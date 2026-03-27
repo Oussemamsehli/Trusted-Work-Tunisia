@@ -1,0 +1,76 @@
+<div class="profile-page">
+  <div class="loading" *ngIf="loading">Chargement du profil...</div>
+
+  <div class="profile-content" *ngIf="user && !loading">
+    <div class="success-msg" *ngIf="saveSuccess">{{ saveSuccess }}</div>
+
+    <!-- Profile Card -->
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="avatar">{{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}</div>
+        <div class="profile-info">
+          <h2>{{ user.firstName }} {{ user.lastName }}</h2>
+          <p>{{ user.email }}</p>
+          <div class="badges">
+            <span class="badge" [style.background]="getStatusColor(user.role) + '20'" [style.color]="getStatusColor(user.role)">{{ user.role }}</span>
+            <span class="badge" [style.background]="getStatusColor(user.accountStatus) + '20'" [style.color]="getStatusColor(user.accountStatus)">{{ user.accountStatus }}</span>
+            <span class="badge" [style.background]="getStatusColor(user.kycStatus) + '20'" [style.color]="getStatusColor(user.kycStatus)">KYC: {{ user.kycStatus }}</span>
+          </div>
+        </div>
+        <button class="btn-edit" (click)="toggleEdit()">
+          {{ editing ? 'Annuler' : 'Modifier' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Info / Edit -->
+    <div class="details-card">
+      <h3>Informations personnelles</h3>
+
+      <!-- View Mode -->
+      <div class="info-grid" *ngIf="!editing">
+        <div class="info-item">
+          <span class="info-label">Prénom</span>
+          <span class="info-value">{{ user.firstName }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Nom</span>
+          <span class="info-value">{{ user.lastName }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Email</span>
+          <span class="info-value">{{ user.email }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Téléphone</span>
+          <span class="info-value">{{ user.phoneNumber || 'Non renseigné' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Membre depuis</span>
+          <span class="info-value">{{ user.createdAt | date:'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">2FA</span>
+          <span class="info-value">{{ user.twoFactorEnabled ? 'Activé' : 'Désactivé' }}</span>
+        </div>
+      </div>
+
+      <!-- Edit Mode -->
+      <form *ngIf="editing" [formGroup]="editForm" (ngSubmit)="saveProfile()" class="edit-form">
+        <div class="form-group">
+          <label>Prénom</label>
+          <input type="text" formControlName="firstName">
+        </div>
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" formControlName="lastName">
+        </div>
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="text" formControlName="phoneNumber">
+        </div>
+        <button type="submit" class="btn-save">Enregistrer</button>
+      </form>
+    </div>
+  </div>
+</div>

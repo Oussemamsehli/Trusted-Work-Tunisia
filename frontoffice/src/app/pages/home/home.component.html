@@ -1,0 +1,27 @@
+<div class="home-page">
+  <div class="hero-card">
+    <div class="badge">TrustedWork Tunisia</div>
+
+    <h1>Bienvenue sur TrustedWork</h1>
+
+    <p class="subtitle" *ngIf="!isLoggedIn()">
+      Une plateforme sécurisée pour gérer votre profil, vos vérifications
+      et vos démarches en toute simplicité.
+    </p>
+
+    <p class="subtitle" *ngIf="isLoggedIn()">
+      Vous êtes connecté{{ getEmail() ? ' avec ' + getEmail() : '' }}.
+      Accédez directement à votre espace personnel et à vos démarches KYC.
+    </p>
+
+    <div class="hero-actions" *ngIf="!isLoggedIn()">
+      <a routerLink="/login" class="primary-btn">Se connecter</a>
+      <a routerLink="/register" class="secondary-btn">Créer un compte</a>
+    </div>
+
+    <div class="hero-actions" *ngIf="isLoggedIn()">
+      <a routerLink="/profile" class="primary-btn">Mon profil</a>
+      <a routerLink="/kyc" class="secondary-btn">Vérification KYC</a>
+    </div>
+  </div>
+</div>
