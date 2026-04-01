@@ -23,6 +23,9 @@ public class UserBadge {
     @JoinColumn(name = "badge_id", nullable = false)
     private Badge badge;
 
+    @Column(nullable = false, length = 500)
+    private String reason;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime awardedAt;
 

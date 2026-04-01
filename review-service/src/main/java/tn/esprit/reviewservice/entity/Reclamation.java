@@ -29,11 +29,19 @@ public class Reclamation {
     @Column(nullable = false)
     private MotifReclamation motif;
 
+    @Column(length = 1000)
     private String description;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatusReclamation status;
+
+    @Column(length = 1000)
+    private String adminComment;
+
+    private Long processedByAdminId;
+
+    private LocalDateTime processedAt;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
