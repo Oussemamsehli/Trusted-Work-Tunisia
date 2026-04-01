@@ -38,6 +38,8 @@ public class TrustScoreServiceImpl implements ITrustScoreService {
         trustScore.setTendance(
                 request.getTendance() != null ? request.getTendance() : Tendance.STABLE
         );
+        trustScore.setPositiveReviews(request.getPositiveReviews());
+        trustScore.setNegativeReviews(request.getNegativeReviews());
 
         TrustScore savedTrustScore = trustScoreRepository.save(trustScore);
         return trustScoreMapper.toResponse(savedTrustScore);

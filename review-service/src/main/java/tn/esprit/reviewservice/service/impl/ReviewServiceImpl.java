@@ -25,25 +25,40 @@ public class ReviewServiceImpl implements IReviewService {
 
     @Override
     public ReviewResponse createReview(ReviewRequest request) {
+
+        boolean exists = reviewRepository
+                .existsByContractIdAndReviewerIdAndIsDeletedFalse(
+                        request.getContractId(),
+                        request.getReviewerId()
+                );
+
+        if (exists) {
+            throw new RuntimeException("Review déjà existante pour ce contrat");
+        }
+
         Review review = reviewMapper.toEntity(request);
+        review.setIsDeleted(false);
+        review.setIsVisible(true);
+
         Review savedReview = reviewRepository.save(review);
         return reviewMapper.toResponse(savedReview);
     }
 
     @Override
     public ReviewResponse updateReview(Long id, ReviewRequest request) {
-        Review existingReview = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review introuvable avec id : " + id));
 
-        existingReview.setContractId(request.getContractId());
-        existingReview.setReviewerId(request.getReviewerId());
-        existingReview.setReviewedUserId(request.getReviewedUserId());
-        existingReview.setReviewType(request.getReviewType());
-        existingReview.setRating(request.getRating());
-        existingReview.setComment(request.getComment());
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Review introuvable"));
 
-        Review updatedReview = reviewRepository.save(existingReview);
-        return reviewMapper.toResponse(updatedReview);
+        review.setComment(request.getComment());
+        review.setOverallRating(request.getOverallRating());
+        review.setQualityRating(request.getQualityRating());
+        review.setCommunicationRating(request.getCommunicationRating());
+        review.setDeadlineRating(request.getDeadlineRating());
+        review.setProfessionalismRating(request.getProfessionalismRating());
+
+        Review updated = reviewRepository.save(review);
+        return reviewMapper.toResponse(updated);
     }
 
     @Override
@@ -63,8 +78,12 @@ public class ReviewServiceImpl implements IReviewService {
 
     @Override
     public void deleteReview(Long id) {
+
         Review review = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Review introuvable avec id : " + id));
-        reviewRepository.delete(review);
+                .orElseThrow(() -> new ResourceNotFoundException("Review introuvable"));
+
+        review.setIsDeleted(true);
+
+        reviewRepository.save(review);
     }
 }

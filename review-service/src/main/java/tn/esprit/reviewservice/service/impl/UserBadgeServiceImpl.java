@@ -35,6 +35,13 @@ public class UserBadgeServiceImpl implements IUserBadgeService {
         Badge badge = badgeRepository.findById(request.getBadgeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Badge introuvable"));
 
+        boolean alreadyExists = userBadgeRepository
+                .existsByUserIdAndBadgeId(request.getUserId(), request.getBadgeId());
+
+        if (alreadyExists) {
+            throw new RuntimeException("Badge déjà attribué à cet utilisateur");
+        }
+
         UserBadge userBadge = new UserBadge();
         userBadge.setUserId(request.getUserId());
         userBadge.setBadge(badge);
