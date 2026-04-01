@@ -19,25 +19,69 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long contractId;
-
+    @Column(nullable = false)
     private Long reviewerId;
 
+    @Column(nullable = false)
     private Long reviewedUserId;
 
-    @Enumerated(EnumType.STRING)
-    private ReviewType reviewType;
+    @Column(nullable = false)
+    private Long contractId;
 
     @Column(nullable = false)
-    private Integer rating;
+    private Long recruitmentId;
 
-    @Column(length = 1000)
+    private Long phaseId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ReviewType reviewType;
+
+    @Column(length = 2000)
     private String comment;
+
+    @Column(nullable = false)
+    private Integer overallRating;
+
+    @Column(nullable = false)
+    private Integer qualityRating;
+
+    @Column(nullable = false)
+    private Integer communicationRating;
+
+    @Column(nullable = false)
+    private Integer deadlineRating;
+
+    @Column(nullable = false)
+    private Integer professionalismRating;
+
+    @Column(nullable = false)
+    private Boolean isVisible;
+
+    @Column(nullable = false)
+    private Boolean isDeleted;
 
     private LocalDateTime createdAt;
 
+    private LocalDateTime updatedAt;
+
     @PrePersist
     public void prePersist() {
-        this.createdAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+
+        if (this.isVisible == null) {
+            this.isVisible = true;
+        }
+
+        if (this.isDeleted == null) {
+            this.isDeleted = false;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }
