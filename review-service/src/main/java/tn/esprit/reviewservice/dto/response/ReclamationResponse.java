@@ -1,8 +1,6 @@
 package tn.esprit.reviewservice.dto.response;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import tn.esprit.reviewservice.entity.enums.MotifReclamation;
 import tn.esprit.reviewservice.entity.enums.StatusReclamation;
 
@@ -10,6 +8,8 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class ReclamationResponse {
 
@@ -19,6 +19,11 @@ public class ReclamationResponse {
     private MotifReclamation motif;
     private String description;
     private StatusReclamation status;
+
+    private String adminComment;
+    private Long processedByAdminId;
+    private LocalDateTime processedAt;
+
     private LocalDateTime createdAt;
     private LocalDateTime resolvedAt;
 }
