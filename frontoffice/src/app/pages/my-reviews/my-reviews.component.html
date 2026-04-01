@@ -1,0 +1,59 @@
+<div class="my-reviews-page">
+  <div class="page-header">
+    <div>
+      <h2>Mes avis recus</h2>
+      <p>Les evaluations que d'autres utilisateurs vous ont laissees.</p>
+    </div>
+    <span class="count-chip" *ngIf="!loading">{{ reviews.length }} avis</span>
+  </div>
+
+  <div class="loading" *ngIf="loading">Chargement de vos avis...</div>
+
+  <div class="stats-row" *ngIf="!loading && reviews.length > 0">
+    <div class="stat-card">
+      <span class="stat-value">{{ averageRating.toFixed(1) }}</span>
+      <span class="stat-label">Note moyenne</span>
+      <div class="stars-small">
+        <span *ngFor="let s of [1,2,3,4,5]" [class.filled]="s <= roundedAvg">&#9733;</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ reviews.length }}</span>
+      <span class="stat-label">Total avis</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ positiveCount }}</span>
+      <span class="stat-label">Avis positifs (4-5)</span>
+    </div>
+  </div>
+
+  <div class="reviews-list" *ngIf="!loading && reviews.length > 0">
+    <div class="review-card" *ngFor="let r of reviews">
+      <div class="review-top">
+        <div class="reviewer-info">
+          <div class="reviewer-avatar">U{{ r.reviewerId }}</div>
+          <div>
+            <span class="reviewer-id">Utilisateur #{{ r.reviewerId }}</span>
+            <span class="review-date">{{ r.createdAt }}</span>
+          </div>
+        </div>
+        <div class="review-rating">
+          <div class="stars">
+            <span *ngFor="let s of [1,2,3,4,5]" [class.filled]="s <= r.rating">&#9733;</span>
+          </div>
+          <span class="type-badge" [class.type-client]="r.reviewType === 'CLIENT_TO_FREELANCER'" [class.type-freelancer]="r.reviewType === 'FREELANCER_TO_CLIENT'">{{ formatType(r.reviewType) }}</span>
+        </div>
+      </div>
+      <p class="review-comment" *ngIf="r.comment">{{ r.comment }}</p>
+      <p class="review-no-comment" *ngIf="!r.comment">Aucun commentaire laisse.</p>
+      <div class="review-actions">
+        <button class="btn-report" (click)="reportReview(r.id)">Signaler</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && reviews.length === 0">
+    <h3>Aucun avis recu</h3>
+    <p>Vous n'avez pas encore recu d'evaluations.</p>
+  </div>
+</div>

@@ -1,0 +1,155 @@
+<div class="progress-page">
+  <div class="page-header">
+    <h2>Mon profil de progression</h2>
+    <p>Votre avancement, badges et score de confiance.</p>
+  </div>
+
+  <div class="loading" *ngIf="loading">Chargement de votre progression...</div>
+
+  <div class="progress-content" *ngIf="!loading">
+
+    <!-- Trust Score -->
+    <div class="card" *ngIf="trustScore">
+      <div class="card-title">Score de confiance</div>
+      <div class="trust-row">
+        <div class="trust-score-circle">
+          <svg viewBox="0 0 120 120" width="120" height="120">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" stroke-width="8"></circle>
+            <circle
+              cx="60"
+              cy="60"
+              r="52"
+              fill="none"
+              [attr.stroke]="getScoreColor()"
+              stroke-width="8"
+              stroke-linecap="round"
+              [attr.stroke-dasharray]="getCircleDash()"
+              stroke-dashoffset="0"
+              transform="rotate(-90 60 60)">
+            </circle>
+          </svg>
+          <div class="trust-score-value">{{ getScoreDisplay() }}</div>
+        </div>
+
+        <div class="trust-details">
+          <div class="trust-detail">
+            <span class="detail-label">Categorie</span>
+            <span class="badge" [class]="getCategorieClass()">
+              {{ trustScore.categorie }}
+            </span>
+          </div>
+
+          <div class="trust-detail">
+            <span class="detail-label">Tendance</span>
+            <span class="badge" [class]="getTendanceClass()">
+              {{ trustScore.tendance }}
+            </span>
+          </div>
+
+          <div class="trust-detail">
+            <span class="detail-label">Note moyenne</span>
+            <div class="stars">
+              <span *ngFor="let s of [1,2,3,4,5]" [class.filled]="s <= getRoundedAvg()">★</span>
+              <span class="avg-text">{{ getAvgDisplay() }}</span>
+            </div>
+          </div>
+
+          <div class="trust-detail">
+            <span class="detail-label">Total avis</span>
+            <span class="detail-value">{{ trustScore.totalReviews }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Growth Profile -->
+    <div class="card" *ngIf="growthProfile">
+      <div class="card-title">Progression</div>
+
+      <div class="growth-grid">
+        <div class="growth-item">
+          <span class="growth-value">{{ growthProfile.level }}</span>
+          <span class="growth-label">Niveau</span>
+        </div>
+
+        <div class="growth-item">
+          <span class="growth-value">{{ growthProfile.xp }}</span>
+          <span class="growth-label">XP</span>
+        </div>
+
+        <div class="growth-item">
+          <span class="growth-value badge" [class]="getNiveauClass()">
+            {{ growthProfile.streakDays }}
+          </span>
+          <span class="growth-label">Rang</span>
+        </div>
+
+        <div class="growth-item">
+          <span class="growth-value">{{ growthProfile.streakDays }} j</span>
+          <span class="growth-label">Serie actuelle</span>
+        </div>
+
+        <div class="growth-item">
+          <span class="growth-value">{{ growthProfile.longestStreak }} j</span>
+          <span class="growth-label">Meilleure serie</span>
+        </div>
+
+        <div class="growth-item">
+          <span class="growth-value">
+            {{ userBadges.length || 0 }}
+          </span>
+          <span class="growth-label">Badges</span>
+        </div>
+      </div>
+
+      <div class="xp-bar-wrap">
+        <div class="xp-bar" [style.width.%]="getXpPercent()"></div>
+      </div>
+
+      <span class="xp-label">
+        {{ growthProfile.xp }} / {{ getNextLevelXp() }} XP pour le prochain niveau
+      </span>
+    </div>
+
+    <!-- Badges -->
+    <div class="card">
+      <div class="card-title">Mes badges</div>
+
+      <div class="badges-grid" *ngIf="userBadges && userBadges.length > 0; else noBadges">
+        
+        <div class="badge-card" *ngFor="let b of userBadges">
+          
+          <div class="badge-icon">🏅</div>
+
+          <div class="badge-info">
+            <div class="badge-header">
+              <span class="badge-name">
+                {{ b.badgeName || ('Badge #' + b.badgeId) }}
+              </span>
+              <span class="badge-status">Obtenu</span>
+            </div>
+
+            <p class="badge-description">
+              Badge attribué pour votre progression et votre activité sur la plateforme.
+            </p>
+
+            <span class="badge-date">
+              {{ b.awardedAt | date:'dd/MM/yyyy à HH:mm' }}
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <ng-template #noBadges>
+        <div class="empty-badge-state">
+          <div class="empty-badge-icon">🏅</div>
+          <p class="empty-text">Vous n'avez pas encore obtenu de badges.</p>
+        </div>
+      </ng-template>
+
+    </div>
+
+  </div>
+</div>

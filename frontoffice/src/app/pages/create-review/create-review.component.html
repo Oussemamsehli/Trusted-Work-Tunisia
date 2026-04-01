@@ -1,0 +1,66 @@
+<div class="create-review-page">
+  <div class="page-header">
+    <h2>Donner un avis</h2>
+    <p>Evaluez un utilisateur suite a une collaboration.</p>
+  </div>
+
+  <div class="form-card">
+    <div class="success-msg" *ngIf="successMessage">{{ successMessage }}</div>
+    <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="contractId">ID du contrat</label>
+          <input id="contractId" type="number" formControlName="contractId" placeholder="Ex: 1" />
+        </div>
+
+        <div class="form-group">
+          <label for="reviewedUserId">ID de l'utilisateur evalue</label>
+          <input id="reviewedUserId" type="number" formControlName="reviewedUserId" placeholder="Ex: 5" />
+        </div>
+
+        <div class="form-group">
+          <label for="reviewType">Type d'avis</label>
+          <select id="reviewType" formControlName="reviewType">
+            <option value="CLIENT_TO_FREELANCER">Client vers Freelancer</option>
+            <option value="FREELANCER_TO_CLIENT">Freelancer vers Client</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group rating-group">
+        <label>Note</label>
+        <div class="star-selector">
+          <span
+            *ngFor="let s of [1,2,3,4,5]"
+            class="star"
+            [class.filled]="s <= selectedRating"
+            [class.hovered]="s <= hoveredRating"
+            (mouseenter)="hoveredRating = s"
+            (mouseleave)="hoveredRating = 0"
+            (click)="setRating(s)"
+          >&#9733;</span>
+          <span class="rating-label" *ngIf="selectedRating">{{ getRatingLabel(selectedRating) }}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="comment">Commentaire</label>
+        <textarea
+          id="comment"
+          formControlName="comment"
+          rows="4"
+          placeholder="Decrivez votre experience..."
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" [disabled]="loading || reviewForm.invalid">
+          {{ loading ? 'Envoi...' : 'Envoyer' }}
+        </button>
+        <button type="button" class="btn-secondary" (click)="resetForm()">Reinitialiser</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -14,6 +14,11 @@ import { ResetPasswordComponent } from './reset-password/reset-password.componen
 import { UsersListComponent } from './users-list/users-list.component';
 import { KycListComponent } from './kyc-list/kyc-list.component';
 import { JwtInterceptor } from './interceptors/jwt.interceptor';
+import { ReviewsListComponent } from './reviews-list/reviews-list.component';
+import { ReclamationsListComponent } from './reclamations-list/reclamations-list.component';
+import { BadgesListComponent } from './badges-list/badges-list.component';
+import { TrustScoresComponent } from './trust-scores/trust-scores.component';
+import { CommonModule } from '@angular/common';
 
 @NgModule({
   declarations: [
@@ -25,14 +30,19 @@ import { JwtInterceptor } from './interceptors/jwt.interceptor';
     ForgotPasswordComponent,
     ResetPasswordComponent,
     UsersListComponent,
-    KycListComponent
+    KycListComponent,
+    ReviewsListComponent,
+    ReclamationsListComponent,
+    BadgesListComponent,
+    TrustScoresComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
     ReactiveFormsModule,
-    FormsModule
+    FormsModule,
+    CommonModule
   ],
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true }

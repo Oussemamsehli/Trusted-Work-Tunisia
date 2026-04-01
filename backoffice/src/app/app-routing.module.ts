@@ -7,6 +7,10 @@ import { ResetPasswordComponent } from './reset-password/reset-password.componen
 import { UsersListComponent } from './users-list/users-list.component';
 import { KycListComponent } from './kyc-list/kyc-list.component';
 import { AuthGuard } from './guards/auth.guard';
+import { ReviewsListComponent } from './reviews-list/reviews-list.component';
+import { ReclamationsListComponent } from './reclamations-list/reclamations-list.component';
+import { BadgesListComponent } from './badges-list/badges-list.component';
+import { TrustScoresComponent } from './trust-scores/trust-scores.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -15,7 +19,11 @@ const routes: Routes = [
   { path: '', component: DashboardComponent, canActivate: [AuthGuard] },
   { path: 'users', component: UsersListComponent, canActivate: [AuthGuard] },
   { path: 'kyc', component: KycListComponent, canActivate: [AuthGuard] },
-  { path: '**', redirectTo: '' }
+  { path: 'reviews', component: ReviewsListComponent, canActivate: [AuthGuard] },
+  { path: 'reclamations', component: ReclamationsListComponent, canActivate: [AuthGuard] },
+  { path: 'badges', component: BadgesListComponent, canActivate: [AuthGuard] },
+  { path: 'trustscores', component: TrustScoresComponent, canActivate: [AuthGuard] },
+    { path: '**', redirectTo: '' }
 ];
 
 @NgModule({

@@ -106,16 +106,24 @@ export class AuthService {
 
         switch (r) {
             case UserRole.ADMIN:
-                return [
-                    { id: 'dashboard', label: 'Tableau de bord', icon: 'grid', section: 'menu', route: '/' },
-                    { id: 'users', label: 'Utilisateurs', icon: 'users', section: 'menu', route: '/users' },
-                    { id: 'kyc', label: 'KYC Vérification', icon: 'file-text', section: 'menu', route: '/kyc' },
-                    { id: 'contracts', label: 'Contrats', icon: 'file-text', section: 'menu' },
-                    { id: 'payments', label: 'Paiements', icon: 'credit-card', section: 'menu' },
-                    { id: 'reports', label: 'Rapports', icon: 'bar-chart', section: 'menu' },
-                    { id: 'help', label: 'Aide', icon: 'help-circle', section: 'support' },
-                    { id: 'settings', label: 'Paramètres', icon: 'settings', section: 'support' },
-                ];
+    return [
+        { id: 'dashboard', label: 'Tableau de bord', icon: 'grid', section: 'menu', route: '/' },
+        { id: 'users', label: 'Utilisateurs', icon: 'users', section: 'menu', route: '/users' },
+        { id: 'kyc', label: 'KYC Vérification', icon: 'file-text', section: 'menu', route: '/kyc' },
+
+       
+        { id: 'reviews', label: 'Reviews', icon: 'star', section: 'menu', route: '/reviews' },
+        { id: 'reclamations', label: 'Réclamations', icon: 'alert-triangle', section: 'menu', route: '/reclamations' },
+        { id: 'badges', label: 'Badges', icon: 'award', section: 'menu', route: '/badges' },
+        { id: 'trustscores', label: 'Trust Scores', icon: 'trending-up', section: 'menu', route: '/trustscores' },
+
+        { id: 'contracts', label: 'Contrats', icon: 'file-text', section: 'menu' },
+        { id: 'payments', label: 'Paiements', icon: 'credit-card', section: 'menu' },
+        { id: 'reports', label: 'Rapports', icon: 'bar-chart', section: 'menu' },
+
+        { id: 'help', label: 'Aide', icon: 'help-circle', section: 'support' },
+        { id: 'settings', label: 'Paramètres', icon: 'settings', section: 'support' },
+    ];
 
             case UserRole.FREELANCER:
                 return [

@@ -1,0 +1,95 @@
+<div class="page-container">
+    <div class="page-header">
+      <h2>Liste des Badges</h2>
+      <p>Créer et gérer les badges de la plateforme.</p>
+    </div>
+  
+    <div class="badge-form-card">
+      <h3>Créer un badge</h3>
+  
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nom</label>
+          <input type="text" [(ngModel)]="newBadge.name" placeholder="Ex: Rising Talent">
+        </div>
+  
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" [(ngModel)]="newBadge.description" placeholder="Description du badge">
+        </div>
+  
+        <div class="form-group">
+          <label>Catégorie</label>
+          <select [(ngModel)]="newBadge.categorie">
+            <option value="TRUST">TRUST</option>
+            <option value="ACTIVITY">ACTIVITY</option>
+            <option value="PERFORMANCE">PERFORMANCE</option>
+          </select>
+        </div>
+  
+        <div class="form-group">
+          <label>Rareté</label>
+          <select [(ngModel)]="newBadge.rarete">
+            <option value="COMMON">COMMON</option>
+            <option value="RARE">RARE</option>
+            <option value="EPIC">EPIC</option>
+            <option value="LEGENDARY">LEGENDARY</option>
+          </select>
+        </div>
+  
+        <div class="form-group">
+          <label>Points</label>
+          <input type="number" [(ngModel)]="newBadge.points" placeholder="100">
+        </div>
+      </div>
+  
+      <button class="create-btn" (click)="createBadge()">
+        Créer Badge
+      </button>
+    </div>
+  
+    <div *ngIf="loading" class="info-box">
+      Chargement des badges...
+    </div>
+  
+    <div *ngIf="errorMessage" class="error-box">
+      {{ errorMessage }}
+    </div>
+  
+    <div class="table-card" *ngIf="!loading">
+      <table *ngIf="badges.length > 0; else noBadges">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Catégorie</th>
+            <th>Rareté</th>
+            <th>Points</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let badge of badges">
+            <td>{{ badge.id }}</td>
+            <td>{{ badge.name }}</td>
+            <td>{{ badge.description }}</td>
+            <td>{{ badge.categorie }}</td>
+            <td>{{ badge.rarete }}</td>
+            <td>{{ badge.points }}</td>
+            <td>
+              <button class="delete-btn" (click)="deleteBadge(badge.id)">
+                Supprimer
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+  
+      <ng-template #noBadges>
+        <div class="empty-box">
+          Aucun badge trouvé.
+        </div>
+      </ng-template>
+    </div>
+  </div>
