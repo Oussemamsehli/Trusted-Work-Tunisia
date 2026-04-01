@@ -9,26 +9,49 @@ import tn.esprit.reviewservice.entity.Review;
 public class ReviewMapper {
 
     public Review toEntity(ReviewRequest request) {
+        if (request == null) return null;
+
         Review review = new Review();
-        review.setContractId(request.getContractId());
+
         review.setReviewerId(request.getReviewerId());
         review.setReviewedUserId(request.getReviewedUserId());
+        review.setContractId(request.getContractId());
+        review.setRecruitmentId(request.getRecruitmentId());
+        review.setPhaseId(request.getPhaseId());
+
         review.setReviewType(request.getReviewType());
-        review.setRating(request.getRating());
         review.setComment(request.getComment());
+
+        review.setOverallRating(request.getOverallRating());
+        review.setQualityRating(request.getQualityRating());
+        review.setCommunicationRating(request.getCommunicationRating());
+        review.setDeadlineRating(request.getDeadlineRating());
+        review.setProfessionalismRating(request.getProfessionalismRating());
+
         return review;
     }
 
     public ReviewResponse toResponse(Review review) {
+        if (review == null) return null;
+
         return ReviewResponse.builder()
                 .id(review.getId())
-                .contractId(review.getContractId())
                 .reviewerId(review.getReviewerId())
                 .reviewedUserId(review.getReviewedUserId())
+                .contractId(review.getContractId())
+                .recruitmentId(review.getRecruitmentId())
+                .phaseId(review.getPhaseId())
                 .reviewType(review.getReviewType())
-                .rating(review.getRating())
                 .comment(review.getComment())
+                .overallRating(review.getOverallRating())
+                .qualityRating(review.getQualityRating())
+                .communicationRating(review.getCommunicationRating())
+                .deadlineRating(review.getDeadlineRating())
+                .professionalismRating(review.getProfessionalismRating())
+                .isVisible(review.getIsVisible())
+                .isDeleted(review.getIsDeleted())
                 .createdAt(review.getCreatedAt())
+                .updatedAt(review.getUpdatedAt())
                 .build();
     }
 }

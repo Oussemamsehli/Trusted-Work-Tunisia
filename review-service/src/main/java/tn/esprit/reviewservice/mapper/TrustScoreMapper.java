@@ -11,18 +11,21 @@ import tn.esprit.reviewservice.entity.enums.Tendance;
 public class TrustScoreMapper {
 
     public TrustScore toEntity(TrustScoreRequest request) {
-        if (request == null) {
-            return null;
-        }
+        if (request == null) return null;
 
         TrustScore trustScore = new TrustScore();
+
         trustScore.setUserId(request.getUserId());
         trustScore.setScore(request.getScore());
         trustScore.setAverageRating(request.getAverageRating());
         trustScore.setTotalReviews(request.getTotalReviews());
+        trustScore.setPositiveReviews(request.getPositiveReviews());
+        trustScore.setNegativeReviews(request.getNegativeReviews());
+
         trustScore.setCategorie(
                 request.getCategorie() != null ? request.getCategorie() : CategorieConfiance.FAIBLE
         );
+
         trustScore.setTendance(
                 request.getTendance() != null ? request.getTendance() : Tendance.STABLE
         );
@@ -31,9 +34,7 @@ public class TrustScoreMapper {
     }
 
     public TrustScoreResponse toResponse(TrustScore trustScore) {
-        if (trustScore == null) {
-            return null;
-        }
+        if (trustScore == null) return null;
 
         return TrustScoreResponse.builder()
                 .id(trustScore.getId())
@@ -41,12 +42,11 @@ public class TrustScoreMapper {
                 .score(trustScore.getScore())
                 .averageRating(trustScore.getAverageRating())
                 .totalReviews(trustScore.getTotalReviews())
-                .categorie(
-                        trustScore.getCategorie() != null ? trustScore.getCategorie() : CategorieConfiance.FAIBLE
-                )
-                .tendance(
-                        trustScore.getTendance() != null ? trustScore.getTendance() : Tendance.STABLE
-                )
+                .positiveReviews(trustScore.getPositiveReviews())
+                .negativeReviews(trustScore.getNegativeReviews())
+                .categorie(trustScore.getCategorie())
+                .tendance(trustScore.getTendance())
+                .createdAt(trustScore.getCreatedAt())
                 .updatedAt(trustScore.getUpdatedAt())
                 .build();
     }

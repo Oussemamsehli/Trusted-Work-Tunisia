@@ -9,14 +9,19 @@ import tn.esprit.reviewservice.entity.Reclamation;
 public class ReclamationMapper {
 
     public Reclamation toEntity(ReclamationRequest request) {
+        if (request == null) return null;
+
         Reclamation reclamation = new Reclamation();
         reclamation.setReportedByUserId(request.getReportedByUserId());
         reclamation.setMotif(request.getMotif());
         reclamation.setDescription(request.getDescription());
+
         return reclamation;
     }
 
     public ReclamationResponse toResponse(Reclamation reclamation) {
+        if (reclamation == null) return null;
+
         return ReclamationResponse.builder()
                 .id(reclamation.getId())
                 .reviewId(reclamation.getReview() != null ? reclamation.getReview().getId() : null)
@@ -24,6 +29,9 @@ public class ReclamationMapper {
                 .motif(reclamation.getMotif())
                 .description(reclamation.getDescription())
                 .status(reclamation.getStatus())
+                .adminComment(reclamation.getAdminComment())
+                .processedByAdminId(reclamation.getProcessedByAdminId())
+                .processedAt(reclamation.getProcessedAt())
                 .createdAt(reclamation.getCreatedAt())
                 .resolvedAt(reclamation.getResolvedAt())
                 .build();
