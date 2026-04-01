@@ -6,15 +6,22 @@ import tn.esprit.reviewservice.entity.Review;
 import tn.esprit.reviewservice.entity.enums.ReviewType;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
 
+    // Basic queries
     List<Review> findByReviewerId(Long reviewerId);
-
     List<Review> findByReviewedUserId(Long reviewedUserId);
-
     List<Review> findByContractId(Long contractId);
-
     List<Review> findByReviewType(ReviewType reviewType);
+
+    //  Soft delete aware queries
+    Optional<Review> findByContractIdAndReviewerIdAndIsDeletedFalse(Long contractId, Long reviewerId);
+
+    boolean existsByContractIdAndReviewerIdAndIsDeletedFalse(Long contractId, Long reviewerId);
+
+    //  Optional
+    List<Review> findByReviewedUserIdAndIsDeletedFalse(Long reviewedUserId);
 }

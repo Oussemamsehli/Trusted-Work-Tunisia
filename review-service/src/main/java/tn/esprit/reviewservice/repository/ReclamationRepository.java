@@ -15,4 +15,7 @@ public interface ReclamationRepository extends JpaRepository<Reclamation, Long> 
     List<Reclamation> findByStatus(StatusReclamation status);
 
     List<Reclamation> findByReviewId(Long reviewId);
+
+    List<Reclamation> findByStatusOrderByCreatedAtDesc(StatusReclamation status);
+
 }

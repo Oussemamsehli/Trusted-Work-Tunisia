@@ -14,4 +14,8 @@ public interface TrustScoreRepository extends JpaRepository<TrustScore, Long> {
     Optional<TrustScore> findByUserId(Long userId);
 
     List<TrustScore> findByCategorie(CategorieConfiance categorie);
+
+    // pour dashboard
+    List<TrustScore> findByScoreGreaterThan(Double score);
+
 }

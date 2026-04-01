@@ -59,7 +59,7 @@ public class Review {
     private Boolean isVisible;
 
     @Column(nullable = false)
-    private Boolean isDeleted;
+    private Boolean isDeleted = false;
 
     private LocalDateTime createdAt;
 
