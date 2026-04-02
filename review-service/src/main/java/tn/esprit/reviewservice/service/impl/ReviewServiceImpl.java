@@ -7,6 +7,7 @@ import tn.esprit.reviewservice.entity.Review;
 import tn.esprit.reviewservice.exception.ResourceNotFoundException;
 import tn.esprit.reviewservice.mapper.ReviewMapper;
 import tn.esprit.reviewservice.repository.ReviewRepository;
+import tn.esprit.reviewservice.service.interfaces.IBadgeAssignmentService;
 import tn.esprit.reviewservice.service.interfaces.IReviewService;
 import tn.esprit.reviewservice.service.interfaces.ITrustScoreService;
 
@@ -19,13 +20,16 @@ public class ReviewServiceImpl implements IReviewService {
     private final ReviewRepository reviewRepository;
     private final ReviewMapper reviewMapper;
     private final ITrustScoreService trustScoreService;
+    private final IBadgeAssignmentService badgeAssignmentService;
 
     public ReviewServiceImpl(ReviewRepository reviewRepository,
                              ReviewMapper reviewMapper,
-                             ITrustScoreService trustScoreService) {
+                             ITrustScoreService trustScoreService,
+                            IBadgeAssignmentService badgeAssignmentService) {
         this.reviewRepository = reviewRepository;
         this.reviewMapper = reviewMapper;
         this.trustScoreService = trustScoreService;
+        this.badgeAssignmentService = badgeAssignmentService;
     }
 
     @Override
@@ -51,6 +55,9 @@ public class ReviewServiceImpl implements IReviewService {
                 savedReview.getReviewedUserId(),
                 savedReview.getId()
         );
+        badgeAssignmentService.updateGrowthProfile(savedReview.getReviewedUserId());
+
+        badgeAssignmentService.assignFirstReviewBadge(savedReview.getReviewedUserId());
 
         return reviewMapper.toResponse(savedReview);
     }
