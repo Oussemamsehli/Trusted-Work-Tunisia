@@ -34,10 +34,13 @@ public class ReclamationServiceImpl implements IReclamationService {
     @Override
     public ReclamationResponse createReclamation(ReclamationRequest request) {
         Review review = reviewRepository.findById(request.getReviewId())
-                .orElseThrow(() -> new ResourceNotFoundException("Review introuvable avec id : " + request.getReviewId()));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Review introuvable avec id : " + request.getReviewId()
+                ));
 
         Reclamation reclamation = reclamationMapper.toEntity(request);
         reclamation.setReview(review);
+        reclamation.setStatus(StatusReclamation.PENDING);
 
         Reclamation savedReclamation = reclamationRepository.save(reclamation);
         return reclamationMapper.toResponse(savedReclamation);
@@ -52,18 +55,67 @@ public class ReclamationServiceImpl implements IReclamationService {
     }
 
     @Override
+    public List<ReclamationResponse> getReclamationsByStatus(StatusReclamation status) {
+        return reclamationRepository.findByStatus(status)
+                .stream()
+                .map(reclamationMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public ReclamationResponse getReclamationById(Long id) {
         Reclamation reclamation = reclamationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Reclamation introuvable avec id : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Reclamation introuvable avec id : " + id
+                ));
+
         return reclamationMapper.toResponse(reclamation);
     }
 
     @Override
-    public ReclamationResponse resolveReclamation(Long id) {
+    public ReclamationResponse markInReview(Long id, Long adminId, String adminComment) {
         Reclamation reclamation = reclamationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Reclamation introuvable avec id : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Reclamation introuvable avec id : " + id
+                ));
+
+        reclamation.setStatus(StatusReclamation.IN_REVIEW);
+        reclamation.setProcessedByAdminId(adminId);
+        reclamation.setAdminComment(adminComment);
+        reclamation.setProcessedAt(LocalDateTime.now());
+
+        Reclamation updatedReclamation = reclamationRepository.save(reclamation);
+        return reclamationMapper.toResponse(updatedReclamation);
+    }
+
+    @Override
+    public ReclamationResponse confirmReclamation(Long id, Long adminId, String adminComment) {
+        Reclamation reclamation = reclamationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Reclamation introuvable avec id : " + id
+                ));
 
         reclamation.setStatus(StatusReclamation.CONFIRMED);
+        reclamation.setProcessedByAdminId(adminId);
+        reclamation.setAdminComment(adminComment);
+        reclamation.setProcessedAt(LocalDateTime.now());
+        reclamation.setResolvedAt(LocalDateTime.now());
+
+        Reclamation updatedReclamation = reclamationRepository.save(reclamation);
+        return reclamationMapper.toResponse(updatedReclamation);
+    }
+
+    @Override
+    public ReclamationResponse rejectReclamation(Long id, Long adminId, String adminComment) {
+        Reclamation reclamation = reclamationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Reclamation introuvable avec id : " + id
+                ));
+
+        reclamation.setStatus(StatusReclamation.REJECTED);
+        reclamation.setProcessedByAdminId(adminId);
+        reclamation.setAdminComment(adminComment);
+        reclamation.setProcessedAt(LocalDateTime.now());
         reclamation.setResolvedAt(LocalDateTime.now());
 
         Reclamation updatedReclamation = reclamationRepository.save(reclamation);
@@ -73,7 +125,9 @@ public class ReclamationServiceImpl implements IReclamationService {
     @Override
     public void deleteReclamation(Long id) {
         Reclamation reclamation = reclamationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Reclamation introuvable avec id : " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Reclamation introuvable avec id : " + id
+                ));
 
         reclamationRepository.delete(reclamation);
     }

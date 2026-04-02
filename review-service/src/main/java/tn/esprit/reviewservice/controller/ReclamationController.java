@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.reviewservice.dto.request.ReclamationRequest;
 import tn.esprit.reviewservice.dto.response.ReclamationResponse;
+import tn.esprit.reviewservice.entity.enums.StatusReclamation;
 import tn.esprit.reviewservice.service.interfaces.IReclamationService;
 
 import java.util.List;
@@ -33,21 +34,35 @@ public class ReclamationController {
         return ResponseEntity.ok(reclamationService.getReclamationById(id));
     }
 
-    @PutMapping("/{id}/resolve")
-    public ResponseEntity<ReclamationResponse> resolveReclamation(@PathVariable Long id) {
-        return ResponseEntity.ok(reclamationService.resolveReclamation(id));
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<ReclamationResponse>> getReclamationsByStatus(@PathVariable StatusReclamation status) {
+        return ResponseEntity.ok(reclamationService.getReclamationsByStatus(status));
+    }
+
+    @PutMapping("/{id}/in-review")
+    public ResponseEntity<ReclamationResponse> markInReview(@PathVariable Long id,
+                                                            @RequestParam Long adminId,
+                                                            @RequestParam(required = false) String adminComment) {
+        return ResponseEntity.ok(reclamationService.markInReview(id, adminId, adminComment));
+    }
+
+    @PutMapping("/{id}/confirm")
+    public ResponseEntity<ReclamationResponse> confirmReclamation(@PathVariable Long id,
+                                                                  @RequestParam Long adminId,
+                                                                  @RequestParam(required = false) String adminComment) {
+        return ResponseEntity.ok(reclamationService.confirmReclamation(id, adminId, adminComment));
+    }
+
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<ReclamationResponse> rejectReclamation(@PathVariable Long id,
+                                                                 @RequestParam Long adminId,
+                                                                 @RequestParam(required = false) String adminComment) {
+        return ResponseEntity.ok(reclamationService.rejectReclamation(id, adminId, adminComment));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReclamation(@PathVariable Long id) {
         reclamationService.deleteReclamation(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/status/{status}")
-    public ResponseEntity<List<ReclamationResponse>> getByStatus(@PathVariable String status) {
-        return ResponseEntity.ok(
-                reclamationService.getAllReclamations()
-        );
     }
 }
