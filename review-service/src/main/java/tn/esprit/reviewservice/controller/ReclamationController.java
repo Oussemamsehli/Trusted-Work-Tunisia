@@ -43,4 +43,11 @@ public class ReclamationController {
         reclamationService.deleteReclamation(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<ReclamationResponse>> getByStatus(@PathVariable String status) {
+        return ResponseEntity.ok(
+                reclamationService.getAllReclamations()
+        );
+    }
 }

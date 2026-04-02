@@ -18,4 +18,6 @@ public interface ITrustScoreService {
     TrustScoreResponse getTrustScoreByUserId(Long userId);
 
     void deleteTrustScore(Long id);
+
+    void recalculateTrustScore(Long userId, Long reviewId);
 }

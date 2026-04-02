@@ -20,7 +20,7 @@ public class UserBadgeController {
 
     @PostMapping
     public ResponseEntity<UserBadgeResponse> assign(@Valid @RequestBody UserBadgeRequest request) {
-        return ResponseEntity.ok(service.assignBadge(request));
+        return ResponseEntity.status(201).body(service.assignBadge(request));
     }
 
     @GetMapping

@@ -8,6 +8,7 @@ import tn.esprit.reviewservice.exception.ResourceNotFoundException;
 import tn.esprit.reviewservice.mapper.ReviewMapper;
 import tn.esprit.reviewservice.repository.ReviewRepository;
 import tn.esprit.reviewservice.service.interfaces.IReviewService;
+import tn.esprit.reviewservice.service.interfaces.ITrustScoreService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,10 +18,14 @@ public class ReviewServiceImpl implements IReviewService {
 
     private final ReviewRepository reviewRepository;
     private final ReviewMapper reviewMapper;
+    private final ITrustScoreService trustScoreService;
 
-    public ReviewServiceImpl(ReviewRepository reviewRepository, ReviewMapper reviewMapper) {
+    public ReviewServiceImpl(ReviewRepository reviewRepository,
+                             ReviewMapper reviewMapper,
+                             ITrustScoreService trustScoreService) {
         this.reviewRepository = reviewRepository;
         this.reviewMapper = reviewMapper;
+        this.trustScoreService = trustScoreService;
     }
 
     @Override
@@ -41,6 +46,12 @@ public class ReviewServiceImpl implements IReviewService {
         review.setIsVisible(true);
 
         Review savedReview = reviewRepository.save(review);
+
+        trustScoreService.recalculateTrustScore(
+                savedReview.getReviewedUserId(),
+                savedReview.getId()
+        );
+
         return reviewMapper.toResponse(savedReview);
     }
 
@@ -58,6 +69,12 @@ public class ReviewServiceImpl implements IReviewService {
         review.setProfessionalismRating(request.getProfessionalismRating());
 
         Review updated = reviewRepository.save(review);
+
+        trustScoreService.recalculateTrustScore(
+                updated.getReviewedUserId(),
+                updated.getId()
+        );
+
         return reviewMapper.toResponse(updated);
     }
 
@@ -83,7 +100,13 @@ public class ReviewServiceImpl implements IReviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("Review introuvable"));
 
         review.setIsDeleted(true);
+        review.setIsVisible(false);
 
-        reviewRepository.save(review);
+        Review deletedReview = reviewRepository.save(review);
+
+        trustScoreService.recalculateTrustScore(
+                deletedReview.getReviewedUserId(),
+                deletedReview.getId()
+        );
     }
 }

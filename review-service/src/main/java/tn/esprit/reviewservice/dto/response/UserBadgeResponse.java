@@ -16,4 +16,5 @@ public class UserBadgeResponse {
     private Long badgeId;
     private String reason;
     private LocalDateTime awardedAt;
+    private String badgeName;
 }
