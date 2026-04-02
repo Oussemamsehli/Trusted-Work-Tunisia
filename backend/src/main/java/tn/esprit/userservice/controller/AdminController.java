@@ -35,7 +35,7 @@ public class AdminController {
 
     // ==================== USER MANAGEMENT ====================
 
-    @PreAuthorize(HasRole("Admin"))
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/users")
     @Operation(summary = "Admin creates a new user")
     public ResponseEntity<UserDTO> createUser(@RequestBody AdminCreateUserRequest request) {

@@ -9,6 +9,12 @@ import tn.esprit.reviewservice.repository.BadgeRepository;
 import tn.esprit.reviewservice.repository.GrowthProfileRepository;
 import tn.esprit.reviewservice.repository.UserBadgeRepository;
 import tn.esprit.reviewservice.service.interfaces.IBadgeAssignmentService;
+import tn.esprit.reviewservice.dto.request.NotificationRequest;
+import tn.esprit.reviewservice.entity.enums.NotificationChannel;
+import tn.esprit.reviewservice.entity.enums.NotificationPriority;
+import tn.esprit.reviewservice.entity.enums.NotificationType;
+import tn.esprit.reviewservice.entity.enums.RelatedEntityType;
+import tn.esprit.reviewservice.service.interfaces.INotificationService;
 
 import java.time.LocalDate;
 
@@ -18,13 +24,17 @@ public class BadgeAssignmentServiceImpl implements IBadgeAssignmentService {
     private final BadgeRepository badgeRepository;
     private final UserBadgeRepository userBadgeRepository;
     private final GrowthProfileRepository growthProfileRepository;
+    private final INotificationService notificationService;
 
     public BadgeAssignmentServiceImpl(BadgeRepository badgeRepository,
                                       UserBadgeRepository userBadgeRepository,
-                                      GrowthProfileRepository growthProfileRepository) {
+                                      GrowthProfileRepository growthProfileRepository,
+                                      INotificationService notificationService
+    ) {
         this.badgeRepository = badgeRepository;
         this.userBadgeRepository = userBadgeRepository;
         this.growthProfileRepository = growthProfileRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -45,15 +55,25 @@ public class BadgeAssignmentServiceImpl implements IBadgeAssignmentService {
                     return newProfile;
                 });
 
+        // sécurisation
         if (profile.getXp() == null) profile.setXp(0);
-        if (profile.getLevel() == null) profile.setLevel(1);
-        if (profile.getNiveau() == null) profile.setNiveau(Niveau.DEBUTANT);
-        if (profile.getStreakDays() == null) profile.setStreakDays(0);
-        if (profile.getLongestStreak() == null) profile.setLongestStreak(0);
-        if (profile.getBadgesCount() == null) profile.setBadgesCount(0);
-        if (profile.getProfileCompleted() == null) profile.setProfileCompleted(false);
 
-        profile.setXp(profile.getXp() + 10);
+        // ajout XP
+        int newXp = profile.getXp() + 10;
+        profile.setXp(newXp);
+
+        //  LEVEL SYSTEM
+        if (newXp < 50) {
+            profile.setLevel(1);
+            profile.setNiveau(Niveau.DEBUTANT);
+        } else if (newXp < 100) {
+            profile.setLevel(2);
+            profile.setNiveau(Niveau.INTERMEDIAIRE);
+        } else {
+            profile.setLevel(3);
+            profile.setNiveau(Niveau.EXPERT);
+        }
+
         profile.setLastActivityDate(LocalDate.now());
 
         growthProfileRepository.save(profile);
@@ -77,6 +97,19 @@ public class BadgeAssignmentServiceImpl implements IBadgeAssignmentService {
         userBadge.setBadge(badge);
         userBadge.setReason("First review published");
 
-        userBadgeRepository.save(userBadge);
-    }
+        UserBadge savedUserBadge = userBadgeRepository.save(userBadge);
+
+            //Notification
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(userId)
+                        .title("🎉 Nouveau badge obtenu")
+                        .message("Félicitations ! Vous avez obtenu le badge : " + badge.getName())
+                        .type(NotificationType.BADGE_EARNED)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.HIGH)
+                        .relatedEntityType(RelatedEntityType.BADGE)
+                        .relatedEntityId(savedUserBadge.getId())
+                        .build()
+        );    }
 }

@@ -12,7 +12,12 @@ import tn.esprit.reviewservice.repository.ReclamationRepository;
 import tn.esprit.reviewservice.repository.ReviewRepository;
 import tn.esprit.reviewservice.service.interfaces.IReclamationService;
 import tn.esprit.reviewservice.service.interfaces.ITrustScoreService;
-
+import tn.esprit.reviewservice.dto.request.NotificationRequest;
+import tn.esprit.reviewservice.entity.enums.NotificationChannel;
+import tn.esprit.reviewservice.entity.enums.NotificationPriority;
+import tn.esprit.reviewservice.entity.enums.NotificationType;
+import tn.esprit.reviewservice.entity.enums.RelatedEntityType;
+import tn.esprit.reviewservice.service.interfaces.INotificationService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,15 +29,18 @@ public class ReclamationServiceImpl implements IReclamationService {
     private final ReviewRepository reviewRepository;
     private final ReclamationMapper reclamationMapper;
     private final ITrustScoreService trustScoreService;
+    private final INotificationService notificationService;
 
     public ReclamationServiceImpl(ReclamationRepository reclamationRepository,
                                   ReviewRepository reviewRepository,
                                   ReclamationMapper reclamationMapper,
-                                  ITrustScoreService trustScoreService) {
+                                  ITrustScoreService trustScoreService,
+                                  INotificationService notificationService) {
         this.reclamationRepository = reclamationRepository;
         this.reviewRepository = reviewRepository;
         this.reclamationMapper = reclamationMapper;
         this.trustScoreService = trustScoreService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -47,6 +55,34 @@ public class ReclamationServiceImpl implements IReclamationService {
         reclamation.setStatus(StatusReclamation.PENDING);
 
         Reclamation savedReclamation = reclamationRepository.save(reclamation);
+
+        Long adminUserId = 3L;
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(adminUserId)
+                        .title("Nouvelle réclamation")
+                        .message("Une nouvelle réclamation a été soumise et nécessite un traitement.")
+                        .type(NotificationType.RECLAMATION_CREATED)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.HIGH)
+                        .relatedEntityType(RelatedEntityType.RECLAMATION)
+                        .relatedEntityId(savedReclamation.getId())
+                        .build()
+        );
+
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(savedReclamation.getReportedByUserId())
+                        .title("Réclamation enregistrée")
+                        .message("Votre réclamation a bien été enregistrée et est en attente de traitement.")
+                        .type(NotificationType.RECLAMATION_CREATED)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.MEDIUM)
+                        .relatedEntityType(RelatedEntityType.RECLAMATION)
+                        .relatedEntityId(savedReclamation.getId())
+                        .build()
+        );
+
         return reclamationMapper.toResponse(savedReclamation);
     }
 
@@ -89,6 +125,20 @@ public class ReclamationServiceImpl implements IReclamationService {
         reclamation.setProcessedAt(LocalDateTime.now());
 
         Reclamation updatedReclamation = reclamationRepository.save(reclamation);
+
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(updatedReclamation.getReportedByUserId())
+                        .title("Réclamation en cours de traitement")
+                        .message("Votre réclamation est maintenant en cours d'examen par un administrateur.")
+                        .type(NotificationType.RECLAMATION_IN_REVIEW)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.MEDIUM)
+                        .relatedEntityType(RelatedEntityType.RECLAMATION)
+                        .relatedEntityId(updatedReclamation.getId())
+                        .build()
+        );
+
         return reclamationMapper.toResponse(updatedReclamation);
     }
 
@@ -116,6 +166,32 @@ public class ReclamationServiceImpl implements IReclamationService {
 
         Reclamation updatedReclamation = reclamationRepository.save(reclamation);
 
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(updatedReclamation.getReportedByUserId())
+                        .title("Réclamation confirmée")
+                        .message("Votre réclamation a été confirmée par l'administration.")
+                        .type(NotificationType.RECLAMATION_CONFIRMED)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.HIGH)
+                        .relatedEntityType(RelatedEntityType.RECLAMATION)
+                        .relatedEntityId(updatedReclamation.getId())
+                        .build()
+        );
+
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(review.getReviewedUserId())
+                        .title("Une review a été masquée")
+                        .message("Suite à une réclamation confirmée, une review liée à votre profil a été masquée.")
+                        .type(NotificationType.RECLAMATION_CONFIRMED)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.HIGH)
+                        .relatedEntityType(RelatedEntityType.RECLAMATION)
+                        .relatedEntityId(updatedReclamation.getId())
+                        .build()
+        );
+
         trustScoreService.recalculateTrustScore(
                 review.getReviewedUserId(),
                 review.getId()
@@ -138,6 +214,20 @@ public class ReclamationServiceImpl implements IReclamationService {
         reclamation.setResolvedAt(LocalDateTime.now());
 
         Reclamation updatedReclamation = reclamationRepository.save(reclamation);
+
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(updatedReclamation.getReportedByUserId())
+                        .title("Réclamation rejetée")
+                        .message("Votre réclamation a été rejetée par l'administration.")
+                        .type(NotificationType.RECLAMATION_REJECTED)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.MEDIUM)
+                        .relatedEntityType(RelatedEntityType.RECLAMATION)
+                        .relatedEntityId(updatedReclamation.getId())
+                        .build()
+        );
+
         return reclamationMapper.toResponse(updatedReclamation);
     }
 

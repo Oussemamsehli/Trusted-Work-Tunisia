@@ -1,0 +1,143 @@
+<div class="create-review-page">
+  <div class="page-header">
+    <h2>Donner un avis</h2>
+    <p>Soumettez une evaluation detaillee apres une collaboration.</p>
+  </div>
+
+  <div class="form-card">
+    <div class="success-msg" *ngIf="successMessage">{{ successMessage }}</div>
+    <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+    <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="contractId">ID du contrat *</label>
+          <input id="contractId" type="number" formControlName="contractId" placeholder="Ex: 1" />
+          <small class="field-error" *ngIf="isFieldInvalid('contractId')">
+            Contract ID obligatoire.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="recruitmentId">ID du recrutement *</label>
+          <input id="recruitmentId" type="number" formControlName="recruitmentId" placeholder="Ex: 10" />
+          <small class="field-error" *ngIf="isFieldInvalid('recruitmentId')">
+            Recruitment ID obligatoire.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="reviewedUserId">ID de l'utilisateur evalue *</label>
+          <input id="reviewedUserId" type="number" formControlName="reviewedUserId" placeholder="Ex: 5" />
+          <small class="field-error" *ngIf="isFieldInvalid('reviewedUserId')">
+            Reviewed user ID obligatoire.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="phaseId">ID de la phase (optionnel)</label>
+          <input id="phaseId" type="number" formControlName="phaseId" placeholder="Ex: 2" />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="reviewType">Type d'avis *</label>
+          <select id="reviewType" formControlName="reviewType">
+            <option value="CLIENT_TO_FREELANCER">Client vers Freelancer</option>
+            <option value="FREELANCER_TO_CLIENT">Freelancer vers Client</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="ratings-section">
+        <h3>Evaluations detaillees</h3>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="overallRating">Note generale *</label>
+            <select id="overallRating" formControlName="overallRating">
+              <option [ngValue]="null">Selectionner</option>
+              <option *ngFor="let rating of ratingOptions" [value]="rating">
+                {{ rating }} - {{ getRatingLabel(rating) }}
+              </option>
+            </select>
+            <small class="field-error" *ngIf="isFieldInvalid('overallRating')">
+              Note generale obligatoire.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="qualityRating">Qualite *</label>
+            <select id="qualityRating" formControlName="qualityRating">
+              <option [ngValue]="null">Selectionner</option>
+              <option *ngFor="let rating of ratingOptions" [value]="rating">
+                {{ rating }} - {{ getRatingLabel(rating) }}
+              </option>
+            </select>
+            <small class="field-error" *ngIf="isFieldInvalid('qualityRating')">
+              Note qualite obligatoire.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="communicationRating">Communication *</label>
+            <select id="communicationRating" formControlName="communicationRating">
+              <option [ngValue]="null">Selectionner</option>
+              <option *ngFor="let rating of ratingOptions" [value]="rating">
+                {{ rating }} - {{ getRatingLabel(rating) }}
+              </option>
+            </select>
+            <small class="field-error" *ngIf="isFieldInvalid('communicationRating')">
+              Note communication obligatoire.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="deadlineRating">Respect delai *</label>
+            <select id="deadlineRating" formControlName="deadlineRating">
+              <option [ngValue]="null">Selectionner</option>
+              <option *ngFor="let rating of ratingOptions" [value]="rating">
+                {{ rating }} - {{ getRatingLabel(rating) }}
+              </option>
+            </select>
+            <small class="field-error" *ngIf="isFieldInvalid('deadlineRating')">
+              Note delai obligatoire.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="professionalismRating">Professionnalisme *</label>
+            <select id="professionalismRating" formControlName="professionalismRating">
+              <option [ngValue]="null">Selectionner</option>
+              <option *ngFor="let rating of ratingOptions" [value]="rating">
+                {{ rating }} - {{ getRatingLabel(rating) }}
+              </option>
+            </select>
+            <small class="field-error" *ngIf="isFieldInvalid('professionalismRating')">
+              Note professionnalisme obligatoire.
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="comment">Commentaire</label>
+        <textarea
+          id="comment"
+          formControlName="comment"
+          rows="5"
+          placeholder="Decrivez votre experience..."
+        ></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          {{ loading ? 'Envoi...' : 'Envoyer' }}
+        </button>
+
+        <button type="button" class="btn-secondary" (click)="resetForm()">
+          Reinitialiser
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

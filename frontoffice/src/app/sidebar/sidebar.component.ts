@@ -1,54 +1,105 @@
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { AuthService, MenuItem, UserRole } from '../services/auth.service';
-
-@Component({
-    selector: 'app-sidebar',
-    templateUrl: './sidebar.component.html',
-    styleUrl: './sidebar.component.css'
-})
-export class SidebarComponent implements OnInit, OnDestroy {
-    @Input() collapsed = false;
-    @Output() collapsedChange = new EventEmitter<boolean>();
-
-    activeItem = 'dashboard';
-    menuItems: MenuItem[] = [];
-    supportItems: MenuItem[] = [];
-    roleColor = '#22D3EE';
-
-    private sub!: Subscription;
-
-    constructor(private auth: AuthService, private router: Router) {}
-
-    ngOnInit(): void {
-        this.sub = this.auth.currentRole$.subscribe(role => {
-            const all = this.auth.getMenuItems(role);
-            this.menuItems = all.filter(i => i.section === 'menu');
-            this.supportItems = all.filter(i => i.section === 'support');
-            this.roleColor = this.auth.getRoleInfo(role).color;
-            this.activeItem = 'dashboard';
-        });
-    }
-
-    ngOnDestroy(): void {
-        this.sub?.unsubscribe();
-    }
-
-    toggleCollapse(): void {
-        this.collapsed = !this.collapsed;
-        this.collapsedChange.emit(this.collapsed);
-    }
-
-    setActive(id: string): void {
-        this.activeItem = id;
-        const item = [...this.menuItems, ...this.supportItems].find(i => i.id === id);
-        if (item?.route) {
-            this.router.navigate([item.route]);
-        }
-    }
-
-    onLogout(): void {
-        this.auth.logout();
-    }
-}
+[{
+	"resource": "/c:/Users/ousse/Desktop/trusted/frontoffice/src/app/sidebar/sidebar.component.ts",
+	"owner": "typescript",
+	"code": "2305",
+	"severity": 8,
+	"message": "Module '\"../services/auth.service\"' has no exported member 'MenuItem'.",
+	"source": "ts",
+	"startLineNumber": 4,
+	"startColumn": 23,
+	"endLineNumber": 4,
+	"endColumn": 31,
+	"modelVersionId": 1,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/ousse/Desktop/trusted/frontoffice/src/app/sidebar/sidebar.component.ts",
+	"owner": "typescript",
+	"code": "2305",
+	"severity": 8,
+	"message": "Module '\"../services/auth.service\"' has no exported member 'UserRole'.",
+	"source": "ts",
+	"startLineNumber": 4,
+	"startColumn": 33,
+	"endLineNumber": 4,
+	"endColumn": 41,
+	"modelVersionId": 1,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/ousse/Desktop/trusted/frontoffice/src/app/sidebar/sidebar.component.ts",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'currentRole$' does not exist on type 'AuthService'.",
+	"source": "ts",
+	"startLineNumber": 25,
+	"startColumn": 30,
+	"endLineNumber": 25,
+	"endColumn": 42,
+	"modelVersionId": 1,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/ousse/Desktop/trusted/frontoffice/src/app/sidebar/sidebar.component.ts",
+	"owner": "typescript",
+	"code": "7006",
+	"severity": 8,
+	"message": "Parameter 'role' implicitly has an 'any' type.",
+	"source": "ts",
+	"startLineNumber": 25,
+	"startColumn": 53,
+	"endLineNumber": 25,
+	"endColumn": 57,
+	"modelVersionId": 1,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/ousse/Desktop/trusted/frontoffice/src/app/sidebar/sidebar.component.ts",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'getMenuItems' does not exist on type 'AuthService'.",
+	"source": "ts",
+	"startLineNumber": 26,
+	"startColumn": 35,
+	"endLineNumber": 26,
+	"endColumn": 47,
+	"modelVersionId": 1,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/ousse/Desktop/trusted/frontoffice/src/app/sidebar/sidebar.component.ts",
+	"owner": "typescript",
+	"code": "7006",
+	"severity": 8,
+	"message": "Parameter 'i' implicitly has an 'any' type.",
+	"source": "ts",
+	"startLineNumber": 27,
+	"startColumn": 41,
+	"endLineNumber": 27,
+	"endColumn": 42,
+	"modelVersionId": 1,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/ousse/Desktop/trusted/frontoffice/src/app/sidebar/sidebar.component.ts",
+	"owner": "typescript",
+	"code": "7006",
+	"severity": 8,
+	"message": "Parameter 'i' implicitly has an 'any' type.",
+	"source": "ts",
+	"startLineNumber": 28,
+	"startColumn": 44,
+	"endLineNumber": 28,
+	"endColumn": 45,
+	"modelVersionId": 1,
+	"origin": "extHost1"
+},{
+	"resource": "/c:/Users/ousse/Desktop/trusted/frontoffice/src/app/sidebar/sidebar.component.ts",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'getRoleInfo' does not exist on type 'AuthService'.",
+	"source": "ts",
+	"startLineNumber": 29,
+	"startColumn": 40,
+	"endLineNumber": 29,
+	"endColumn": 51,
+	"modelVersionId": 1,
+	"origin": "extHost1"
+}]

@@ -9,6 +9,7 @@ import tn.esprit.reviewservice.mapper.BadgeMapper;
 import tn.esprit.reviewservice.repository.BadgeRepository;
 import tn.esprit.reviewservice.service.interfaces.IBadgeService;
 
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,9 +19,11 @@ public class BadgeServiceImpl implements IBadgeService {
     private final BadgeRepository badgeRepository;
     private final BadgeMapper badgeMapper;
 
-    public BadgeServiceImpl(BadgeRepository badgeRepository, BadgeMapper badgeMapper) {
+
+    public BadgeServiceImpl(BadgeRepository badgeRepository, BadgeMapper badgeMapper ) {
         this.badgeRepository = badgeRepository;
         this.badgeMapper = badgeMapper;
+
     }
 
     @Override

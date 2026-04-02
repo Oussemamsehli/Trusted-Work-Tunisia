@@ -10,7 +10,12 @@ import tn.esprit.reviewservice.repository.ReviewRepository;
 import tn.esprit.reviewservice.service.interfaces.IBadgeAssignmentService;
 import tn.esprit.reviewservice.service.interfaces.IReviewService;
 import tn.esprit.reviewservice.service.interfaces.ITrustScoreService;
-
+import tn.esprit.reviewservice.dto.request.NotificationRequest;
+import tn.esprit.reviewservice.entity.enums.NotificationChannel;
+import tn.esprit.reviewservice.entity.enums.NotificationPriority;
+import tn.esprit.reviewservice.entity.enums.NotificationType;
+import tn.esprit.reviewservice.entity.enums.RelatedEntityType;
+import tn.esprit.reviewservice.service.interfaces.INotificationService;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,15 +26,18 @@ public class ReviewServiceImpl implements IReviewService {
     private final ReviewMapper reviewMapper;
     private final ITrustScoreService trustScoreService;
     private final IBadgeAssignmentService badgeAssignmentService;
+    private final INotificationService notificationService;
 
     public ReviewServiceImpl(ReviewRepository reviewRepository,
                              ReviewMapper reviewMapper,
                              ITrustScoreService trustScoreService,
-                            IBadgeAssignmentService badgeAssignmentService) {
+                             IBadgeAssignmentService badgeAssignmentService,
+                             INotificationService notificationService) {
         this.reviewRepository = reviewRepository;
         this.reviewMapper = reviewMapper;
         this.trustScoreService = trustScoreService;
         this.badgeAssignmentService = badgeAssignmentService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -50,6 +58,19 @@ public class ReviewServiceImpl implements IReviewService {
         review.setIsVisible(true);
 
         Review savedReview = reviewRepository.save(review);
+
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(savedReview.getReviewedUserId())
+                        .title("Nouvelle review reçue")
+                        .message("Vous avez reçu une nouvelle review sur votre profil.")
+                        .type(NotificationType.REVIEW_CREATED)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.MEDIUM)
+                        .relatedEntityType(RelatedEntityType.REVIEW)
+                        .relatedEntityId(savedReview.getId())
+                        .build()
+        );
 
         trustScoreService.recalculateTrustScore(
                 savedReview.getReviewedUserId(),
@@ -76,6 +97,19 @@ public class ReviewServiceImpl implements IReviewService {
         review.setProfessionalismRating(request.getProfessionalismRating());
 
         Review updated = reviewRepository.save(review);
+
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(updated.getReviewedUserId())
+                        .title("Review mise à jour")
+                        .message("Une review liée à votre profil a été mise à jour.")
+                        .type(NotificationType.SYSTEM)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.LOW)
+                        .relatedEntityType(RelatedEntityType.REVIEW)
+                        .relatedEntityId(updated.getId())
+                        .build()
+        );
 
         trustScoreService.recalculateTrustScore(
                 updated.getReviewedUserId(),
@@ -110,6 +144,19 @@ public class ReviewServiceImpl implements IReviewService {
         review.setIsVisible(false);
 
         Review deletedReview = reviewRepository.save(review);
+
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(deletedReview.getReviewedUserId())
+                        .title("Review masquée")
+                        .message("Une review liée à votre profil n'est plus visible.")
+                        .type(NotificationType.SYSTEM)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.MEDIUM)
+                        .relatedEntityType(RelatedEntityType.REVIEW)
+                        .relatedEntityId(deletedReview.getId())
+                        .build()
+        );
 
         trustScoreService.recalculateTrustScore(
                 deletedReview.getReviewedUserId(),

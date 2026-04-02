@@ -3,8 +3,6 @@ import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
-
-
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
@@ -15,12 +13,13 @@ import { ProfileComponent } from './pages/profile/profile.component';
 import { KycSubmitComponent } from './pages/kyc-submit/kyc-submit.component';
 import { ForgotPasswordComponent } from './pages/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
-import { CreateReviewComponent } from './pages/create-review/create-review.component';
-import { MyReviewsComponent } from './pages/my-reviews/my-reviews.component';
-import { ReportReviewComponent } from './pages/report-review/report-review.component';
-import { MyProgressComponent } from './pages/my-progress/my-progress.component';
+import { CreateReviewComponent } from './review/pages/create-review/create-review.component';
+import { MyReviewsComponent } from './review/pages/my-reviews/my-reviews.component';
+import { ReportReviewComponent } from './review/pages/report-review/report-review.component';
+import { MyProgressComponent } from './review/pages/my-progress/my-progress.component';
 import { NavbarComponent } from './layout/navbar/navbar.component';
 import { JwtInterceptor } from './interceptors/jwt.interceptor';
+
 @NgModule({
   declarations: [
     AppComponent,

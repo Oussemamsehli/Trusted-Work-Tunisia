@@ -14,6 +14,12 @@ import tn.esprit.reviewservice.repository.ReviewRepository;
 import tn.esprit.reviewservice.repository.TrustScoreHistoryRepository;
 import tn.esprit.reviewservice.repository.TrustScoreRepository;
 import tn.esprit.reviewservice.service.interfaces.ITrustScoreService;
+import tn.esprit.reviewservice.dto.request.NotificationRequest;
+import tn.esprit.reviewservice.entity.enums.NotificationChannel;
+import tn.esprit.reviewservice.entity.enums.NotificationPriority;
+import tn.esprit.reviewservice.entity.enums.NotificationType;
+import tn.esprit.reviewservice.entity.enums.RelatedEntityType;
+import tn.esprit.reviewservice.service.interfaces.INotificationService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,19 +33,20 @@ public class TrustScoreServiceImpl implements ITrustScoreService {
     private final ReviewRepository reviewRepository;
 
     private final TrustScoreHistoryRepository trustScoreHistoryRepository;
+    private final INotificationService notificationService;
 
     public TrustScoreServiceImpl(
             TrustScoreRepository trustScoreRepository,
             TrustScoreMapper trustScoreMapper,
             TrustScoreHistoryRepository trustScoreHistoryRepository,
-            ReviewRepository reviewRepository
-
+            ReviewRepository reviewRepository,
+            INotificationService notificationService
     ) {
         this.trustScoreRepository = trustScoreRepository;
         this.trustScoreMapper = trustScoreMapper;
         this.trustScoreHistoryRepository = trustScoreHistoryRepository;
         this.reviewRepository = reviewRepository;
-
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -177,6 +184,8 @@ public class TrustScoreServiceImpl implements ITrustScoreService {
 
         TrustScore savedTrustScore = trustScoreRepository.save(trustScore);
 
+
+
         TrustScoreHistory history = TrustScoreHistory.builder()
                 .userId(userId)
                 .oldScore(oldScore)
@@ -186,5 +195,18 @@ public class TrustScoreServiceImpl implements ITrustScoreService {
                 .build();
 
         trustScoreHistoryRepository.save(history);
+
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(userId)
+                        .title("Trust Score mis à jour")
+                        .message("Votre trust score est passé de " + oldScore + " à " + savedTrustScore.getScore())
+                        .type(NotificationType.TRUST_SCORE_UPDATED)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.MEDIUM)
+                        .relatedEntityType(RelatedEntityType.TRUST_SCORE)
+                        .relatedEntityId(savedTrustScore.getId())
+                        .build()
+        );
     }
 }

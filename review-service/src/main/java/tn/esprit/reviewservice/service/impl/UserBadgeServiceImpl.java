@@ -9,7 +9,13 @@ import tn.esprit.reviewservice.exception.ResourceNotFoundException;
 import tn.esprit.reviewservice.mapper.UserBadgeMapper;
 import tn.esprit.reviewservice.repository.BadgeRepository;
 import tn.esprit.reviewservice.repository.UserBadgeRepository;
+import tn.esprit.reviewservice.service.interfaces.INotificationService;
 import tn.esprit.reviewservice.service.interfaces.IUserBadgeService;
+import tn.esprit.reviewservice.dto.request.NotificationRequest;
+import tn.esprit.reviewservice.entity.enums.NotificationChannel;
+import tn.esprit.reviewservice.entity.enums.NotificationPriority;
+import tn.esprit.reviewservice.entity.enums.NotificationType;
+import tn.esprit.reviewservice.entity.enums.RelatedEntityType;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,13 +26,19 @@ public class UserBadgeServiceImpl implements IUserBadgeService {
     private final UserBadgeRepository userBadgeRepository;
     private final BadgeRepository badgeRepository;
     private final UserBadgeMapper userBadgeMapper;
+    private final INotificationService notificationService;
+
 
     public UserBadgeServiceImpl(UserBadgeRepository userBadgeRepository,
                                 BadgeRepository badgeRepository,
-                                UserBadgeMapper userBadgeMapper) {
+                                UserBadgeMapper userBadgeMapper,
+                                INotificationService notificationService
+    ) {
         this.userBadgeRepository = userBadgeRepository;
         this.badgeRepository = badgeRepository;
         this.userBadgeMapper = userBadgeMapper;
+        this.notificationService = notificationService;
+
     }
 
     @Override
@@ -46,8 +58,22 @@ public class UserBadgeServiceImpl implements IUserBadgeService {
         userBadge.setUserId(request.getUserId());
         userBadge.setBadge(badge);
 
-        return userBadgeMapper.toResponse(userBadgeRepository.save(userBadge));
-    }
+        UserBadge savedUserBadge = userBadgeRepository.save(userBadge);
+
+        notificationService.createNotification(
+                NotificationRequest.builder()
+                        .userId(savedUserBadge.getUserId())
+                        .title("Nouveau badge obtenu")
+                        .message("Félicitations ! Vous avez obtenu le badge : " + badge.getName())
+                        .type(NotificationType.BADGE_EARNED)
+                        .channel(NotificationChannel.IN_APP)
+                        .priority(NotificationPriority.HIGH)
+                        .relatedEntityType(RelatedEntityType.BADGE)
+                        .relatedEntityId(savedUserBadge.getId())
+                        .build()
+        );
+
+        return userBadgeMapper.toResponse(savedUserBadge);    }
 
     @Override
     public List<UserBadgeResponse> getBadgesByUser(Long userId) {
