@@ -11,6 +11,7 @@ import tn.esprit.reviewservice.mapper.ReclamationMapper;
 import tn.esprit.reviewservice.repository.ReclamationRepository;
 import tn.esprit.reviewservice.repository.ReviewRepository;
 import tn.esprit.reviewservice.service.interfaces.IReclamationService;
+import tn.esprit.reviewservice.service.interfaces.ITrustScoreService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,13 +23,16 @@ public class ReclamationServiceImpl implements IReclamationService {
     private final ReclamationRepository reclamationRepository;
     private final ReviewRepository reviewRepository;
     private final ReclamationMapper reclamationMapper;
+    private final ITrustScoreService trustScoreService;
 
     public ReclamationServiceImpl(ReclamationRepository reclamationRepository,
                                   ReviewRepository reviewRepository,
-                                  ReclamationMapper reclamationMapper) {
+                                  ReclamationMapper reclamationMapper,
+                                  ITrustScoreService trustScoreService) {
         this.reclamationRepository = reclamationRepository;
         this.reviewRepository = reviewRepository;
         this.reclamationMapper = reclamationMapper;
+        this.trustScoreService = trustScoreService;
     }
 
     @Override
@@ -95,13 +99,28 @@ public class ReclamationServiceImpl implements IReclamationService {
                         "Reclamation introuvable avec id : " + id
                 ));
 
+        Review review = reclamation.getReview();
+        if (review == null) {
+            throw new ResourceNotFoundException("Aucune review liée à cette réclamation");
+        }
+
         reclamation.setStatus(StatusReclamation.CONFIRMED);
         reclamation.setProcessedByAdminId(adminId);
         reclamation.setAdminComment(adminComment);
         reclamation.setProcessedAt(LocalDateTime.now());
         reclamation.setResolvedAt(LocalDateTime.now());
 
+        review.setIsDeleted(true);
+        review.setIsVisible(false);
+        reviewRepository.save(review);
+
         Reclamation updatedReclamation = reclamationRepository.save(reclamation);
+
+        trustScoreService.recalculateTrustScore(
+                review.getReviewedUserId(),
+                review.getId()
+        );
+
         return reclamationMapper.toResponse(updatedReclamation);
     }
 
