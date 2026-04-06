@@ -1,0 +1,271 @@
+<div class="wallet-page">
+  <section class="wallet-hero">
+    <div class="wallet-hero__glow wallet-hero__glow--one"></div>
+    <div class="wallet-hero__glow wallet-hero__glow--two"></div>
+
+    <div class="wallet-hero__content">
+      <div class="wallet-hero__copy">
+        <div class="eyebrow-group">
+          <span class="eyebrow">Finance Hub</span>
+          <span class="eyebrow eyebrow--accent">Premium wallet workspace</span>
+        </div>
+
+        <h1>Control your cash flow, escrow and payouts from one premium dashboard.</h1>
+
+        <p>
+          Monitor available balance, secured project funds and recent transactions
+          with a financial workspace designed for clarity, speed and trust.
+        </p>
+
+        <div class="wallet-actions">
+          <button
+            type="button"
+            class="wallet-action-btn"
+            *ngFor="let action of quickActions; trackBy: trackByAction"
+            [ngClass]="getActionClass(action.tone)"
+          >
+            <i class="fas" [ngClass]="action.icon"></i>
+            <span>{{ action.label }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="wallet-balance-card">
+        <span class="card-kicker">Primary balance</span>
+
+        <div class="wallet-balance-card__amount">$8,420.00</div>
+
+        <div class="wallet-balance-card__meta">
+          <div>
+            <span>Wallet ID</span>
+            <strong>TW-WLT-2408</strong>
+          </div>
+          <div>
+            <span>Last sync</span>
+            <strong>Just now</strong>
+          </div>
+        </div>
+
+        <div class="wallet-balance-card__footer">
+          <div class="balance-chip">
+            <span class="balance-chip__dot"></span>
+            Active payout status
+          </div>
+
+          <div class="mini-growth">
+            <small>Monthly growth</small>
+            <strong>+18.2%</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wallet-stats-grid">
+    <article
+      class="wallet-stat-card"
+      *ngFor="let card of statCards; trackBy: trackByLabel"
+    >
+      <div class="wallet-stat-card__top">
+        <span>{{ card.label }}</span>
+        <em [ngClass]="getTrendClass(card.trend)">{{ card.delta }}</em>
+      </div>
+
+      <strong>{{ card.value }}</strong>
+      <p>{{ card.description }}</p>
+    </article>
+  </section>
+
+  <section class="wallet-main-layout">
+    <div class="wallet-main-column">
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <span class="card-kicker">Recent activity</span>
+            <h2>Latest transactions</h2>
+          </div>
+          <div class="panel-head__meta">Updated live</div>
+        </div>
+
+        <div class="transactions-list">
+          <article
+            class="transaction-item"
+            *ngFor="let transaction of recentTransactions; trackBy: trackByTransaction"
+          >
+            <div class="transaction-item__left">
+              <div class="transaction-icon">
+                <i class="fas fa-arrow-right-arrow-left"></i>
+              </div>
+
+              <div class="transaction-content">
+                <div class="transaction-title-row">
+                  <h3>{{ transaction.title }}</h3>
+                  <span
+                    class="transaction-status"
+                    [ngClass]="getStatusClass(transaction.status)"
+                  >
+                    {{ transaction.status }}
+                  </span>
+                </div>
+
+                <p>{{ transaction.subtitle }}</p>
+
+                <div class="transaction-meta">
+                  <span>{{ transaction.id }}</span>
+                  <span class="dot-separator">•</span>
+                  <span>{{ transaction.type }}</span>
+                  <span class="dot-separator">•</span>
+                  <span>{{ transaction.date }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="transaction-amount">
+              {{ transaction.amount }}
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <span class="card-kicker">Escrow monitoring</span>
+            <h2>Protected funds in progress</h2>
+          </div>
+          <div class="panel-head__meta">$3,180 secured</div>
+        </div>
+
+        <div class="escrow-list">
+          <article
+            class="escrow-item"
+            *ngFor="let escrow of escrowItems; trackBy: trackByEscrow"
+          >
+            <div class="escrow-item__top">
+              <div>
+                <h3>{{ escrow.project }}</h3>
+                <p>{{ escrow.client }}</p>
+              </div>
+
+              <div class="escrow-item__amount">{{ escrow.amount }}</div>
+            </div>
+
+            <div class="escrow-progress">
+              <div class="escrow-progress__bar">
+                <div
+                  class="escrow-progress__fill"
+                  [style.width.%]="escrow.progress"
+                ></div>
+              </div>
+
+              <div class="escrow-progress__meta">
+                <span>{{ escrow.progress }}% milestone completion</span>
+                <strong>Release {{ escrow.releaseDate }}</strong>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <aside class="wallet-side-column">
+      <div class="panel-card panel-card--dark">
+        <div class="panel-head panel-head--dark">
+          <div>
+            <span class="card-kicker card-kicker--dark">Payout methods</span>
+            <h2>Saved cards</h2>
+          </div>
+        </div>
+
+        <div class="payment-methods">
+          <article
+            class="payment-card"
+            *ngFor="let method of paymentMethods; trackBy: trackByPayment"
+            [class.payment-card--light]="method.tone === 'light'"
+          >
+            <div class="payment-card__top">
+              <span class="payment-brand">{{ method.brand }}</span>
+              <span class="payment-default" *ngIf="method.isDefault">Default</span>
+            </div>
+
+            <div class="payment-number">{{ method.number }}</div>
+
+            <div class="payment-card__bottom">
+              <span>Expires {{ method.expiry }}</span>
+              <i class="fas fa-wifi"></i>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <span class="card-kicker">Wallet insights</span>
+            <h2>Financial health</h2>
+          </div>
+        </div>
+
+        <div class="insight-list">
+          <article class="insight-item">
+            <div class="insight-item__icon">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div>
+              <strong>Strong monthly momentum</strong>
+              <p>Your wallet income is growing faster than the previous period.</p>
+            </div>
+          </article>
+
+          <article class="insight-item">
+            <div class="insight-item__icon insight-item__icon--accent">
+              <i class="fas fa-lock"></i>
+            </div>
+            <div>
+              <strong>Healthy escrow coverage</strong>
+              <p>Protected milestone funds are balanced across multiple projects.</p>
+            </div>
+          </article>
+
+          <article class="insight-item">
+            <div class="insight-item__icon insight-item__icon--soft">
+              <i class="fas fa-shield-halved"></i>
+            </div>
+            <div>
+              <strong>Secure payout setup</strong>
+              <p>Your active payout method is verified and ready for transfer.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-head">
+          <div>
+            <span class="card-kicker">Quick summary</span>
+            <h2>Snapshot</h2>
+          </div>
+        </div>
+
+        <div class="summary-stack">
+          <div class="summary-row">
+            <span>Available now</span>
+            <strong>$8,420</strong>
+          </div>
+          <div class="summary-row">
+            <span>Pending escrow</span>
+            <strong>$3,180</strong>
+          </div>
+          <div class="summary-row">
+            <span>Expected next release</span>
+            <strong>05 Apr</strong>
+          </div>
+          <div class="summary-row">
+            <span>Default payout</span>
+            <strong>Visa</strong>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </section>
+</div>
