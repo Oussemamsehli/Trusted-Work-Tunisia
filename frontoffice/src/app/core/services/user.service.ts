@@ -15,6 +15,12 @@ export interface SetupTwoFactorResponse {
   message?: string;
 }
 
+export interface CompleteProfilePayload {
+  cin: string;
+  phoneNumber: string;
+  role: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -34,6 +40,18 @@ export class UserService {
       map((user: ConnectedUserResponse) => this.mapToDashboardUser(user))
     );
   }
+
+  // ── Google OAuth — vérification & complétion du profil ──────────────────
+
+  checkProfileComplete(): Observable<{ incomplete: boolean }> {
+    return this.api.get<{ incomplete: boolean }>('/users/me/profile-complete');
+  }
+
+  completeGoogleProfile(payload: CompleteProfilePayload): Observable<any> {
+    return this.api.post('/users/me/complete-profile', payload);
+  }
+
+  // ── 2FA ─────────────────────────────────────────────────────────────────
 
   setupTwoFactor(cin: number | string): Observable<SetupTwoFactorResponse> {
     return this.api.post<SetupTwoFactorResponse>(
@@ -69,16 +87,10 @@ export class UserService {
     }
 
     const firstName =
-      user.firstName ||
-      user.firstname ||
-      user.prenom ||
-      '';
+      user.firstName || user.firstname || user.prenom || '';
 
     const lastName =
-      user.lastName ||
-      user.lastname ||
-      user.nom ||
-      '';
+      user.lastName || user.lastname || user.nom || '';
 
     const fullName =
       user.fullName ||
