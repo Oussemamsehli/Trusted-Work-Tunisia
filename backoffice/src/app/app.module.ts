@@ -28,6 +28,7 @@ import { ContractsListComponent } from './features/contracts/contracts-list/cont
 import { JobsListComponent } from './features/jobs/jobs-list/jobs-list.component';
 import { EventsListComponent } from './features/events/events-list/events-list.component';
 import { RecruitmentListComponent } from './features/recruitment/recruitment-list/recruitment-list.component';
+import { FilterCatPipe } from './shared/pipes/filter-cat.pipe';
 
 @NgModule({
   declarations: [
@@ -49,6 +50,7 @@ import { RecruitmentListComponent } from './features/recruitment/recruitment-lis
     ContractsListComponent,
     JobsListComponent,
     EventsListComponent,
+    FilterCatPipe,
     RecruitmentListComponent,
   ],
   imports: [

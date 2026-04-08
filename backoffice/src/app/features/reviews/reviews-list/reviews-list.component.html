@@ -1,1 +1,154 @@
-<p>reviews-list works!</p>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reviews</h1>
+      <p class="page-subtitle">Modération et supervision de tous les avis de la plateforme</p>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row" *ngIf="!loading && !error">
+    <div class="stat-card">
+      <div class="stat-icon-wrap stat-icon--accent"><i class="fas fa-star"></i></div>
+      <div>
+        <div class="stat-value">{{ totalReviews }}</div>
+        <div class="stat-label">Total Reviews</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-wrap stat-icon--gold"><i class="fas fa-chart-bar"></i></div>
+      <div>
+        <div class="stat-value">{{ avgRating }}</div>
+        <div class="stat-label">Note Moyenne</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon-wrap stat-icon--success"><i class="fas fa-thumbs-up"></i></div>
+      <div>
+        <div class="stat-value">{{ positiveCount }}</div>
+        <div class="stat-label">Avis Positifs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="state-box" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement des reviews...</p>
+  </div>
+
+  <!-- ERROR -->
+  <div class="state-box state-box--error" *ngIf="!loading && error">
+    <i class="fas fa-triangle-exclamation"></i>
+    <p>Impossible de charger les reviews. Review-service hors ligne ?</p>
+  </div>
+
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- FILTERS -->
+    <div class="filters-bar">
+      <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input
+          type="text"
+          placeholder="Rechercher par commentaire ou userId..."
+          [(ngModel)]="searchTerm"
+          (input)="applyFilters()"
+        />
+      </div>
+
+      <select [(ngModel)]="selectedType" (change)="applyFilters()">
+        <option value="ALL">Tous types</option>
+        <option value="CLIENT_TO_FREELANCER">Client → Freelancer</option>
+        <option value="FREELANCER_TO_CLIENT">Freelancer → Client</option>
+      </select>
+
+      <select [(ngModel)]="selectedRating" (change)="applyFilters()">
+        <option value="ALL">Toutes notes</option>
+        <option value="5">★ 5</option>
+        <option value="4">★ 4</option>
+        <option value="3">★ 3</option>
+        <option value="2">★ 2</option>
+        <option value="1">★ 1</option>
+      </select>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#ID</th>
+              <th>Reviewer</th>
+              <th>Reviewé</th>
+              <th>Type</th>
+              <th>Note</th>
+              <th>Qualité</th>
+              <th>Comm.</th>
+              <th>Délai</th>
+              <th>Pro.</th>
+              <th>Commentaire</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of filtered; trackBy: trackById">
+              <td><span class="id-badge">#{{ r.id }}</span></td>
+              <td><span class="user-chip">U{{ r.reviewerId }}</span></td>
+              <td><span class="user-chip user-chip--reviewed">U{{ r.reviewedUserId }}</span></td>
+              <td>
+                <span class="type-badge" [class.type-ctf]="r.reviewType === 'CLIENT_TO_FREELANCER'">
+                  {{ r.reviewType === 'CLIENT_TO_FREELANCER' ? 'C→F' : 'F→C' }}
+                </span>
+              </td>
+              <td>
+                <span class="rating-badge" [ngClass]="getRatingClass(r.overallRating)">
+                  ★ {{ r.overallRating }}
+                </span>
+              </td>
+              <td class="sub-rating">{{ r.qualityRating }}/5</td>
+              <td class="sub-rating">{{ r.communicationRating }}/5</td>
+              <td class="sub-rating">{{ r.deadlineRating }}/5</td>
+              <td class="sub-rating">{{ r.professionalismRating }}/5</td>
+              <td class="comment-cell">
+                <span *ngIf="r.comment">{{ r.comment | slice:0:60 }}{{ r.comment.length > 60 ? '...' : '' }}</span>
+                <span *ngIf="!r.comment" class="text-muted">—</span>
+              </td>
+              <td class="date-cell">{{ formatDate(r.createdAt) }}</td>
+              <td>
+                <button class="btn-delete" (click)="confirmDelete(r.id)" title="Supprimer">
+                  <i class="fas fa-trash-can"></i>
+                </button>
+              </td>
+            </tr>
+
+            <tr *ngIf="filtered.length === 0">
+              <td colspan="12" class="empty-row">Aucun avis trouvé.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- CONFIRM DELETE MODAL -->
+  <div class="modal-overlay" *ngIf="deleteConfirmId !== null" (click)="cancelDelete()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-icon danger"><i class="fas fa-trash-can"></i></div>
+      <h3>Supprimer cet avis ?</h3>
+      <p>Cette action est irréversible. L'avis #{{ deleteConfirmId }} sera définitivement supprimé.</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="cancelDelete()">Annuler</button>
+        <button class="btn-confirm-delete" (click)="executeDelete()" [disabled]="deleting">
+          {{ deleting ? 'Suppression...' : 'Confirmer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

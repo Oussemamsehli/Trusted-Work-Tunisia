@@ -15,15 +15,16 @@ export class AuthService {
     return this.http.post<any>(`${this.baseUrl}/auth/login`, { email, password }).pipe(
       tap(res => {
         if (res.accessToken) {
-          localStorage.setItem('token', res.accessToken);
-          localStorage.setItem('role', res.role || '');
-          localStorage.setItem('email', email);
+          localStorage.setItem('token',   res.accessToken);
+          localStorage.setItem('role',    res.role    || '');
+          localStorage.setItem('email',   res.email   || email);
+          localStorage.setItem('userId',  String(res.userId || ''));
         }
       })
     );
   }
 
-  logout() {
+  logout(): void {
     localStorage.clear();
     this.router.navigate(['/auth/login']);
   }
@@ -38,5 +39,14 @@ export class AuthService {
 
   getRole(): string {
     return localStorage.getItem('role') || '';
+  }
+
+  getEmail(): string {
+    return localStorage.getItem('email') || '';
+  }
+
+  // ← Nouveau : userId directement disponible
+  getUserId(): number {
+    return parseInt(localStorage.getItem('userId') || '0', 10);
   }
 }
