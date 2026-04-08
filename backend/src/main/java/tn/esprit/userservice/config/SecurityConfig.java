@@ -77,8 +77,7 @@ public class SecurityConfig {
 
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:4200",
-                "http://localhost:4201",
-                "http://localhost:3000"
+                "http://localhost:4201"
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
