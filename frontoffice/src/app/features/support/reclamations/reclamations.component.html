@@ -1,233 +1,201 @@
-<div class="support-page">
-  <section class="support-hero">
-    <div class="support-hero__content">
-      <div class="support-hero__copy">
-        <div class="eyebrow-group">
-          <span class="eyebrow">Support Center</span>
-          <span class="eyebrow eyebrow--accent">Premium case management</span>
-        </div>
+<div class="reclamations-page">
 
-        <h1>Manage claims, disputes and support incidents with clarity.</h1>
+  <!-- LOADING -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement de vos réclamations...</p>
+  </div>
 
-        <p>
-          Track payment disputes, technical issues and account incidents from one
-          premium support workspace designed for transparency and fast resolution.
-        </p>
+  <ng-container *ngIf="!loading">
 
-        <div class="hero-actions">
-          <button type="button" class="hero-btn hero-btn--primary">
-            Create reclamation
-          </button>
-          <button type="button" class="hero-btn hero-btn--secondary">
-            Export history
-          </button>
-        </div>
-      </div>
-
-      <div class="support-hero__panel">
-        <span class="card-kicker">Case distribution</span>
-        <div class="support-metrics">
-          <article class="support-metric">
-            <strong>42%</strong>
-            <span>Payment & escrow</span>
-          </article>
-          <article class="support-metric">
-            <strong>31%</strong>
-            <span>Client disputes</span>
-          </article>
-          <article class="support-metric">
-            <strong>27%</strong>
-            <span>Tech & account issues</span>
-          </article>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="support-stats">
-    <article
-      class="support-stat-card"
-      *ngFor="let stat of supportStats; trackBy: trackByLabel"
-    >
-      <span>{{ stat.label }}</span>
-      <strong>{{ stat.value }}</strong>
-      <p>{{ stat.caption }}</p>
-    </article>
-  </section>
-
-  <section class="support-toolbar">
-    <div class="toolbar-copy">
-      <span>Case filters</span>
-      <strong>Refine support view by status</strong>
-    </div>
-
-    <div class="filter-chip-group">
-      <button
-        type="button"
-        class="filter-chip"
-        *ngFor="let status of statusFilters"
-        [class.active]="selectedStatus === status"
-        (click)="selectStatus(status)"
-      >
-        {{ status }}
-      </button>
-    </div>
-  </section>
-
-  <section class="support-layout">
-    <div class="support-list-panel">
-      <div class="panel-head">
-        <div>
-          <span class="card-kicker">All reclamations</span>
-          <h2>Support tickets</h2>
-        </div>
-        <div class="panel-head__meta">
-          {{ filteredReclamations.length }} case(s)
-        </div>
-      </div>
-
-      <div class="claims-list" *ngIf="filteredReclamations.length; else emptyClaims">
-        <article
-          class="claim-card"
-          *ngFor="let item of filteredReclamations; trackBy: trackByClaim"
-          [class.claim-card--active]="selectedReclamation.id === item.id"
-          (click)="selectReclamation(item)"
-        >
-          <div class="claim-card__top">
-            <div>
-              <div class="claim-card__id">{{ item.id }}</div>
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.category }} · {{ item.clientName }}</p>
-            </div>
-
-            <div class="claim-status-stack">
-              <span class="claim-status" [ngClass]="getStatusClass(item.status)">
-                {{ item.status }}
-              </span>
-              <span class="claim-priority" [ngClass]="getPriorityClass(item.priority)">
-                {{ item.priority }}
-              </span>
-            </div>
+    <!-- ── HERO ──────────────────────────────────────────────────────────── -->
+    <section class="reviews-hero-card">
+      <div class="reviews-hero-card__glow"></div>
+      <div class="hero-content">
+        <div class="hero-copy">
+          <div class="hero-badges">
+            <span class="hero-badge">Support</span>
+            <span class="hero-badge hero-badge--orange">Centre de réclamations</span>
           </div>
-
-          <p class="claim-description">
-            {{ item.description }}
+          <h1>Mes Réclamations</h1>
+          <p>
+            Signalez un avis abusif ou faux. Notre équipe examine chaque
+            réclamation et vous notifie du résultat.
           </p>
+        </div>
+        <div class="hero-action-card">
+          <button class="btn-report" type="button" (click)="openForm()">
+            <i class="fas fa-flag"></i>
+            Signaler un avis
+          </button>
+          <p class="action-note">Délai de traitement : 48–72h</p>
+        </div>
+      </div>
+    </section>
 
-          <div class="claim-meta-grid">
-            <div class="claim-meta">
-              <span>Created</span>
-              <strong>{{ item.createdAt }}</strong>
-            </div>
+    <!-- ── STATS ─────────────────────────────────────────────────────────── -->
+    <section class="reviews-stats-grid">
+      <article class="stat-card">
+        <div class="stat-card__icon stat-icon--orange">📋</div>
+        <div class="stat-card__content">
+          <span>Total Réclamations</span>
+          <strong>{{ reclamations.length }}</strong>
+        </div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-card__icon stat-icon--yellow">⏳</div>
+        <div class="stat-card__content">
+          <span>En attente</span>
+          <strong>{{ reclamations | statusCount: 'PENDING' }}</strong>
+        </div>
+      </article>
+      <article class="stat-card">
+        <div class="stat-card__icon stat-icon--green">✓</div>
+        <div class="stat-card__content">
+          <span>Résolues</span>
+          <strong>{{ reclamations | statusCount: 'CONFIRMED' }}</strong>
+        </div>
+      </article>
+    </section>
 
-            <div class="claim-meta">
-              <span>Last update</span>
-              <strong>{{ item.lastUpdate }}</strong>
-            </div>
+    <!-- ── PANEL PRINCIPAL ───────────────────────────────────────────────── -->
+    <section class="reviews-panel split-panel">
 
-            <div class="claim-meta">
-              <span>Assigned to</span>
-              <strong>{{ item.assignedTo }}</strong>
-            </div>
-
-            <div class="claim-meta">
-              <span>Mission ref</span>
-              <strong>{{ item.missionRef }}</strong>
-            </div>
+      <!-- Colonne gauche : liste -->
+      <div class="split-left">
+        <div class="split-header">
+          <h2>Historique</h2>
+          <div class="status-filters">
+            <button type="button"
+              *ngFor="let s of statusFilters"
+              [class.active]="selectedStatus === s"
+              (click)="selectStatus(s)">
+              {{ s === 'All' ? 'Tous' : getStatusLabel(s) }}
+            </button>
           </div>
-        </article>
+        </div>
+
+        <div class="empty-state" *ngIf="filteredReclamations.length === 0">
+          <span>📭</span>
+          <p>Aucune réclamation dans cette catégorie.</p>
+        </div>
+
+        <div class="claim-list">
+          <div class="claim-row"
+            *ngFor="let r of filteredReclamations; trackBy: trackById"
+            [class.selected]="selectedReclamation?.id === r.id"
+            (click)="selectReclamation(r)">
+            <div class="claim-row__top">
+              <span class="claim-motif">{{ getMotifLabel(r.motif) }}</span>
+              <span class="claim-status" [ngClass]="getStatusClass(r.status)">
+                {{ getStatusLabel(r.status) }}
+              </span>
+            </div>
+            <p class="claim-desc">{{ r.description | slice:0:80 }}{{ r.description.length > 80 ? '...' : '' }}</p>
+            <span class="claim-date">{{ formatDate(r.createdAt) }}</span>
+          </div>
+        </div>
       </div>
 
-      <ng-template #emptyClaims>
-        <div class="empty-panel">
-          <div class="empty-panel__icon">!</div>
-          <h3>No reclamations found</h3>
-          <p>Try changing the selected status filter.</p>
-        </div>
-      </ng-template>
-    </div>
-
-    <aside class="support-details-panel" *ngIf="selectedReclamation">
-      <div class="panel-head">
-        <div>
-          <span class="card-kicker">Case details</span>
-          <h2>{{ selectedReclamation.id }}</h2>
-        </div>
-
-        <span
-          class="claim-status"
-          [ngClass]="getStatusClass(selectedReclamation.status)"
-        >
-          {{ selectedReclamation.status }}
-        </span>
-      </div>
-
-      <div class="details-card">
-        <div class="details-card__header">
-          <div>
-            <h3>{{ selectedReclamation.title }}</h3>
-            <p>
-              {{ selectedReclamation.category }} ·
-              {{ selectedReclamation.clientName }}
-            </p>
-          </div>
-
-          <span
-            class="claim-priority"
-            [ngClass]="getPriorityClass(selectedReclamation.priority)"
-          >
-            {{ selectedReclamation.priority }} priority
+      <!-- Colonne droite : détail -->
+      <div class="split-right" *ngIf="selectedReclamation">
+        <div class="detail-header">
+          <h3>Réclamation #{{ selectedReclamation.id }}</h3>
+          <span class="claim-status" [ngClass]="getStatusClass(selectedReclamation.status)">
+            {{ getStatusLabel(selectedReclamation.status) }}
           </span>
         </div>
 
-        <div class="details-grid">
-          <div class="detail-box">
-            <span>Assigned support</span>
-            <strong>{{ selectedReclamation.assignedTo }}</strong>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Motif</span>
+            <span class="detail-value">{{ getMotifLabel(selectedReclamation.motif) }}</span>
           </div>
-
-          <div class="detail-box">
-            <span>Created</span>
-            <strong>{{ selectedReclamation.createdAt }}</strong>
+          <div class="detail-item">
+            <span class="detail-label">Avis signalé</span>
+            <span class="detail-value">#{{ selectedReclamation.review.id }}</span>
           </div>
-
-          <div class="detail-box">
-            <span>Mission reference</span>
-            <strong>{{ selectedReclamation.missionRef }}</strong>
+          <div class="detail-item">
+            <span class="detail-label">Soumise le</span>
+            <span class="detail-value">{{ formatDate(selectedReclamation.createdAt) }}</span>
           </div>
-        </div>
-
-        <div class="details-section">
-          <h4>Description</h4>
-          <p>{{ selectedReclamation.description }}</p>
-        </div>
-
-        <div class="details-section">
-          <h4>Resolution timeline</h4>
-          <div class="timeline-list">
-            <article
-              class="timeline-item"
-              *ngFor="let step of selectedReclamation.timeline"
-            >
-              <span class="timeline-item__dot"></span>
-              <div class="timeline-item__content">
-                <strong>{{ step.title }}</strong>
-                <small>{{ step.date }}</small>
-                <p>{{ step.description }}</p>
-              </div>
-            </article>
+          <div class="detail-item" *ngIf="selectedReclamation.processedAt">
+            <span class="detail-label">Traitée le</span>
+            <span class="detail-value">{{ formatDate(selectedReclamation.processedAt) }}</span>
           </div>
         </div>
 
-        <div class="details-actions">
-          <button type="button" class="hero-btn hero-btn--primary">
-            Reply to support
-          </button>
-          <button type="button" class="hero-btn hero-btn--secondary">
-            Attach evidence
-          </button>
+        <div class="detail-section">
+          <span class="detail-label">Description</span>
+          <p class="detail-desc">{{ selectedReclamation.description }}</p>
+        </div>
+
+        <div class="detail-section admin-comment" *ngIf="selectedReclamation.adminComment">
+          <span class="detail-label">Réponse de l'équipe</span>
+          <p class="detail-desc">{{ selectedReclamation.adminComment }}</p>
         </div>
       </div>
-    </aside>
-  </section>
+
+      <!-- Aucune sélection -->
+      <div class="split-right split-right--empty" *ngIf="!selectedReclamation">
+        <span class="empty-icon">📋</span>
+        <p>Sélectionnez une réclamation pour voir les détails.</p>
+      </div>
+    </section>
+
+  </ng-container>
+
+  <!-- ── MODAL FORMULAIRE ──────────────────────────────────────────────────── -->
+  <div class="modal-overlay" *ngIf="showForm" (click)="closeForm()">
+    <div class="modal-box" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Signaler un avis</h3>
+        <button type="button" class="modal-close" (click)="closeForm()">✕</button>
+      </div>
+
+      <div class="modal-success" *ngIf="submitSuccess">
+        <span>✓</span> Réclamation soumise avec succès !
+      </div>
+
+      <ng-container *ngIf="!submitSuccess">
+        <div class="form-group">
+          <label>Avis concerné</label>
+          <select [(ngModel)]="form.reviewId">
+            <option [value]="0" disabled>Sélectionnez un avis</option>
+            <option *ngFor="let r of myReviews" [value]="r.id">
+              Avis #{{ r.id }} — Note {{ r.overallRating }}/5 ({{ formatDate(r.createdAt) }})
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Motif du signalement</label>
+          <select [(ngModel)]="form.motif">
+            <option *ngFor="let m of motifs" [value]="m.value">{{ m.label }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="form.description" rows="4"
+            placeholder="Décrivez pourquoi cet avis est problématique..."></textarea>
+        </div>
+
+        <div class="modal-error" *ngIf="submitError">
+          Une erreur est survenue. Veuillez réessayer.
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="closeForm()">Annuler</button>
+          <button type="button" class="btn-submit"
+            [disabled]="!form.reviewId || !form.description.trim() || submitting"
+            (click)="submitReclamation()">
+            <span *ngIf="!submitting">Soumettre</span>
+            <span *ngIf="submitting">Envoi...</span>
+          </button>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
 </div>

@@ -1,271 +1,164 @@
-import { Component } from '@angular/core';
-
-type ClaimStatus = 'Open' | 'In Review' | 'Resolved' | 'Urgent';
-type ClaimPriority = 'Low' | 'Medium' | 'High';
-type ClaimCategory = 'Payment' | 'Client dispute' | 'Account issue' | 'Technical issue';
-
-interface SupportStat {
-  label: string;
-  value: string;
-  caption: string;
-}
-
-interface ClaimTimelineItem {
-  title: string;
-  date: string;
-  description: string;
-}
-
-interface ReclamationItem {
-  id: string;
-  title: string;
-  category: ClaimCategory;
-  status: ClaimStatus;
-  priority: ClaimPriority;
-  createdAt: string;
-  lastUpdate: string;
-  assignedTo: string;
-  description: string;
-  clientName: string;
-  missionRef: string;
-  timeline: ClaimTimelineItem[];
-}
+import { Component, OnInit } from '@angular/core';
+import { ReviewService } from '../../../core/services/review.service';
+import { AuthService } from '../../../core/services/auth.service';
+import {
+  ReclamationResponse, ReclamationRequest,
+  ReviewResponse, StatusReclamation, MotifReclamation
+} from '../../../core/models/review.model';
 
 @Component({
   selector: 'app-reclamations',
   templateUrl: './reclamations.component.html',
   styleUrls: ['./reclamations.component.css']
 })
-export class ReclamationsComponent {
-  readonly supportStats: SupportStat[] = [
-    {
-      label: 'Open claims',
-      value: '14',
-      caption: 'Tickets currently requiring action'
-    },
-    {
-      label: 'Resolved this month',
-      value: '38',
-      caption: 'Issues successfully closed by support'
-    },
-    {
-      label: 'Avg. response time',
-      value: '2h 40m',
-      caption: 'Measured across active conversations'
-    }
+export class ReclamationsComponent implements OnInit {
+
+  // ── Données ──────────────────────────────────────────────────────────────
+  reclamations: ReclamationResponse[] = [];
+  myReviews: ReviewResponse[] = [];
+  selectedReclamation: ReclamationResponse | null = null;
+  selectedStatus: StatusReclamation | 'All' = 'All';
+
+  loading = true;
+  error = false;
+
+  // ── Formulaire de signalement ─────────────────────────────────────────────
+  showForm = false;
+  submitting = false;
+  submitSuccess = false;
+  submitError = false;
+
+  form: ReclamationRequest = {
+    reviewId: 0,
+    reportedByUserId: 0,
+motif: 'FAKE_REVIEW',
+    description: ''
+  };
+
+  readonly motifs: { value: MotifReclamation; label: string }[] = [
+  { value: 'FAKE_REVIEW',       label: 'Avis faux ou trompeur' },
+  { value: 'SPAM',              label: 'Spam' },
+  { value: 'ABUSIVE_LANGUAGE',  label: 'Langage abusif' },
+  { value: 'IRRELEVANT',        label: 'Hors sujet' },
+  { value: 'OTHER',             label: 'Autre' }
+];
+
+  readonly statusFilters: Array<StatusReclamation | 'All'> = [
+    'All', 'PENDING', 'IN_REVIEW', 'CONFIRMED', 'REJECTED'
   ];
 
-  readonly statusFilters: Array<ClaimStatus | 'All'> = [
-    'All',
-    'Open',
-    'In Review',
-    'Resolved',
-    'Urgent'
-  ];
+  private currentUserId = 0;
 
-  selectedStatus: ClaimStatus | 'All' = 'All';
+  constructor(
+    private reviewService: ReviewService,
+    private authService: AuthService
+  ) {}
 
-  readonly reclamations: ReclamationItem[] = [
-    {
-      id: 'REC-1042',
-      title: 'Delayed payment after completed milestone',
-      category: 'Payment',
-      status: 'Open',
-      priority: 'High',
-      createdAt: '03 Apr 2026',
-      lastUpdate: '2 hours ago',
-      assignedTo: 'Nadia B.',
-      description:
-        'The client approved the delivered milestone but the payment release has not been reflected in the wallet. Freelancer requests verification and escalation.',
-      clientName: 'Orbit Digital Studio',
-      missionRef: 'TW-MIS-7821',
-      timeline: [
-        {
-          title: 'Claim submitted',
-          date: '03 Apr 2026 · 09:12',
-          description: 'Freelancer opened a payment-related reclamation.'
-        },
-        {
-          title: 'Support acknowledged',
-          date: '03 Apr 2026 · 10:03',
-          description: 'Automated acknowledgment sent and case assigned.'
-        },
-        {
-          title: 'Awaiting finance verification',
-          date: '03 Apr 2026 · 11:24',
-          description: 'Internal team is checking escrow release logs.'
-        }
-      ]
-    },
-    {
-      id: 'REC-1038',
-      title: 'Dispute about delivered Angular dashboard scope',
-      category: 'Client dispute',
-      status: 'In Review',
-      priority: 'High',
-      createdAt: '02 Apr 2026',
-      lastUpdate: '5 hours ago',
-      assignedTo: 'Sami K.',
-      description:
-        'The freelancer claims the original scope was completed, while the client considers some premium UI sections incomplete. Requires manual review of milestone acceptance.',
-      clientName: 'BluePeak Digital',
-      missionRef: 'TW-MIS-7714',
-      timeline: [
-        {
-          title: 'Dispute opened',
-          date: '02 Apr 2026 · 14:20',
-          description: 'Client and freelancer submitted conflicting notes.'
-        },
-        {
-          title: 'Evidence requested',
-          date: '02 Apr 2026 · 16:00',
-          description: 'Support requested screenshots and agreed scope files.'
-        },
-        {
-          title: 'Case under arbitration',
-          date: '03 Apr 2026 · 08:40',
-          description: 'Senior moderator is reviewing the attached deliverables.'
-        }
-      ]
-    },
-    {
-      id: 'REC-1031',
-      title: 'Login protection triggered unexpectedly',
-      category: 'Account issue',
-      status: 'Resolved',
-      priority: 'Medium',
-      createdAt: '31 Mar 2026',
-      lastUpdate: 'Yesterday',
-      assignedTo: 'Lina R.',
-      description:
-        'User was temporarily locked after multiple login attempts from a new device. Access was restored after identity verification.',
-      clientName: 'Personal account',
-      missionRef: 'ACC-4421',
-      timeline: [
-        {
-          title: 'Incident reported',
-          date: '31 Mar 2026 · 18:10',
-          description: 'User reported being unable to access the dashboard.'
-        },
-        {
-          title: 'Verification completed',
-          date: '31 Mar 2026 · 19:25',
-          description: 'Support validated account ownership.'
-        },
-        {
-          title: 'Issue resolved',
-          date: '31 Mar 2026 · 19:42',
-          description: 'Access reset and security recommendations sent.'
-        }
-      ]
-    },
-    {
-      id: 'REC-1027',
-      title: 'Notification delivery failure on important updates',
-      category: 'Technical issue',
-      status: 'Urgent',
-      priority: 'High',
-      createdAt: '30 Mar 2026',
-      lastUpdate: '30 minutes ago',
-      assignedTo: 'Tech Ops',
-      description:
-        'Critical system notifications related to job applications are not appearing consistently. Impacts activity tracking and response times.',
-      clientName: 'Platform-wide issue',
-      missionRef: 'SYS-ALERT-92',
-      timeline: [
-        {
-          title: 'Issue detected',
-          date: '30 Mar 2026 · 08:30',
-          description: 'Internal monitoring flagged notification failures.'
-        },
-        {
-          title: 'Incident escalated',
-          date: '30 Mar 2026 · 09:15',
-          description: 'Tech support and product team were notified.'
-        },
-        {
-          title: 'Hotfix in progress',
-          date: '03 Apr 2026 · 12:05',
-          description: 'Patch validation is ongoing before deployment.'
-        }
-      ]
+  ngOnInit(): void {
+    const user = this.authService.getCurrentAuthUser();
+    if (user?.userId) {
+      this.currentUserId = user.userId;
+      this.form.reportedByUserId = user.userId;
     }
-  ];
-
-  selectedReclamation: ReclamationItem = this.reclamations[0];
-
-  get filteredReclamations(): ReclamationItem[] {
-    if (this.selectedStatus === 'All') {
-      return this.reclamations;
-    }
-
-    return this.reclamations.filter(
-      (item) => item.status === this.selectedStatus
-    );
+    this.loadData();
   }
 
-  selectStatus(status: ClaimStatus | 'All'): void {
-    this.selectedStatus = status;
-    this.syncSelectedReclamation();
+  private loadData(): void {
+    this.loading = true;
+    // Charger en parallèle mes reclamations et mes reviews (pour le formulaire)
+    this.reviewService.getAllReclamations().subscribe({
+      next: (all) => {
+        this.reclamations = all.filter(r => r.reportedByUserId === this.currentUserId);
+        if (this.reclamations.length > 0) this.selectedReclamation = this.reclamations[0];
+        this.loading = false;
+      },
+      error: () => { this.error = true; this.loading = false; }
+    });
+
+    this.reviewService.getAllReviews().subscribe({
+      next: (all) => {
+        // Reviews que j'ai reçues = je peux les signaler
+        this.myReviews = all.filter(r => r.reviewedUserId === this.currentUserId && !r.isDeleted);
+      }
+    });
   }
 
-  selectReclamation(item: ReclamationItem): void {
-    this.selectedReclamation = item;
+  // ── Filtrage ──────────────────────────────────────────────────────────────
+  get filteredReclamations(): ReclamationResponse[] {
+    if (this.selectedStatus === 'All') return this.reclamations;
+    return this.reclamations.filter(r => r.status === this.selectedStatus);
   }
 
-  getStatusClass(status: ClaimStatus): string {
-    switch (status) {
-      case 'Open':
-        return 'status-open';
-      case 'In Review':
-        return 'status-review';
-      case 'Resolved':
-        return 'status-resolved';
-      case 'Urgent':
-        return 'status-urgent';
-      default:
-        return '';
+  selectStatus(s: StatusReclamation | 'All'): void {
+    this.selectedStatus = s;
+    const visible = this.filteredReclamations;
+    if (visible.length > 0 && !visible.find(r => r.id === this.selectedReclamation?.id)) {
+      this.selectedReclamation = visible[0];
     }
   }
 
-  getPriorityClass(priority: ClaimPriority): string {
-    switch (priority) {
-      case 'Low':
-        return 'priority-low';
-      case 'Medium':
-        return 'priority-medium';
-      case 'High':
-        return 'priority-high';
-      default:
-        return '';
-    }
+  selectReclamation(r: ReclamationResponse): void {
+    this.selectedReclamation = r;
   }
 
-  trackByLabel(index: number, item: SupportStat): string {
-    return item.label;
+  // ── Formulaire ────────────────────────────────────────────────────────────
+  openForm(): void {
+    this.showForm = true;
+    this.submitSuccess = false;
+    this.submitError = false;
+    this.form = { reviewId: 0, reportedByUserId: this.currentUserId, motif: 'FAKE_REVIEW', description: '' };
   }
 
-  trackByClaim(index: number, item: ReclamationItem): string {
-    return item.id;
+  closeForm(): void {
+    this.showForm = false;
   }
 
-  trackByText(index: number, item: string): string {
-    return `${index}-${item}`;
+  submitReclamation(): void {
+    if (!this.form.reviewId || !this.form.description.trim()) return;
+    this.submitting = true;
+    this.submitError = false;
+
+    this.reviewService.createReclamation(this.form).subscribe({
+      next: (created) => {
+        this.reclamations = [created, ...this.reclamations];
+        this.selectedReclamation = created;
+        this.submitting = false;
+        this.submitSuccess = true;
+        setTimeout(() => { this.showForm = false; this.submitSuccess = false; }, 1800);
+      },
+      error: () => { this.submitting = false; this.submitError = true; }
+    });
   }
 
-  private syncSelectedReclamation(): void {
-    const visibleItems = this.filteredReclamations;
-
-    if (!visibleItems.length) {
-      return;
-    }
-
-    const stillExists = visibleItems.some(
-      (item) => item.id === this.selectedReclamation.id
-    );
-
-    if (!stillExists) {
-      this.selectedReclamation = visibleItems[0];
-    }
+  // ── Helpers CSS ───────────────────────────────────────────────────────────
+  getStatusClass(status: StatusReclamation): string {
+    const map: Record<StatusReclamation, string> = {
+      PENDING:   'status-open',
+      IN_REVIEW: 'status-review',
+      CONFIRMED: 'status-resolved',
+      REJECTED:  'status-urgent'
+    };
+    return map[status] ?? '';
   }
+
+  getStatusLabel(status: StatusReclamation): string {
+    const map: Record<StatusReclamation, string> = {
+      PENDING:   'En attente',
+      IN_REVIEW: 'En cours',
+      CONFIRMED: 'Confirmée',
+      REJECTED:  'Rejetée'
+    };
+    return map[status] ?? status;
+  }
+
+  formatDate(d: string): string {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString('fr-TN', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  getMotifLabel(m: MotifReclamation): string {
+    return this.motifs.find(x => x.value === m)?.label ?? m;
+  }
+
+  trackById(_: number, r: ReclamationResponse): number { return r.id; }
 }

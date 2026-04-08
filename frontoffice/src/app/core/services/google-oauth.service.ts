@@ -16,8 +16,7 @@ export interface GoogleCredentialResponse {
 })
 export class GoogleOAuthService {
 
-  private readonly GOOGLE_CLIENT_ID = '628858058239-rb548ltjbhdlfpa47gc3c91uvfouap4b.apps.googleusercontent.com';
-
+private readonly GOOGLE_CLIENT_ID = '770752272656-tqn8j0hotptmdn54pmltnd10e1sak057.apps.googleusercontent.com';
   constructor(
     private api: ApiService,
     private authService: AuthService,

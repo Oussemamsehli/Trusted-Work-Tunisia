@@ -1,23 +1,12 @@
 export type ReviewType = 'CLIENT_TO_FREELANCER' | 'FREELANCER_TO_CLIENT';
-export type CategorieConfiance = 'FAIBLE' | 'MOYEN' | 'ELEVÉ' | 'EXCELLENT';
-export type Tendance = 'HAUSSE' | 'STABLE' | 'BAISSE';
+export type CategorieConfiance = 'FAIBLE' | 'MOYENNE' | 'ELEVEE';
+export type Tendance = 'EN_HAUSSE' | 'STABLE' | 'EN_BAISSE';
 export type StatusReclamation = 'PENDING' | 'IN_REVIEW' | 'CONFIRMED' | 'REJECTED';
-export type MotifReclamation =
-  | 'FAUX_AVIS'
-  | 'CONTENU_INAPPROPRIE'
-  | 'CONFLIT_INTERET'
-  | 'SPAM'
-  | 'AUTRE';
-export type CategorieBadge =
-  | 'PERFORMANCE'
-  | 'COMMUNICATION'
-  | 'LIVRAISON'
-  | 'EXPERTISE'
-  | 'CONFIANCE';
-export type Rarete = 'COMMUN' | 'RARE' | 'EPIQUE' | 'LEGENDAIRE';
-export type Niveau = 'JUNIOR' | 'CONFIRME' | 'EXPERT' | 'MASTER';
+export type MotifReclamation = 'SPAM' | 'FAKE_REVIEW' | 'ABUSIVE_LANGUAGE' | 'IRRELEVANT' | 'OTHER';
+export type CategorieBadge = 'TRUST' | 'ACTIVITY' | 'PERFORMANCE';
+export type Rarete = 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+export type Niveau = 'DEBUTANT' | 'INTERMEDIAIRE' | 'AVANCE' | 'EXPERT';
 
-// ── Review ──────────────────────────────────────────────────────────────────
 export interface ReviewResponse {
   id: number;
   reviewerId: number;
@@ -54,7 +43,6 @@ export interface ReviewRequest {
   isVisible: boolean;
 }
 
-// ── TrustScore ───────────────────────────────────────────────────────────────
 export interface TrustScoreResponse {
   id: number;
   userId: number;
@@ -69,7 +57,6 @@ export interface TrustScoreResponse {
   updatedAt: string;
 }
 
-// ── Badge ────────────────────────────────────────────────────────────────────
 export interface BadgeResponse {
   id: number;
   name: string;
@@ -87,27 +74,35 @@ export interface BadgeRequest {
   points: number;
 }
 
-// ── UserBadge ────────────────────────────────────────────────────────────────
 export interface UserBadgeResponse {
   id: number;
   userId: number;
   badge: BadgeResponse;
-  earnedAt: string;
+  reason: string;
+  awardedAt: string;
 }
 
-// ── GrowthProfile ────────────────────────────────────────────────────────────
+export interface UserBadgeRequest {
+  userId: number;
+  badgeId: number;
+  reason: string;
+}
+
 export interface GrowthProfileResponse {
   id: number;
   userId: number;
-  totalXp: number;
-  currentLevel: number;
+  xp: number;
+  level: number;
   niveau: Niveau;
   streakDays: number;
-  weeklyXpGain: number;
+  longestStreak: number;
+  lastActivityDate?: string;
+  badgesCount: number;
+  profileCompleted: boolean;
+  createdAt: string;
   updatedAt: string;
 }
 
-// ── Reclamation ──────────────────────────────────────────────────────────────
 export interface ReclamationResponse {
   id: number;
   review: ReviewResponse;
