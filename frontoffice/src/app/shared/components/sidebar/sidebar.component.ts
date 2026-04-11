@@ -1,16 +1,19 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+﻿import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService, UserProfileResponse } from '../../../core/services/user.service';
 import { AuthUser } from '../../../core/models/auth.model';
 
-interface NavItem {
+interface NavChild {
   label: string;
   icon: string;
-  route?: string;
-  badge?: string;
-  disabled?: boolean;
-  isLogout?: boolean;
-  comingSoon?: boolean;
+  route: string;
+}
+
+interface NavGroup {
+  label: string;
+  icon: string;
+  children: NavChild[];
+  expanded?: boolean;
 }
 
 @Component({
@@ -23,54 +26,66 @@ export class SidebarComponent implements OnInit {
   @Output() toggleCollapse = new EventEmitter<void>();
 
   currentUser: AuthUser | null = null;
-  trustLevel = 1; // ← chargé depuis le backend
+  trustLevel = 1;
 
-  // ── Module 01 — actifs ──────────────────────────────
-  activeItems: NavItem[] = [
-    { label: 'Dashboard',      icon: 'fa-house',    route: '/app/dashboard' },
-    { label: 'Mon Profil',     icon: 'fa-user',     route: '/app/profile/overview' },
-    { label: 'KYC',            icon: 'fa-id-card',  route: '/app/profile/kyc' },
-    { label: 'Trust Passport', icon: 'fa-passport', route: '/app/profile/trust-passport' },
-    { label: 'Paramètres',     icon: 'fa-gear',     route: '/app/profile/settings' }
+  dashboardLink = { label: 'Dashboard', icon: 'fa-house', route: '/app/dashboard' };
+
+  navGroups: NavGroup[] = [
+    {
+      label: 'Identite et Acces',
+      icon: 'fa-shield-halved',
+      expanded: false,
+      children: [
+        { label: 'Vue generale',   icon: 'fa-user',         route: '/app/profile/overview' },
+        { label: 'KYC',            icon: 'fa-id-card',      route: '/app/profile/kyc' },
+        { label: 'Trust Passport', icon: 'fa-passport',     route: '/app/profile/trust-passport' },
+        { label: 'Parametres',     icon: 'fa-gear',         route: '/app/profile/settings' }
+      ]
+    },
+    {
+      label: 'Profil Freelancer',
+      icon: 'fa-briefcase',
+      expanded: false,
+      children: [
+        { label: 'Portfolio',    icon: 'fa-images',    route: '/app/profile/portfolio' },
+        { label: 'Experiences',  icon: 'fa-building',  route: '/app/profile/work-experience' },
+        { label: 'Endorsements', icon: 'fa-handshake', route: '/app/profile/endorsements' },
+        { label: 'Avis Clients', icon: 'fa-star',      route: '/app/profile/reviews' },
+        { label: 'Carriere AI',  icon: 'fa-robot',     route: '/app/profile/career-path' }
+      ]
+    }
   ];
 
-  // ── Autres modules — désactivés (coming soon) ──────
-  comingSoonItems: NavItem[] = [
-    { label: 'Offres Freelance', icon: 'fa-briefcase',     comingSoon: true },
-    { label: 'Contrats',         icon: 'fa-file-contract', comingSoon: true },
-    { label: 'Événements',       icon: 'fa-calendar-days', comingSoon: true },
-    { label: 'Wallet',           icon: 'fa-wallet',        comingSoon: true },
-    { label: 'Messages',         icon: 'fa-envelope',      comingSoon: true },
-    { label: 'Réputation',       icon: 'fa-star',          comingSoon: true },
-    { label: 'Agence',           icon: 'fa-building',      comingSoon: true }
+  comingSoonItems = [
+    { label: 'Job Board',  icon: 'fa-magnifying-glass' },
+    { label: 'Contrats',   icon: 'fa-file-contract' },
+    { label: 'Wallet',     icon: 'fa-wallet' },
+    { label: 'Messages',   icon: 'fa-envelope' },
+    { label: 'Evenements', icon: 'fa-calendar-days' }
   ];
 
-  constructor(
-    public authService: AuthService,
-    private userService: UserService
-  ) {}
+  constructor(public authService: AuthService, private userService: UserService) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentAuthUser();
-
-    // Chargement du trust level réel depuis le backend
     this.userService.getMyProfile().subscribe({
-      next: (data: UserProfileResponse) => {
-        this.trustLevel = (data as any).trustLevel ?? 1;
-      },
-      error: () => {
-        this.trustLevel = 1;
-      }
+      next: (data: UserProfileResponse) => { this.trustLevel = (data as any).trustLevel ?? 1; },
+      error: () => { this.trustLevel = 1; }
     });
   }
 
+  toggleGroup(group: NavGroup): void {
+    this.navGroups.forEach(g => { if (g !== group) g.expanded = false; });
+    group.expanded = !group.expanded;
+  }
+
   onToggleCollapse(): void {
+    if (!this.collapsed) { this.navGroups.forEach(g => g.expanded = false); }
     this.toggleCollapse.emit();
   }
 
   onLogout(): void {
     this.authService.logout();
-    // Redirige vers la landing page (frontoffice)
     window.location.href = '/';
   }
 }
