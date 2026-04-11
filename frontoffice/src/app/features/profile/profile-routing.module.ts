@@ -1,30 +1,31 @@
-import { NgModule } from '@angular/core';
+﻿import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-
 import { ProfileOverviewComponent } from './profile-overview/profile-overview.component';
 import { CertificationsComponent } from './certifications/certifications.component';
 import { SkillsComponent } from './skills/skills.component';
 import { SettingsComponent } from './settings/settings.component';
 import { KycComponent } from './kyc/kyc.component';
 import { TrustPassportComponent } from './trust-passport/trust-passport.component';
-
+import { PortfolioComponent } from './portfolio/portfolio.component';
+import { WorkExperienceComponent } from './work-experience/work-experience.component';
+import { EndorsementsComponent } from './endorsements/endorsements.component';
+import { ReviewsComponent } from './reviews/reviews.component';
+import { CareerRecommendationsComponent } from './career-recommendations/career-recommendations.component';
 const routes: Routes = [
-  // Redirection par défaut vers overview
-  { path: '',               redirectTo: 'overview', pathMatch: 'full' },
-
-  // ← FIX : path 'overview' au lieu de 'profile-overview'
-  // La sidebar pointe vers /app/profile/overview
-  { path: 'overview',       component: ProfileOverviewComponent },
+  { path: '', redirectTo: 'overview', pathMatch: 'full' },
+  { path: 'overview', component: ProfileOverviewComponent },
   { path: 'certifications', component: CertificationsComponent },
-  { path: 'skills',         component: SkillsComponent },
-  { path: 'settings',       component: SettingsComponent },
-  { path: 'kyc',            component: KycComponent },
+  { path: 'skills', component: SkillsComponent },
+  { path: 'settings', component: SettingsComponent },
+  { path: 'kyc', component: KycComponent },
   { path: 'trust-passport', component: TrustPassportComponent },
-
-  // Fallback
-  { path: '**',             redirectTo: 'overview' }
+  { path: 'portfolio', component: PortfolioComponent },
+  { path: 'work-experience', component: WorkExperienceComponent },
+  { path: 'endorsements', component: EndorsementsComponent },
+  { path: 'reviews', component: ReviewsComponent },
+  { path: 'career-path', component: CareerRecommendationsComponent },
+  { path: '**', redirectTo: 'overview' }
 ];
-
 @NgModule({
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule]
