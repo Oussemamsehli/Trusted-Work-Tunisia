@@ -1,1 +1,205 @@
-<p>profile-detail works!</p>
+<!-- Loading -->
+<div *ngIf="loading" class="card">
+  <div class="empty-state">
+    <i class="fas fa-spinner fa-spin"></i>
+    <p>Chargement du profil...</p>
+  </div>
+</div>
+
+<!-- Erreur -->
+<div *ngIf="errorMsg && !loading" class="card">
+  <div class="empty-state">
+    <i class="fas fa-exclamation-triangle text-danger"></i>
+    <p class="text-danger">{{ errorMsg }}</p>
+  </div>
+</div>
+
+<!-- Contenu principal -->
+<ng-container *ngIf="profile && !loading">
+
+  <!-- Bouton retour -->
+  <div style="margin-bottom: 16px;">
+    <a routerLink="/admin/freelancers" class="btn btn-ghost btn-sm">
+      <i class="fas fa-arrow-left"></i> Retour à la liste
+    </a>
+  </div>
+
+  <!-- ════════ EN-TÊTE DU PROFIL ════════ -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="profile-header">
+      <div class="avatar avatar-lg avatar-accent">
+        {{ (profile.headline || 'U').charAt(0).toUpperCase() }}
+      </div>
+      <div class="profile-header-info">
+        <h1 class="page-title">{{ profile.headline || 'Sans titre' }}</h1>
+        <p class="page-subtitle">
+          User #{{ profile.userId }} · {{ profile.region || 'Région non définie' }}
+        </p>
+        <div class="profile-badges">
+          <span class="badge" [ngClass]="getStatusBadge(profile.availabilityStatus)">
+            {{ profile.availabilityStatus }}
+          </span>
+          <span class="badge badge-accent">{{ profile.experienceLevel }}</span>
+          <span *ngIf="profile.hourlyRate" class="badge badge-info">
+            {{ profile.hourlyRate }} TND/h
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bio -->
+    <div class="divider"></div>
+    <p class="profile-bio">{{ profile.bio || 'Aucune bio renseignée.' }}</p>
+  </div>
+
+  <!-- ════════ GRILLE STATS ════════ -->
+  <div class="stats-grid">
+    <!-- Complétude -->
+    <div class="card stat-mini">
+      <div class="stat-mini-label">Complétude</div>
+      <div class="stat-mini-value" [ngClass]="getScoreClass(profile.completenessScore)">
+        {{ profile.completenessScore }}%
+      </div>
+      <div *ngIf="completeness && completeness.suggestions.length > 0" class="stat-mini-hint">
+        {{ completeness.suggestions.length }} suggestion(s)
+      </div>
+    </div>
+
+    <!-- Note moyenne -->
+    <div class="card stat-mini">
+      <div class="stat-mini-label">Note moyenne</div>
+      <div class="stat-mini-value">
+        <span *ngFor="let star of getStars(averageRating)">
+          <i [class]="star" style="color: var(--warning); font-size: 14px;"></i>
+        </span>
+        <span style="margin-left: 6px;">{{ averageRating | number:'1.1-1' }}</span>
+      </div>
+      <div class="stat-mini-hint">{{ reviews.length }} avis</div>
+    </div>
+
+    <!-- Taux horaire -->
+    <div class="card stat-mini">
+      <div class="stat-mini-label">Taux horaire</div>
+      <div class="stat-mini-value">{{ profile.hourlyRate || 0 }} TND</div>
+    </div>
+
+    <!-- Skills count -->
+    <div class="card stat-mini">
+      <div class="stat-mini-label">Compétences</div>
+<div class="stat-mini-value">{{ profile.skills.length }}</div>
+    </div>
+  </div>
+
+  <!-- ════════ COMPÉTENCES ════════ -->
+  <div class="card section-card" *ngIf="profile.skills && profile.skills.length > 0">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-code"></i> Compétences</span>
+    </div>
+    <table class="tw-table">
+      <thead>
+        <tr>
+          <th>Skill</th>
+          <th>Catégorie</th>
+          <th>Niveau</th>
+          <th>Expérience</th>
+          <th>Vérifié</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of profile.skills">
+          <td>{{ s.skillName }}</td>
+          <td>{{ s.category || '—' }}</td>
+          <td>
+            <span class="badge" [ngClass]="getProficiencyBadge(s.proficiencyLevel)">
+              {{ s.proficiencyLevel }}
+            </span>
+          </td>
+          <td>{{ s.yearsOfExperience }} an(s)</td>
+          <td>
+            <i *ngIf="s.verified" class="fas fa-check-circle text-success"></i>
+            <i *ngIf="!s.verified" class="fas fa-times-circle text-danger"></i>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ════════ PORTFOLIO ════════ -->
+  <div class="card section-card" *ngIf="profile.portfolio && profile.portfolio.length > 0">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-briefcase"></i> Portfolio</span>
+    </div>
+    <div class="portfolio-grid">
+      <div class="portfolio-item" *ngFor="let item of profile.portfolio">
+        <h4>{{ item.title }}</h4>
+        <p class="text-secondary">{{ item.description || 'Pas de description' }}</p>
+        <a *ngIf="item.projectUrl" [href]="item.projectUrl" target="_blank" class="btn btn-ghost btn-sm">
+          <i class="fas fa-external-link-alt"></i> Voir le projet
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ AVIS ════════ -->
+  <div class="card section-card" *ngIf="reviews.length > 0">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-star"></i> Avis ({{ reviews.length }})</span>
+    </div>
+    <div class="reviews-list">
+      <div class="review-item" *ngFor="let r of reviews">
+        <div class="review-header">
+          <span>
+            <span *ngFor="let star of getStars(r.rating)">
+              <i [class]="star" style="color: var(--warning); font-size: 12px;"></i>
+            </span>
+          </span>
+          <span class="text-muted" style="font-size: 12px;">
+            {{ r.createdAt | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+        <p class="text-secondary" style="margin-top: 6px;">{{ r.comment || 'Pas de commentaire' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ SUGGESTIONS DE COMPLÉTUDE ════════ -->
+  <div class="card section-card" *ngIf="completeness && completeness.suggestions.length > 0">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-lightbulb text-warning"></i> Suggestions d'amélioration</span>
+    </div>
+    <ul class="suggestions-list">
+      <li *ngFor="let s of completeness.suggestions">
+        <i class="fas fa-arrow-right text-accent"></i> {{ s }}
+      </li>
+    </ul>
+  </div>
+
+  <!-- ════════ CAREER PATH ════════ -->
+  <div class="card section-card" *ngIf="careerPath">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-route text-accent"></i> Parcours de carrière</span>
+    </div>
+    <div class="career-info">
+      <p>
+        <strong>Niveau actuel :</strong>
+        <span class="badge badge-accent">{{ careerPath.currentLevel }}</span>
+      </p>
+      <p>
+        <strong>Prochain niveau :</strong>
+        <span class="badge badge-success">{{ careerPath.nextLevel }}</span>
+        <span class="text-muted" style="margin-left: 8px;">
+          (~{{ careerPath.estimatedTimeMonths }} mois estimés)
+        </span>
+      </p>
+      <div *ngIf="careerPath.recommendations.length > 0" style="margin-top: 12px;">
+        <strong>Recommandations :</strong>
+        <ul class="suggestions-list">
+          <li *ngFor="let rec of careerPath.recommendations">
+            <i class="fas fa-check text-success"></i> {{ rec }}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</ng-container>
