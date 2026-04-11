@@ -40,6 +40,7 @@ import { StatusCountPipe } from './pipes/status-count.pipe';
     NotificationBellComponent,
     LoadingSpinnerComponent,
     FormsModule,
+    RouterModule,
     StatusCountPipe
   ]
 })

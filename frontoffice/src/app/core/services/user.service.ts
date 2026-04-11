@@ -4,7 +4,17 @@ import { ApiService } from './api.service';
 import { ConnectedUserResponse, DashboardUser } from '../models/user.model';
 
 export interface UserProfileResponse extends ConnectedUserResponse {
+  phone?: string;
+  photo?: string;
+  headline?: string;
+  location?: string;
+  bio?: string;
+  kycStatus?: string;
   twoFactorEnabled?: boolean;
+  trustLevel?: number;
+  livenessPassed?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface SetupTwoFactorResponse {
@@ -41,8 +51,6 @@ export class UserService {
     );
   }
 
-  // ── Google OAuth — vérification & complétion du profil ──────────────────
-
   checkProfileComplete(): Observable<{ incomplete: boolean }> {
     return this.api.get<{ incomplete: boolean }>('/users/me/profile-complete');
   }
@@ -50,8 +58,6 @@ export class UserService {
   completeGoogleProfile(payload: CompleteProfilePayload): Observable<any> {
     return this.api.post('/users/me/complete-profile', payload);
   }
-
-  // ── 2FA ─────────────────────────────────────────────────────────────────
 
   setupTwoFactor(cin: number | string): Observable<SetupTwoFactorResponse> {
     return this.api.post<SetupTwoFactorResponse>(

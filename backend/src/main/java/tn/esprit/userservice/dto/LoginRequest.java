@@ -17,4 +17,8 @@ public class LoginRequest {
     private String password;
 
     private String twoFactorCode;
+
+    // Adresse IP du client — utilisée pour le Session Risk Score
+    // Envoyée par le frontend ou extraite côté contrôleur
+    private String ipAddress;
 }

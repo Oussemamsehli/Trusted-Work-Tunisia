@@ -19,7 +19,7 @@ interface NavItem {
   styleUrls: ['./sidebar.component.css']
 })
 export class SidebarComponent implements OnInit {
-  @Input()  collapsed = false;
+  @Input() collapsed = false;
   @Output() toggleCollapse = new EventEmitter<void>();
 
   navItems: NavItem[] = [
@@ -43,6 +43,16 @@ export class SidebarComponent implements OnInit {
       route: '/admin/users/kyc',
       badge: '12',
       badgeType: 'warning'
+    },
+    {
+      label: 'Audit Logs',
+      icon: 'fa-scroll',
+      route: '/admin/audit-logs'
+    },
+    {
+      label: 'Suspensions',
+      icon: 'fa-ban',
+      route: '/admin/suspensions'
     },
     {
       sectionLabel: 'Reputation Engine',

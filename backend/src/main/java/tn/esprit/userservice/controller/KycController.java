@@ -18,21 +18,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/kyc")
 @RequiredArgsConstructor
-@Tag(name = "KYC Verification", description = "Submit and review KYC documents")
+@Tag(name = "KYC Verification", description = "Legacy KYC workflow")
 public class KycController {
 
     private final IKycService kycService;
 
-    // Tout utilisateur connecté peut soumettre son KYC
     @PostMapping("/submit/{cin}")
-    @Operation(summary = "Submit KYC documents for verification")
+    @Operation(summary = "Legacy submit KYC documents for verification")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> submitKyc(@PathVariable Integer cin,
                                              @Valid @RequestBody KycSubmitRequest request) {
         return ResponseEntity.ok(kycService.submitKyc(cin, request));
     }
 
-    // Un utilisateur consulte son propre statut KYC ; l'ADMIN peut consulter celui de n'importe qui
     @GetMapping("/status/{cin}")
     @Operation(summary = "Get KYC status for a user")
     @PreAuthorize("isAuthenticated()")
@@ -40,9 +38,6 @@ public class KycController {
         return ResponseEntity.ok(kycService.getKycStatus(cin));
     }
 
-    // ==================== ADMIN ENDPOINTS ====================
-
-    // Seul l'ADMIN peut voir la liste des dossiers KYC en attente
     @GetMapping("/review/pending")
     @Operation(summary = "[ADMIN] List all users with pending KYC")
     @PreAuthorize("hasRole('ADMIN')")
@@ -50,7 +45,6 @@ public class KycController {
         return ResponseEntity.ok(kycService.getPendingKycRequests());
     }
 
-    // Seul l'ADMIN peut approuver ou rejeter un dossier KYC
     @PutMapping("/review/{cin}")
     @Operation(summary = "[ADMIN] Approve or reject KYC for a user")
     @PreAuthorize("hasRole('ADMIN')")

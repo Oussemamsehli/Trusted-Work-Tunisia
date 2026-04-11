@@ -1,6 +1,7 @@
 package tn.esprit.userservice.service;
 
 import tn.esprit.userservice.dto.AdminCreateUserRequest;
+import tn.esprit.userservice.dto.PublicUserDTO;
 import tn.esprit.userservice.dto.UpdateProfileRequest;
 import tn.esprit.userservice.dto.UserDTO;
 
@@ -25,4 +26,12 @@ public interface IUserService {
     void deleteUser(Integer cin);
 
     UserDTO createUserByAdmin(AdminCreateUserRequest request);
+
+    // ==================== INTER-MODULES ====================
+
+    // Retourne le DTO public minimal pour les autres microservices
+    PublicUserDTO getPublicUser(Long userId);
+
+    // Retourne uniquement le Trust Level — consommé par Module 05
+    int getTrustLevel(Long userId);
 }

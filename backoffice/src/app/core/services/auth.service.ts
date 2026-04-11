@@ -9,6 +9,9 @@ export class AuthService {
 
   private baseUrl = 'http://localhost:8081/api';
 
+  // URL du frontoffice — landing page
+  private readonly FRONTOFFICE_URL = 'http://localhost:4200';
+
   constructor(private http: HttpClient, private router: Router) {}
 
   login(email: string, password: string): Observable<any> {
@@ -25,8 +28,10 @@ export class AuthService {
   }
 
   logout(): void {
+    // Nettoyage de la session admin
     localStorage.clear();
-    this.router.navigate(['/auth/login']);
+    // Redirection vers la landing page du frontoffice
+    window.location.href = this.FRONTOFFICE_URL;
   }
 
   getToken(): string | null {
@@ -45,7 +50,6 @@ export class AuthService {
     return localStorage.getItem('email') || '';
   }
 
-  // ← Nouveau : userId directement disponible
   getUserId(): number {
     return parseInt(localStorage.getItem('userId') || '0', 10);
   }

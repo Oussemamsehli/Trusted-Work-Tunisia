@@ -1,5 +1,6 @@
 package tn.esprit.userservice.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +32,15 @@ public class AuthServiceImpl implements IAuthService {
     private final JwtService jwtService;
     private final ITwoFactorService twoFactorService;
     private final UserMapper userMapper;
+    private final ITrustLevelService trustLevelService;
+
+    // Nombre maximum de tentatives avant verrouillage
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+
+    // Durée du verrouillage en minutes
+    private static final int LOCK_DURATION_MINUTES = 15;
+
+    // ==================== REGISTER ====================
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -59,7 +69,10 @@ public class AuthServiceImpl implements IAuthService {
 
         User savedUser = userRepository.save(user);
 
-        log.info("New user registered: {} with role {}", savedUser.getEmail(), role);
+        // Calcul initial du Trust Level après création
+        trustLevelService.computeAndSave(savedUser);
+
+        log.info("Nouvel utilisateur enregistré : {} avec le rôle {}", savedUser.getEmail(), role);
 
         String accessToken = jwtService.generateAccessToken(savedUser);
         String refreshToken = jwtService.generateRefreshToken(savedUser);
@@ -76,16 +89,29 @@ public class AuthServiceImpl implements IAuthService {
                 .build();
     }
 
+    // ==================== LOGIN ====================
+
     @Override
     public AuthResponse login(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
 
+        // Vérification du verrouillage temporaire
+        if (isCurrentlyLocked(user)) {
+            long minutesLeft = java.time.temporal.ChronoUnit.MINUTES.between(
+                    LocalDateTime.now(), user.getLockedUntil());
+            throw new AccountSuspendedException(
+                    "Compte temporairement verrouillé. Réessayez dans " + minutesLeft + " minute(s).");
+        }
+
+        // Vérification du mot de passe
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            handleFailedAttempt(user);
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
+        // Vérification du statut du compte
         if (user.getAccountStatus() == AccountStatus.SUSPENDED) {
             throw new AccountSuspendedException("Your account has been suspended");
         }
@@ -95,14 +121,22 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         if (user.getRole() == null) {
-            log.error("Login blocked: user {} has no roles loaded from database", user.getEmail());
+            log.error("Login bloqué : l'utilisateur {} n'a pas de rôle", user.getEmail());
             throw new InvalidCredentialsException("User has no assigned role");
         }
 
+        // Réinitialisation du compteur après connexion réussie
+        resetFailedAttempts(user);
+
+        // Mise à jour des données de session
+        user.setLastLoginAt(LocalDateTime.now());
+        user.setLastLoginIp(request.getIpAddress());
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
         // Si 2FA activée, on ne génère pas encore les tokens
         if (user.isTwoFactorEnabled()) {
-            log.info("2FA required for user {}", user.getEmail());
-
+            log.info("2FA requise pour l'utilisateur {}", user.getEmail());
             return AuthResponse.builder()
                     .accessToken(null)
                     .refreshToken(null)
@@ -115,14 +149,10 @@ public class AuthServiceImpl implements IAuthService {
                     .build();
         }
 
-        user.setUpdatedAt(LocalDateTime.now());
-        userRepository.save(user);
-
-        log.info("User {} logged in with role {}", user.getEmail(), user.getRole());
+        log.info("Connexion réussie pour {} avec le rôle {}", user.getEmail(), user.getRole());
 
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-
         String primaryRole = userMapper.toDTO(user).getRole();
 
         return AuthResponse.builder()
@@ -136,6 +166,8 @@ public class AuthServiceImpl implements IAuthService {
                 .message("Login successful")
                 .build();
     }
+
+    // ==================== VERIFY 2FA ====================
 
     @Override
     public AuthResponse verifyTwoFactor(VerifyTwoFactorRequest request) {
@@ -158,10 +190,9 @@ public class AuthServiceImpl implements IAuthService {
 
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
-
         String primaryRole = userMapper.toDTO(user).getRole();
 
-        log.info("2FA verified successfully for user {}", user.getEmail());
+        log.info("2FA vérifiée avec succès pour {}", user.getEmail());
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
@@ -174,6 +205,8 @@ public class AuthServiceImpl implements IAuthService {
                 .message("2FA verification successful")
                 .build();
     }
+
+    // ==================== REFRESH TOKEN ====================
 
     @Override
     public AuthResponse refreshToken(String refreshToken) {
@@ -188,7 +221,7 @@ public class AuthServiceImpl implements IAuthService {
                 .orElseThrow(() -> new InvalidCredentialsException("User not found"));
 
         if (user.getRole() == null) {
-            log.error("Refresh token blocked: user {} has no role assigned", user.getEmail());
+            log.error("Refresh token bloqué : {} n'a pas de rôle", user.getEmail());
             throw new InvalidCredentialsException("User has no assigned role");
         }
 
@@ -205,5 +238,46 @@ public class AuthServiceImpl implements IAuthService {
                 .twoFactorRequired(false)
                 .message("Token refreshed")
                 .build();
+    }
+
+    // ==================== HELPERS PRIVÉS ====================
+
+    /**
+     * Vérifie si le compte est actuellement dans la fenêtre de verrouillage.
+     */
+    private boolean isCurrentlyLocked(User user) {
+        return user.getLockedUntil() != null
+                && user.getLockedUntil().isAfter(LocalDateTime.now());
+    }
+
+    /**
+     * Incrémente le compteur de tentatives échouées.
+     * Verrouille le compte pendant LOCK_DURATION_MINUTES si MAX_FAILED_ATTEMPTS atteint.
+     */
+    private void handleFailedAttempt(User user) {
+        int attempts = user.getFailedAttempts() + 1;
+        user.setFailedAttempts(attempts);
+
+        if (attempts >= MAX_FAILED_ATTEMPTS) {
+            user.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
+            user.setAccountNonLocked(false);
+            log.warn("Compte {} verrouillé après {} tentatives échouées", user.getEmail(), attempts);
+        }
+
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
+    /**
+     * Réinitialise le compteur et déverrouille le compte après connexion réussie.
+     */
+    private void resetFailedAttempts(User user) {
+        if (user.getFailedAttempts() > 0 || user.getLockedUntil() != null) {
+            user.setFailedAttempts(0);
+            user.setLockedUntil(null);
+            user.setAccountNonLocked(true);
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
+        }
     }
 }

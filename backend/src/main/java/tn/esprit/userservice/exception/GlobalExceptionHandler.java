@@ -15,11 +15,8 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ==================== VALIDATION ERRORS (400) ====================
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
-
         Map<String, String> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
                 .collect(Collectors.toMap(
                         error -> error.getField(),
@@ -36,14 +33,10 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
-    // ==================== USER NOT FOUND (404) ====================
-
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleUserNotFound(UserNotFoundException ex) {
         return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
-
-    // ==================== AUTHENTICATION ERRORS (401) ====================
 
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex) {
@@ -55,8 +48,6 @@ public class GlobalExceptionHandler {
         return buildResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
-    // ==================== FORBIDDEN (403) ====================
-
     @ExceptionHandler(AccountSuspendedException.class)
     public ResponseEntity<Map<String, Object>> handleSuspended(AccountSuspendedException ex) {
         return buildResponse(ex.getMessage(), HttpStatus.FORBIDDEN);
@@ -66,8 +57,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
         return buildResponse("Access denied", HttpStatus.FORBIDDEN);
     }
-
-    // ==================== CONFLICT (409) ====================
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<Map<String, Object>> handleEmailExists(EmailAlreadyExistsException ex) {
@@ -79,21 +68,15 @@ public class GlobalExceptionHandler {
         return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
-    // ==================== GENERIC RUNTIME (400) ====================
-
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
         return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
-    // ==================== FALLBACK (500) ====================
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
         return buildResponse("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    // ==================== HELPER ====================
 
     private ResponseEntity<Map<String, Object>> buildResponse(String message, HttpStatus status) {
         Map<String, Object> response = new HashMap<>();

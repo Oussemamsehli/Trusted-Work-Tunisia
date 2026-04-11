@@ -1,5 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-topbar',
@@ -12,14 +12,15 @@ export class TopbarComponent {
 
   currentDate = new Date();
 
-  constructor(private router: Router) {}
+  // On injecte AuthService au lieu de Router directement
+  constructor(private authService: AuthService) {}
 
   onToggle() {
     this.toggleSidebar.emit();
   }
 
   onLogout() {
-    localStorage.removeItem('token');
-    this.router.navigate(['/auth/login']);
+    // Délègue au AuthService qui fait localStorage.clear() + window.location.href
+    this.authService.logout();
   }
 }

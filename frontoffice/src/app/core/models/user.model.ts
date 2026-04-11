@@ -11,7 +11,22 @@ export interface ConnectedUserResponse {
   email?: string;
   role?: string;
   cin?: string | number;
+  phone?: string;
+  photo?: string;
+
+  // ✅ nouveaux champs profil
+  headline?: string;
+  location?: string;
+  bio?: string;
+
   twoFactorEnabled?: boolean;
+  trustLevel?: number;
+  livenessPassed?: boolean;
+  lastLoginAt?: string;
+  accountStatus?: string;
+  kycStatus?: string;
+  updatedAt?: string;
+  createdAt?: string;
 }
 
 export interface DashboardUser {

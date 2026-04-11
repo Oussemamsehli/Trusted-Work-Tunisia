@@ -1,10 +1,9 @@
 import { Pipe, PipeTransform } from '@angular/core';
-import { TrustScoreResponse, CategorieConfiance } from '../../core/models/review.model';
 
 @Pipe({ name: 'filterCat' })
 export class FilterCatPipe implements PipeTransform {
-  transform(items: TrustScoreResponse[], cat: CategorieConfiance): number {
+  transform(items: any[], cat: string): number {
     if (!items) return 0;
-    return items.filter(i => i.categorie === cat).length;
+    return items.filter(i => i?.categorie === cat).length;
   }
 }

@@ -1,24 +1,18 @@
 <div class="overview">
 
-  <!-- Page Header -->
   <div class="page-header">
     <div>
       <h1 class="page-title">Platform Overview</h1>
       <p class="page-subtitle">TrustedWork Tunisia — Admin Dashboard</p>
     </div>
     <div class="page-actions">
-      <button class="btn btn-ghost btn-sm">
-        <i class="fas fa-download"></i>
-        Export Report
-      </button>
-      <button class="btn btn-primary btn-sm">
+      <button class="btn btn-primary btn-sm" (click)="loadStats()">
         <i class="fas fa-rotate-right"></i>
         Refresh
       </button>
     </div>
   </div>
 
-  <!-- Stats Grid -->
   <div class="stats-grid">
     <div class="stat-card" *ngFor="let stat of stats">
       <div class="stat-top">
@@ -33,12 +27,12 @@
           }">
           <i class="fas"
             [ngClass]="{
-              'fa-arrow-trend-up':   stat.changeType === 'up',
+              'fa-arrow-trend-up': stat.changeType === 'up',
               'fa-arrow-trend-down': stat.changeType === 'down',
-              'fa-minus':            stat.changeType === 'flat'
+              'fa-minus': stat.changeType === 'flat'
             }">
           </i>
-          {{ stat.change }}
+          {{ stat.change || 'Live' }}
         </span>
       </div>
       <div class="stat-value">{{ stat.value }}</div>
@@ -46,10 +40,8 @@
     </div>
   </div>
 
-  <!-- Main Grid -->
   <div class="main-grid">
 
-    <!-- Recent Activity -->
     <div class="card activity-card">
       <div class="card-header">
         <div>
@@ -82,17 +74,15 @@
       </div>
     </div>
 
-    <!-- Right Column -->
     <div class="right-col">
 
-      <!-- Microservices Status -->
       <div class="card services-card">
         <div class="card-header">
           <div>
             <div class="card-title">Microservices</div>
             <div class="card-subtitle">Service health status</div>
           </div>
-          <span class="badge badge-accent">9 modules</span>
+          <span class="badge badge-accent">6 modules</span>
         </div>
 
         <div class="services-list">
@@ -119,7 +109,6 @@
         </div>
       </div>
 
-      <!-- Quick Actions -->
       <div class="card quick-actions-card">
         <div class="card-header">
           <div class="card-title">Quick Actions</div>
@@ -128,28 +117,10 @@
           <a routerLink="/admin/users/kyc" class="qa-btn">
             <i class="fas fa-id-card"></i>
             <span>Review KYC</span>
-            <span class="qa-badge">12</span>
-          </a>
-          <a routerLink="/admin/reviews/reclamations" class="qa-btn qa-btn--danger">
-            <i class="fas fa-flag"></i>
-            <span>Reclamations</span>
-            <span class="qa-badge">3</span>
           </a>
           <a routerLink="/admin/users" class="qa-btn">
             <i class="fas fa-users"></i>
             <span>All Users</span>
-          </a>
-          <a routerLink="/admin/reviews" class="qa-btn">
-            <i class="fas fa-star"></i>
-            <span>Reviews</span>
-          </a>
-          <a routerLink="/admin/contracts" class="qa-btn">
-            <i class="fas fa-file-contract"></i>
-            <span>Contracts</span>
-          </a>
-          <a routerLink="/admin/reviews/trust-scores" class="qa-btn">
-            <i class="fas fa-shield-halved"></i>
-            <span>Trust Scores</span>
           </a>
         </div>
       </div>

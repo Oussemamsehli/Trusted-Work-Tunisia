@@ -15,19 +15,15 @@ import { SidebarComponent } from './shared/components/sidebar/sidebar.component'
 import { TopbarComponent } from './shared/components/topbar/topbar.component';
 import { StatCardComponent } from './shared/components/stat-card/stat-card.component';
 
+import { LoginComponent } from './features/auth/login/login.component';
 import { OverviewComponent } from './features/dashboard/overview/overview.component';
 import { UsersListComponent } from './features/users/users-list/users-list.component';
 import { UserDetailComponent } from './features/users/user-detail/user-detail.component';
 import { KycManagementComponent } from './features/users/kyc-management/kyc-management.component';
-import { ReviewsListComponent } from './features/reviews/reviews-list/reviews-list.component';
-import { ReclamationsComponent } from './features/reviews/reclamations/reclamations.component';
-import { BadgesComponent } from './features/reviews/badges/badges.component';
-import { TrustScoresComponent } from './features/reviews/trust-scores/trust-scores.component';
-import { GrowthProfilesComponent } from './features/reviews/growth-profiles/growth-profiles.component';
-import { ContractsListComponent } from './features/contracts/contracts-list/contracts-list.component';
-import { JobsListComponent } from './features/jobs/jobs-list/jobs-list.component';
-import { EventsListComponent } from './features/events/events-list/events-list.component';
-import { RecruitmentListComponent } from './features/recruitment/recruitment-list/recruitment-list.component';
+
+import { AuditLogsComponent } from './features/admin/audit-logs/audit-logs.component';
+import { SuspensionsComponent } from './features/admin/suspensions/suspensions.component';
+
 import { FilterCatPipe } from './shared/pipes/filter-cat.pipe';
 
 @NgModule({
@@ -38,29 +34,23 @@ import { FilterCatPipe } from './shared/pipes/filter-cat.pipe';
     SidebarComponent,
     TopbarComponent,
     StatCardComponent,
+    LoginComponent,
     OverviewComponent,
     UsersListComponent,
     UserDetailComponent,
     KycManagementComponent,
-    ReviewsListComponent,
-    ReclamationsComponent,
-    BadgesComponent,
-    TrustScoresComponent,
-    GrowthProfilesComponent,
-    ContractsListComponent,
-    JobsListComponent,
-    EventsListComponent,
-    FilterCatPipe,
-    RecruitmentListComponent,
+    AuditLogsComponent,
+    SuspensionsComponent,
+    FilterCatPipe
   ],
   imports: [
     BrowserModule,
     HttpClientModule,
+    AppRoutingModule,
+    RouterModule,
     FormsModule,
     ReactiveFormsModule,
-    CommonModule,
-    RouterModule,
-    AppRoutingModule,
+    CommonModule
   ],
   providers: [],
   bootstrap: [AppComponent]

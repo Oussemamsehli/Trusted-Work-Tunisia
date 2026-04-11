@@ -41,4 +41,7 @@ public interface UserRepository extends JpaRepository<User, Long>{
     long countByAccountStatus(AccountStatus status);
 
     long countByKycStatus(KycStatus status);
+
+    // Comptes verrouillés — utilisé par le scheduler de déverrouillage
+    List<User> findByAccountNonLockedFalse();
 }

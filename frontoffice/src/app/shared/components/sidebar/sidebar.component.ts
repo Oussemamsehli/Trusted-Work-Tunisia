@@ -1,15 +1,16 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { UserService, UserProfileResponse } from '../../../core/services/user.service';
 import { AuthUser } from '../../../core/models/auth.model';
 
-interface QuickNavItem {
+interface NavItem {
   label: string;
   icon: string;
   route?: string;
   badge?: string;
   disabled?: boolean;
   isLogout?: boolean;
+  comingSoon?: boolean;
 }
 
 @Component({
@@ -22,184 +23,45 @@ export class SidebarComponent implements OnInit {
   @Output() toggleCollapse = new EventEmitter<void>();
 
   currentUser: AuthUser | null = null;
+  trustLevel = 1; // ← chargé depuis le backend
 
-  quickItems: QuickNavItem[] = [
-    {
-      label: 'Dashboard',
-      icon: 'fa-house',
-      route: '/app/dashboard'
-    },
-    {
-      label: 'Profil',
-      icon: 'fa-user',
-      route: '/app/profile/profile-overview'
-    },
-    {
-      label: 'Certifications',
-      icon: 'fa-certificate',
-      route: '/app/profile/certifications'
-    },
-    {
-      label: 'Skills',
-      icon: 'fa-lightbulb',
-      route: '/app/profile/skills'
-    },
-    {
-      label: 'Settings',
-      icon: 'fa-gear',
-      route: '/app/profile/settings'
-    },
-    {
-      label: 'KYC',
-      icon: 'fa-id-card',
-      route: '/app/profile/kyc'
-    },
-    {
-      label: 'Trust Passport',
-      icon: 'fa-passport',
-      route: '/app/profile/trust-passport'
-    },
-    {
-      label: 'Trust Score',
-      icon: 'fa-shield-halved',
-      route: '/app/reputation/trust-score'
-    },
-    {
-      label: 'Badges',
-      icon: 'fa-award',
-      route: '/app/reputation/badges'
-    },
-    {
-      label: 'Badges & XP',
-      icon: 'fa-medal',
-      route: '/app/reputation/badges-xp'
-    },
-    {
-      label: 'Reviews',
-      icon: 'fa-star',
-      route: '/app/reputation/reviews'
-    },
-    {
-      label: 'History',
-      icon: 'fa-clock-rotate-left',
-      route: '/app/reputation/history'
-    },
-    {
-      label: 'Progression',
-      icon: 'fa-chart-line',
-      route: '/app/reputation/progression'
-    },
-    {
-      label: 'Freelance Jobs',
-      icon: 'fa-briefcase',
-      route: '/app/opportunities/freelance-jobs'
-    },
-    {
-      label: 'Recruitment Overview',
-      icon: 'fa-binoculars',
-      route: '/app/recruitment/overview'
-    },
-    {
-      label: 'Recruitment Jobs',
-      icon: 'fa-user-tie',
-      route: '/app/opportunities/recruitment-jobs'
-    },
-    {
-      label: 'Events Overview',
-      icon: 'fa-calendar-days',
-      route: '/app/opportunities/events-overview'
-    },
-    {
-      label: 'Events List',
-      icon: 'fa-list-check',
-      route: '/app/opportunities/events-list'
-    },
-    {
-      label: 'Challenges',
-      icon: 'fa-bolt',
-      route: '/app/opportunities/challenges'
-    },
-    {
-      label: 'Saved Items',
-      icon: 'fa-bookmark',
-      route: '/app/opportunities/saved-items'
-    },
-    {
-      label: 'Applications',
-      icon: 'fa-file-signature',
-      route: '/app/activity/applications'
-    },
-    {
-      label: 'Contracts',
-      icon: 'fa-file-contract',
-      route: '/app/activity/contracts'
-    },
-    {
-      label: 'Deliveries',
-      icon: 'fa-box-open',
-      route: '/app/activity/deliveries'
-    },
-    {
-      label: 'Participations',
-      icon: 'fa-user-group',
-      route: '/app/activity/participations'
-    },
-    {
-      label: 'My Reviews',
-      icon: 'fa-comment-dots',
-      route: '/app/activity/my-reviews'
-    },
-    {
-      label: 'Messages',
-      icon: 'fa-envelope',
-      route: '/app/messages',
-      badge: '2'
-    },
-    {
-      label: 'Notifications',
-      icon: 'fa-bell',
-      route: '/app/notifications'
-    },
-    {
-      label: 'Wallet',
-      icon: 'fa-wallet',
-      route: '/app/finance/wallet'
-    },
-    {
-      label: 'Transactions',
-      icon: 'fa-arrow-right-arrow-left',
-      route: '/app/finance/transactions'
-    },
-    {
-      label: 'Escrow',
-      icon: 'fa-lock',
-      route: '/app/finance/escrow'
-    },
-    {
-      label: 'Payments History',
-      icon: 'fa-receipt',
-      route: '/app/finance/payments-history'
-    },
-    {
-      label: 'Support',
-      icon: 'fa-life-ring',
-      route: '/app/support/reclamations'
-    }
+  // ── Module 01 — actifs ──────────────────────────────
+  activeItems: NavItem[] = [
+    { label: 'Dashboard',      icon: 'fa-house',    route: '/app/dashboard' },
+    { label: 'Mon Profil',     icon: 'fa-user',     route: '/app/profile/overview' },
+    { label: 'KYC',            icon: 'fa-id-card',  route: '/app/profile/kyc' },
+    { label: 'Trust Passport', icon: 'fa-passport', route: '/app/profile/trust-passport' },
+    { label: 'Paramètres',     icon: 'fa-gear',     route: '/app/profile/settings' }
   ];
 
-  logoutItem: QuickNavItem = {
-    label: 'Déconnexion',
-    icon: 'fa-right-from-bracket',
-    isLogout: true
-  };
+  // ── Autres modules — désactivés (coming soon) ──────
+  comingSoonItems: NavItem[] = [
+    { label: 'Offres Freelance', icon: 'fa-briefcase',     comingSoon: true },
+    { label: 'Contrats',         icon: 'fa-file-contract', comingSoon: true },
+    { label: 'Événements',       icon: 'fa-calendar-days', comingSoon: true },
+    { label: 'Wallet',           icon: 'fa-wallet',        comingSoon: true },
+    { label: 'Messages',         icon: 'fa-envelope',      comingSoon: true },
+    { label: 'Réputation',       icon: 'fa-star',          comingSoon: true },
+    { label: 'Agence',           icon: 'fa-building',      comingSoon: true }
+  ];
 
   constructor(
     public authService: AuthService,
-    private router: Router
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentAuthUser();
+
+    // Chargement du trust level réel depuis le backend
+    this.userService.getMyProfile().subscribe({
+      next: (data: UserProfileResponse) => {
+        this.trustLevel = (data as any).trustLevel ?? 1;
+      },
+      error: () => {
+        this.trustLevel = 1;
+      }
+    });
   }
 
   onToggleCollapse(): void {
@@ -208,6 +70,7 @@ export class SidebarComponent implements OnInit {
 
   onLogout(): void {
     this.authService.logout();
-    this.router.navigate(['/login']);
+    // Redirige vers la landing page (frontoffice)
+    window.location.href = '/';
   }
 }

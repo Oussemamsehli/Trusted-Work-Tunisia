@@ -1,9 +1,10 @@
 <aside class="dashboard-sidebar" [class.collapsed]="collapsed">
-  <a routerLink="/app/dashboard" class="sb-brand" [title]="collapsed ? 'TrustedWork' : ''">
+
+  <a routerLink="/app/dashboard" class="sb-brand">
     <div class="sb-logo">TW</div>
     <div class="sb-brand-text" *ngIf="!collapsed">
       <strong>TrustedWork</strong>
-      <small>Freelancer Space</small>
+      <small>Tunisia</small>
     </div>
   </a>
 
@@ -12,66 +13,58 @@
       {{ authService.getUserInitials() }}
     </div>
     <div class="profile-meta" *ngIf="!collapsed">
-      <strong>{{ currentUser?.email || 'User' }}</strong>
+      <strong>{{ currentUser?.email }}</strong>
       <span>Session active</span>
     </div>
   </div>
 
+  <!-- Trust Level — valeur réelle chargée depuis le backend -->
   <div class="sidebar-trust">
     <div class="sidebar-trust__head">
-      <span *ngIf="!collapsed">Trust Score</span>
-      <strong>--</strong>
-    </div>
-    <div class="sidebar-trust__bar" *ngIf="!collapsed">
-      <div class="fill"></div>
+      <span *ngIf="!collapsed">Trust Level</span>
+      <strong>{{ trustLevel }}/5</strong>
     </div>
   </div>
 
-  <button
-    type="button"
-    class="sb-collapse-btn"
-    (click)="onToggleCollapse()"
-    [title]="collapsed ? 'Déplier la sidebar' : 'Réduire la sidebar'">
-    <span class="sidebar-link__icon">
-      <i class="fas" [ngClass]="collapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
-    </span>
-    <span class="sb-collapse-label" *ngIf="!collapsed">
-      {{ collapsed ? 'Déplier' : 'Réduire' }}
-    </span>
+  <button type="button" class="sb-collapse-btn" (click)="onToggleCollapse()">
+    <i class="fas" [ngClass]="collapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
   </button>
 
-  <div class="sidebar-section-label" *ngIf="!collapsed">Navigation</div>
-
   <nav class="sidebar-nav">
-    <ng-container *ngFor="let item of quickItems">
-      <a
-        *ngIf="!item.disabled"
-        [routerLink]="item.route"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-        class="sidebar-link"
-        [title]="item.label">
 
-        <span class="sidebar-link__icon">
-          <i class="fas" [ngClass]="item.icon"></i>
-        </span>
+    <div class="sidebar-section-label" *ngIf="!collapsed">Mon espace</div>
 
-        <span class="sidebar-link__label" *ngIf="!collapsed">{{ item.label }}</span>
-        <span class="sidebar-link__badge" *ngIf="!collapsed && item.badge">{{ item.badge }}</span>
-      </a>
-    </ng-container>
+    <a
+      *ngFor="let item of activeItems"
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      class="sidebar-link">
+      <i class="fas" [ngClass]="item.icon"></i>
+      <span *ngIf="!collapsed">{{ item.label }}</span>
+    </a>
+
+    <hr />
+
+    <div class="sidebar-section-label" *ngIf="!collapsed">Autres modules</div>
+
+    <div
+      *ngFor="let item of comingSoonItems"
+      class="sidebar-link sidebar-link--disabled">
+      <i class="fas" [ngClass]="item.icon"></i>
+      <span *ngIf="!collapsed">{{ item.label }}</span>
+      <small *ngIf="!collapsed">Bientôt</small>
+    </div>
+
   </nav>
 
   <div class="sidebar-footer">
     <button
       type="button"
       class="sidebar-link sidebar-link--logout"
-      (click)="onLogout()"
-      [title]="logoutItem.label">
-      <span class="sidebar-link__icon">
-        <i class="fas" [ngClass]="logoutItem.icon"></i>
-      </span>
-      <span class="sidebar-link__label" *ngIf="!collapsed">{{ logoutItem.label }}</span>
+      (click)="onLogout()">
+      <i class="fas fa-right-from-bracket"></i>
+      <span *ngIf="!collapsed">Déconnexion</span>
     </button>
   </div>
+
 </aside>

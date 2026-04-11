@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tn.esprit.userservice.dto.AdminCreateUserRequest;
+import tn.esprit.userservice.dto.PublicUserDTO;
 import tn.esprit.userservice.dto.UpdateProfileRequest;
 import tn.esprit.userservice.dto.UserDTO;
 import tn.esprit.userservice.entity.AccountStatus;
@@ -27,14 +28,10 @@ public class UserServiceImpl implements IUserService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
-    // ==================== HELPER ====================
-
     private User findUserByCinOrThrow(Integer cin) {
         return userRepository.findByCin(cin)
                 .orElseThrow(() -> new UserNotFoundException("User not found with cin: " + cin));
     }
-
-    // ==================== GET BY CIN ====================
 
     @Override
     public UserDTO getUserById(Integer cin) {
@@ -42,16 +39,12 @@ public class UserServiceImpl implements IUserService {
         return userMapper.toDTO(user);
     }
 
-    // ==================== GET BY EMAIL ====================
-
     @Override
     public UserDTO getUserByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
         return userMapper.toDTO(user);
     }
-
-    // ==================== UPDATE PROFILE ====================
 
     @Override
     public UserDTO updateProfile(Integer cin, UpdateProfileRequest request) {
@@ -65,8 +58,20 @@ public class UserServiceImpl implements IUserService {
             user.setLastName(request.getLastName().trim());
         }
 
-        if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
-            user.setPhone(request.getPhoneNumber().trim());
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone().trim());
+        }
+
+        if (request.getHeadline() != null) {
+            user.setHeadline(request.getHeadline().trim());
+        }
+
+        if (request.getLocation() != null) {
+            user.setLocation(request.getLocation().trim());
+        }
+
+        if (request.getBio() != null) {
+            user.setBio(request.getBio().trim());
         }
 
         if (request.getPhoto() != null && !request.getPhoto().trim().isEmpty()) {
@@ -74,13 +79,12 @@ public class UserServiceImpl implements IUserService {
         }
 
         user.setUpdatedAt(LocalDateTime.now());
+
         User updatedUser = userRepository.save(user);
 
         log.info("Profile updated for user: {}", updatedUser.getEmail());
         return userMapper.toDTO(updatedUser);
     }
-
-    // ==================== GET ALL USERS ====================
 
     @Override
     public List<UserDTO> getAllUsers() {
@@ -90,8 +94,6 @@ public class UserServiceImpl implements IUserService {
                 .collect(Collectors.toList());
     }
 
-    // ==================== SEARCH USERS ====================
-
     @Override
     public List<UserDTO> searchUsers(String keyword) {
         return userRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(keyword, keyword)
@@ -99,8 +101,6 @@ public class UserServiceImpl implements IUserService {
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
     }
-
-    // ==================== GET USERS BY ROLE ====================
 
     @Override
     public List<UserDTO> getUsersByRole(String role) {
@@ -112,8 +112,6 @@ public class UserServiceImpl implements IUserService {
                 .collect(Collectors.toList());
     }
 
-    // ==================== GET USERS BY STATUS ====================
-
     @Override
     public List<UserDTO> getUsersByStatus(String status) {
         AccountStatus parsedStatus = AccountStatus.valueOf(status.toUpperCase());
@@ -123,8 +121,6 @@ public class UserServiceImpl implements IUserService {
                 .map(userMapper::toDTO)
                 .collect(Collectors.toList());
     }
-
-    // ==================== DELETE USER ====================
 
     @Override
     public void deleteUser(Integer cin) {
@@ -140,13 +136,12 @@ public class UserServiceImpl implements IUserService {
         log.info("User soft-deleted: {}", user.getEmail());
     }
 
-    // ==================== ADMIN CREATE USER ====================
-
     @Override
     public UserDTO createUserByAdmin(AdminCreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already exists: " + request.getEmail());
         }
+
         if (userRepository.existsByCin(request.getCin())) {
             throw new IllegalArgumentException("CIN already exists: " + request.getCin());
         }
@@ -161,12 +156,36 @@ public class UserServiceImpl implements IUserService {
         user.setPhoto(request.getPhoto());
         user.setRole(Role.valueOf(request.getRole().toUpperCase()));
 
-        // Initialisation centralisée des champs par défaut
         userMapper.initNewUser(user);
 
         User savedUser = userRepository.save(user);
 
         log.info("Admin created new user: {}", savedUser.getEmail());
         return userMapper.toDTO(savedUser);
+    }
+
+    @Override
+    public PublicUserDTO getPublicUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur introuvable : " + userId));
+
+        return PublicUserDTO.builder()
+                .id(user.getId())
+                .cin(user.getCin())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .role(user.getRole() != null ? user.getRole().name() : null)
+                .kycStatus(user.getKycStatus() != null ? user.getKycStatus().name() : null)
+                .trustLevel(user.getTrustLevel())
+                .accountStatus(user.getAccountStatus() != null ? user.getAccountStatus().name() : null)
+                .build();
+    }
+
+    @Override
+    public int getTrustLevel(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur introuvable : " + userId));
+        return user.getTrustLevel();
     }
 }

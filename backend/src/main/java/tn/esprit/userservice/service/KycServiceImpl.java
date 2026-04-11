@@ -6,13 +6,12 @@ import org.springframework.stereotype.Service;
 import tn.esprit.userservice.dto.KycReviewRequest;
 import tn.esprit.userservice.dto.KycSubmitRequest;
 import tn.esprit.userservice.dto.UserDTO;
-import tn.esprit.userservice.entity.AuditLog;
+import tn.esprit.userservice.entity.AuditEventType;
 import tn.esprit.userservice.entity.KycStatus;
 import tn.esprit.userservice.entity.User;
 import tn.esprit.userservice.exception.KycAlreadySubmittedException;
 import tn.esprit.userservice.exception.UserNotFoundException;
 import tn.esprit.userservice.mapper.UserMapper;
-import tn.esprit.userservice.repository.AuditLogRepository;
 import tn.esprit.userservice.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -25,14 +24,15 @@ import java.util.stream.Collectors;
 public class KycServiceImpl implements IKycService {
 
     private final UserRepository userRepository;
-    private final AuditLogRepository auditLogRepository;
+    private final IAuditService auditService;
+    private final ITrustLevelService trustLevelService;
     private final UserMapper userMapper;
 
     // ==================== HELPER ====================
 
     private User findUserByCinOrThrow(Integer cin) {
         return userRepository.findByCin(cin)
-                .orElseThrow(() -> new UserNotFoundException("User not found with cin: " + cin));
+                .orElseThrow(() -> new UserNotFoundException("Utilisateur introuvable avec le CIN : " + cin));
     }
 
     // ==================== SUBMIT KYC ====================
@@ -42,25 +42,31 @@ public class KycServiceImpl implements IKycService {
         User user = findUserByCinOrThrow(cin);
 
         if (user.getKycStatus() == KycStatus.APPROVED) {
-            throw new KycAlreadySubmittedException("KYC already approved for this user");
+            throw new KycAlreadySubmittedException("KYC déjà approuvé pour cet utilisateur");
         }
 
         if (user.getKycStatus() == KycStatus.IN_REVIEW) {
-            throw new KycAlreadySubmittedException("KYC already submitted and under review");
+            throw new KycAlreadySubmittedException("KYC déjà soumis et en cours de révision");
         }
 
         user.setKycStatus(KycStatus.IN_REVIEW);
         user.setUpdatedAt(LocalDateTime.now());
-
         User updated = userRepository.save(user);
 
-        saveAuditLog("KYC_SUBMITTED", user.getEmail(), user.getEmail(),
-                "CIN: " + request.getCinNumber());
+        // Audit de la soumission KYC
+        auditService.log(
+                AuditEventType.KYC_SUBMITTED,
+                user.getEmail(),
+                user.getEmail(),
+                "CIN soumis : " + request.getCinNumber(),
+                null
+        );
 
-        log.info("KYC submitted by user: {}", user.getEmail());
+        log.info("KYC soumis par l'utilisateur : {}", user.getEmail());
 
         return userMapper.toDTO(updated);
     }
+
     // ==================== REVIEW KYC (ADMIN) ====================
 
     @Override
@@ -74,15 +80,30 @@ public class KycServiceImpl implements IKycService {
         } else if ("REJECTED".equals(decision)) {
             user.setKycStatus(KycStatus.REJECTED);
         } else {
-            throw new IllegalArgumentException("Decision must be APPROVED or REJECTED");
+            throw new IllegalArgumentException("La décision doit être APPROVED ou REJECTED");
         }
 
         user.setUpdatedAt(LocalDateTime.now());
-
         User updated = userRepository.save(user);
 
-        saveAuditLog("KYC_" + decision, adminEmail, user.getEmail(),
-                "Reject reason: " + request.getRejectReason());
+        // Recalcul du Trust Level après décision KYC
+        trustLevelService.computeAndSave(updated);
+
+        // Audit de la décision KYC
+        AuditEventType eventType = "APPROVED".equals(decision)
+                ? AuditEventType.KYC_APPROVED
+                : AuditEventType.KYC_REJECTED;
+
+        auditService.log(
+                eventType,
+                adminEmail,
+                user.getEmail(),
+                "Motif de rejet : " + request.getRejectReason(),
+                null
+        );
+
+        log.info("KYC {} pour l'utilisateur {} par l'admin {}",
+                decision, user.getEmail(), adminEmail);
 
         return userMapper.toDTO(updated);
     }
@@ -102,17 +123,5 @@ public class KycServiceImpl implements IKycService {
     public UserDTO getKycStatus(Integer cin) {
         User user = findUserByCinOrThrow(cin);
         return userMapper.toDTO(user);
-    }
-
-    // ==================== AUDIT LOG ====================
-
-    private void saveAuditLog(String action, String performedBy, String targetUser, String details) {
-        AuditLog auditLog = new AuditLog();
-        auditLog.setAction(action);
-        auditLog.setPerformedBy(performedBy);
-        auditLog.setTargetUser(targetUser);
-        auditLog.setDetails(details);
-        auditLog.setCreatedAt(LocalDateTime.now());
-        auditLogRepository.save(auditLog);
     }
 }

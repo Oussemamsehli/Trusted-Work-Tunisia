@@ -39,29 +39,29 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
 
-                        // Auth public endpoints
                         .requestMatchers("/auth/register").permitAll()
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/auth/verify-2fa").permitAll()
                         .requestMatchers("/auth/refresh").permitAll()
                         .requestMatchers("/auth/forgot-password").permitAll()
                         .requestMatchers("/auth/reset-password").permitAll()
-
-                        // Google OAuth2
                         .requestMatchers("/auth/google").permitAll()
-
-                        // 2FA setup endpoints
                         .requestMatchers("/auth/setup-2fa/**").permitAll()
                         .requestMatchers("/auth/confirm-2fa/**").permitAll()
                         .requestMatchers("/auth/disable-2fa/**").permitAll()
-
-                        // Swagger / OpenAPI
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/identity/**").permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
 
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -80,8 +80,11 @@ public class SecurityConfig {
                 "http://localhost:4201"
         ));
 
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedHeaders(List.of(
+                "Authorization", "Content-Type", "Accept",
+                "Origin", "X-Requested-With"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);

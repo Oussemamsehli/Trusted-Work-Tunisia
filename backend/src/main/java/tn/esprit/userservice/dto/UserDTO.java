@@ -21,11 +21,20 @@ public class UserDTO {
     private String phone;
     private String photo;
 
+    private String headline;
+    private String location;
+    private String bio;
+
     private String role;
     private String accountStatus;
     private String kycStatus;
 
     private boolean twoFactorEnabled;
 
+    private int trustLevel;
+    private boolean livenessPassed;
+
+    private LocalDateTime lastLoginAt;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

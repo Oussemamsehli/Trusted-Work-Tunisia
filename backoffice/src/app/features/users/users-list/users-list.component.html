@@ -13,7 +13,6 @@
     </div>
   </div>
 
-  <!-- Filters -->
   <div class="filters-bar">
     <div class="search-bar">
       <i class="fas fa-search"></i>
@@ -46,13 +45,11 @@
     </div>
   </div>
 
-  <!-- Loading -->
   <div class="empty-state" *ngIf="loading">
     <i class="fas fa-spinner fa-spin"></i>
     <p>Loading users...</p>
   </div>
 
-  <!-- Table -->
   <div class="card" *ngIf="!loading">
     <div class="table-wrap">
       <table class="tw-table">
@@ -64,6 +61,7 @@
             <th>Status</th>
             <th>KYC</th>
             <th>2FA</th>
+            <th>Trust</th>
             <th>Joined</th>
             <th>Actions</th>
           </tr>
@@ -102,6 +100,11 @@
                 {{ user.twoFactorEnabled ? 'ON' : 'OFF' }}
               </span>
             </td>
+            <td>
+              <span class="badge badge-accent">
+                {{ user.trustLevel ?? '—' }}
+              </span>
+            </td>
             <td>{{ user.createdAt | date:'MMM d, yyyy' }}</td>
             <td>
               <div class="action-btns">
@@ -113,6 +116,7 @@
                   <i class="fas fa-ban"></i>
                   Suspend
                 </button>
+
                 <button
                   *ngIf="user.accountStatus === 'SUSPENDED'"
                   class="btn btn-sm btn-success"

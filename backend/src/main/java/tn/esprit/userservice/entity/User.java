@@ -16,12 +16,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ================= CIN =================
     @Column(nullable = false, unique = true)
     private Integer cin;
 
-
-    // ================= BASIC INFO =================
     @Column(nullable = false)
     private String firstName;
 
@@ -39,12 +36,20 @@ public class User {
     @Column(name = "photo")
     private String photo;
 
-    // ================= ROLE =================
+    // 🔥 NOUVEAU
+    @Column(length = 100)
+    private String headline;
+
+    @Column(length = 100)
+    private String location;
+
+    @Column(length = 1000)
+    private String bio;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     private Role role;
 
-    // ================= STATUS =================
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
@@ -53,20 +58,32 @@ public class User {
     @Column(nullable = false)
     private KycStatus kycStatus = KycStatus.PENDING;
 
-    // ================= SECURITY =================
     @Column(nullable = false)
     private boolean enabled = true;
 
     @Column(nullable = false)
     private boolean accountNonLocked = true;
 
-    // ================= 2FA =================
+    @Column(nullable = false)
+    private int failedAttempts = 0;
+
+    private LocalDateTime lockedUntil;
+
     @Column(nullable = false)
     private boolean twoFactorEnabled = false;
 
     private String secret2FA;
 
-    // ================= AUDIT =================
+    @Column(nullable = false)
+    private int trustLevel = 1;
+
+    @Column(nullable = false)
+    private boolean livenessPassed = false;
+
+    private LocalDateTime lastLoginAt;
+
+    private String lastLoginIp;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -82,7 +99,6 @@ public class User {
         if (this.accountStatus == null) {
             this.accountStatus = AccountStatus.ACTIVE;
         }
-
         if (this.kycStatus == null) {
             this.kycStatus = KycStatus.PENDING;
         }
