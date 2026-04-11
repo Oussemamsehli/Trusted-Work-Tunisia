@@ -372,3 +372,124 @@
 .dashboard-sidebar.collapsed .sb-collapse-label {
   display: none;
 }
+/* ===== GROUPES ===== */
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-group-btn {
+  text-align: left;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.sidebar-group-btn.group-open {
+  background: var(--glass);
+  color: var(--text-1);
+}
+
+.chevron {
+  margin-left: auto;
+  font-size: 11px;
+  transition: transform 0.25s ease;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.chevron.rotated {
+  transform: rotate(180deg);
+}
+
+/* ===== ENFANTS ===== */
+.group-children {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.group-children.open {
+  max-height: 400px;
+}
+
+.sidebar-child-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 0 12px 0 32px;
+  border-radius: 12px;
+  color: var(--text-3);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-child-link:hover {
+  background: var(--glass);
+  color: var(--text-1);
+}
+
+.sidebar-child-link.active-child {
+  background: var(--brand-dim);
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.sidebar-child-link i {
+  font-size: 0.8rem;
+  width: 16px;
+  text-align: center;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* ===== TRUST BADGE ===== */
+.trust-badge {
+  font-size: 11px;
+  background: var(--trust-green-dim);
+  color: var(--trust-green);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* ===== COMING SOON ===== */
+.coming-soon-badge {
+  margin-left: auto;
+  font-size: 10px;
+  background: rgba(255,255,255,0.06);
+  color: var(--text-3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* ===== DIVIDER ===== */
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid var(--glass-border);
+  margin: 8px 4px;
+}
+
+/* ===== SECTION LABEL ===== */
+.sidebar-section-label {
+  font-size: 0.64rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  padding: 8px 10px 4px;
+}
+
+/* ===== DISABLED ===== */
+.sidebar-link--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
