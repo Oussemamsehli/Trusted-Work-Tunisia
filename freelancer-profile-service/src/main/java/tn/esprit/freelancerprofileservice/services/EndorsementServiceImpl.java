@@ -7,6 +7,10 @@ import tn.esprit.freelancerprofileservice.entities.Skill;
 import tn.esprit.freelancerprofileservice.repositories.EndorsementRepository;
 import tn.esprit.freelancerprofileservice.repositories.SkillRepository;
 
+import tn.esprit.freelancerprofileservice.exceptions.DuplicateResourceException;
+import tn.esprit.freelancerprofileservice.exceptions.InvalidDataException;
+import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
+
 import java.util.List;
 
 /**
@@ -22,12 +26,13 @@ public class EndorsementServiceImpl implements IEndorsementService {
     @Override
     public Endorsement addEndorsement(Long skillId, Long endorserId, String comment) {
         if (endorsementRepository.existsByEndorserIdAndSkillId(endorserId, skillId)) {
-            throw new RuntimeException("Vous avez déjà validé cette compétence");
+            throw new DuplicateResourceException("Vous avez déjà validé cette compétence");
         }
         Skill skill = skillRepository.findById(skillId)
-                .orElseThrow(() -> new RuntimeException("Skill introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Skill", skillId));
+
         if (skill.getProfile().getUserId().equals(endorserId)) {
-            throw new RuntimeException("Vous ne pouvez pas valider vos propres compétences");
+            throw new InvalidDataException("Vous ne pouvez pas valider vos propres compétences");
         }
         Endorsement endorsement = Endorsement.builder()
                 .endorserId(endorserId)

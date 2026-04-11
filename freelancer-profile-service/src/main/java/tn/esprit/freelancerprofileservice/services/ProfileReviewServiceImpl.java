@@ -8,6 +8,10 @@ import tn.esprit.freelancerprofileservice.enums.ReviewStatus;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
 import tn.esprit.freelancerprofileservice.repositories.ProfileReviewRepository;
 
+import tn.esprit.freelancerprofileservice.exceptions.DuplicateResourceException;
+import tn.esprit.freelancerprofileservice.exceptions.InvalidDataException;
+import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
+
 import java.util.List;
 
 /**
@@ -23,13 +27,14 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
     @Override
     public ProfileReview addReview(Long profileId, Long clientId, Integer rating, String comment) {
         if (reviewRepository.existsByClientIdAndProfileId(clientId, profileId)) {
-            throw new RuntimeException("Vous avez déjà laissé un avis sur ce profil");
+            throw new DuplicateResourceException("Vous avez déjà laissé un avis sur ce profil");
         }
         if (rating < 1 || rating > 5) {
-            throw new RuntimeException("La note doit être entre 1 et 5");
+            throw new InvalidDataException("La note doit être entre 1 et 5");
         }
         FreelancerProfile profile = profileRepository.findById(profileId)
-                .orElseThrow(() -> new RuntimeException("Profil introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Profil", profileId));
+
         ProfileReview review = ProfileReview.builder()
                 .clientId(clientId)
                 .profile(profile)

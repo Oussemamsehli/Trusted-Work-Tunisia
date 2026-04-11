@@ -6,6 +6,9 @@ import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
 import tn.esprit.freelancerprofileservice.enums.AvailabilityStatus;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
 
+import tn.esprit.freelancerprofileservice.exceptions.DuplicateResourceException;
+import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
+
 import java.util.List;
 
 /**
@@ -20,7 +23,7 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
     @Override
     public FreelancerProfile createProfile(FreelancerProfile profile) {
         if (profileRepository.existsByUserId(profile.getUserId())) {
-            throw new RuntimeException("Profil déjà existant pour userId: " + profile.getUserId());
+            throw new DuplicateResourceException("Profil déjà existant pour userId: " + profile.getUserId());
         }
         profile.setCompletenessScore(0);
         profile.setTotalViews(0);
@@ -30,15 +33,14 @@ public class FreelancerProfileServiceImpl implements IFreelancerProfileService {
     @Override
     public FreelancerProfile getByUserId(Long userId) {
         return profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Profil introuvable pour userId: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Profil", userId));
     }
 
     @Override
     public FreelancerProfile getById(Long profileId) {
         return profileRepository.findById(profileId)
-                .orElseThrow(() -> new RuntimeException("Profil introuvable: " + profileId));
+                .orElseThrow(() -> new ResourceNotFoundException("Profil", profileId));
     }
-
     @Override
     public FreelancerProfile updateProfile(Long userId, FreelancerProfile updates) {
         FreelancerProfile existing = getByUserId(userId);
