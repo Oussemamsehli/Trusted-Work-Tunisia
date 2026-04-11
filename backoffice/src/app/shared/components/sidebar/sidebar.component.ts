@@ -54,6 +54,26 @@ export class SidebarComponent implements OnInit {
       icon: 'fa-ban',
       route: '/admin/suspensions'
     },
+    // ── Module 02 : Freelancer Profiles ──
+    {
+      sectionLabel: 'Freelancer Profiles',
+      label: 'All Profiles',
+      icon: 'fa-address-card',
+      route: '/admin/freelancers'
+    },
+    {
+      label: 'Profile Reports',
+      icon: 'fa-flag',
+      route: '/admin/freelancers/reports',
+      badge: '',
+      badgeType: 'danger'
+    },
+    {
+      label: 'Platform Stats',
+      icon: 'fa-chart-pie',
+      route: '/admin/freelancers/stats'
+    },
+    // ── Reputation Engine ──
     {
       sectionLabel: 'Reputation Engine',
       label: 'Reviews',

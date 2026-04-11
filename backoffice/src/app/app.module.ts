@@ -26,6 +26,12 @@ import { SuspensionsComponent } from './features/admin/suspensions/suspensions.c
 
 import { FilterCatPipe } from './shared/pipes/filter-cat.pipe';
 
+// ── Module 02 : Freelancer Profiles ──
+import { ProfilesListComponent } from './features/freelancer/profiles-list/profiles-list.component';
+import { ProfileDetailComponent } from './features/freelancer/profile-detail/profile-detail.component';
+import { ReportsManagementComponent } from './features/freelancer/reports-management/reports-management.component';
+import { PlatformStatsComponent } from './features/freelancer/platform-stats/platform-stats.component';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -41,7 +47,12 @@ import { FilterCatPipe } from './shared/pipes/filter-cat.pipe';
     KycManagementComponent,
     AuditLogsComponent,
     SuspensionsComponent,
-    FilterCatPipe
+    FilterCatPipe,
+    // ── Module 02 ──
+    ProfilesListComponent,
+    ProfileDetailComponent,
+    ReportsManagementComponent,
+    PlatformStatsComponent
   ],
   imports: [
     BrowserModule,
