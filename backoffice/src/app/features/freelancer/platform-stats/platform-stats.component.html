@@ -1,1 +1,129 @@
-<p>platform-stats works!</p>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Statistiques de la plateforme</h1>
+    <p class="page-subtitle">Vue d'ensemble des profils freelancer</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-ghost btn-sm" (click)="loadStats()">
+      <i class="fas fa-refresh"></i> Rafraîchir
+    </button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div *ngIf="loading" class="card">
+  <div class="empty-state">
+    <i class="fas fa-spinner fa-spin"></i>
+    <p>Chargement des statistiques...</p>
+  </div>
+</div>
+
+<!-- Erreur -->
+<div *ngIf="errorMsg && !loading" class="card">
+  <div class="empty-state">
+    <i class="fas fa-exclamation-triangle text-danger"></i>
+    <p class="text-danger">{{ errorMsg }}</p>
+    <button class="btn btn-primary" style="margin-top: 12px;" (click)="loadStats()">
+      <i class="fas fa-refresh"></i> Réessayer
+    </button>
+  </div>
+</div>
+
+<ng-container *ngIf="!loading && !errorMsg">
+
+  <!-- ════════ CARTES RÉSUMÉ ════════ -->
+  <div class="stats-grid-4">
+    <div class="card stat-mini">
+      <div class="stat-mini-label">Total profils</div>
+      <div class="stat-mini-value text-accent">{{ totalProfiles }}</div>
+    </div>
+    <div class="card stat-mini">
+      <div class="stat-mini-label">Complétude moyenne</div>
+      <div class="stat-mini-value" [ngClass]="getScoreClass(avgCompleteness)">
+        {{ avgCompleteness }}%
+      </div>
+    </div>
+    <div class="card stat-mini">
+      <div class="stat-mini-label">Disponibles</div>
+      <div class="stat-mini-value text-success">{{ availableCount }}</div>
+    </div>
+    <div class="card stat-mini">
+      <div class="stat-mini-label">Occupés / Indisponibles</div>
+      <div class="stat-mini-value text-warning">
+        {{ busyCount }} <span class="text-muted" style="font-size: 14px;">/</span>
+        <span class="text-danger">{{ unavailableCount }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ 2 COLONNES : SKILLS + RÉGIONS ════════ -->
+  <div class="grid-2">
+
+    <!-- Top Skills -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-code"></i> Top 10 Skills</span>
+      </div>
+      <div *ngIf="topSkills.length === 0" class="empty-state">
+        <p>Aucune compétence enregistrée</p>
+      </div>
+      <div class="bar-list" *ngIf="topSkills.length > 0">
+        <div class="bar-item" *ngFor="let s of topSkills; let i = index">
+          <div class="bar-label">
+            <span class="bar-rank">#{{ i + 1 }}</span>
+            <span>{{ s.name }}</span>
+          </div>
+          <div class="bar-track">
+            <div
+              class="bar-fill"
+              [style.width.%]="getPercent(s.count) > 5 ? getPercent(s.count) : 5"
+            ></div>
+          </div>
+          <span class="bar-count">{{ s.count }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Répartition par région -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="fas fa-map-marker-alt"></i> Répartition par région</span>
+      </div>
+      <div *ngIf="regionStats.length === 0" class="empty-state">
+        <p>Aucune donnée de région</p>
+      </div>
+      <div class="bar-list" *ngIf="regionStats.length > 0">
+        <div class="bar-item" *ngFor="let r of regionStats">
+          <div class="bar-label">
+            <span>{{ r.region }}</span>
+          </div>
+          <div class="bar-track">
+            <div
+              class="bar-fill bar-fill-info"
+              [style.width.%]="getPercent(r.count) > 5 ? getPercent(r.count) : 5"
+            ></div>
+          </div>
+          <span class="bar-count">{{ r.count }} ({{ getPercent(r.count) }}%)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ RÉPARTITION PAR NIVEAU ════════ -->
+  <div class="card" style="margin-top: 20px;">
+    <div class="card-header">
+      <span class="card-title"><i class="fas fa-layer-group"></i> Répartition par niveau d'expérience</span>
+    </div>
+    <div *ngIf="levelStats.length === 0" class="empty-state">
+      <p>Aucune donnée</p>
+    </div>
+    <div class="level-chips" *ngIf="levelStats.length > 0">
+      <div class="level-chip" *ngFor="let l of levelStats">
+        <span class="level-chip-label">{{ l.level }}</span>
+        <span class="level-chip-count">{{ l.count }}</span>
+        <span class="text-muted" style="font-size: 11px;">({{ getPercent(l.count) }}%)</span>
+      </div>
+    </div>
+  </div>
+
+</ng-container>
