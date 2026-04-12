@@ -1,6 +1,7 @@
 ﻿import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService, UserProfileResponse } from '../../../core/services/user.service';
+import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 import { AuthUser } from '../../../core/models/auth.model';
 
 interface NavChild {
@@ -20,6 +21,7 @@ interface NavGroup {
  * Sidebar de navigation — frontoffice TrustedWork Tunisia
  * Groupe 1 : Identité & Accès (Module 01)
  * Groupe 2 : Profil Freelancer (Module 02)
+ * Groupe 3 : Découvrir (profils publics)
  */
 @Component({
   selector: 'app-sidebar',
@@ -32,6 +34,7 @@ export class SidebarComponent implements OnInit {
 
   currentUser: AuthUser | null = null;
   trustLevel = 1;
+  currentUserId = 0;
 
   dashboardLink = { label: 'Dashboard', icon: 'fa-house', route: '/app/dashboard' };
 
@@ -52,14 +55,23 @@ export class SidebarComponent implements OnInit {
       icon: 'fa-briefcase',
       expanded: false,
       children: [
-        { label: 'Portfolio',      icon: 'fa-images',        route: '/app/profile/portfolio' },
-        { label: 'Experiences',    icon: 'fa-building',      route: '/app/profile/work-experience' },
-        { label: 'Formation',      icon: 'fa-graduation-cap',route: '/app/profile/education' },
-        { label: 'Skills',         icon: 'fa-code',          route: '/app/profile/skills' },
-        { label: 'Certifications', icon: 'fa-certificate',   route: '/app/profile/certifications' },
-        { label: 'Endorsements',   icon: 'fa-handshake',     route: '/app/profile/endorsements' },
-        { label: 'Avis Clients',   icon: 'fa-star',          route: '/app/profile/reviews' },
-        { label: 'Carriere AI',    icon: 'fa-robot',         route: '/app/profile/career-path' }
+        { label: 'Portfolio',      icon: 'fa-images',         route: '/app/profile/portfolio' },
+        { label: 'Experiences',    icon: 'fa-building',       route: '/app/profile/work-experience' },
+        { label: 'Formation',      icon: 'fa-graduation-cap', route: '/app/profile/education' },
+        { label: 'Skills',         icon: 'fa-code',           route: '/app/profile/skills' },
+        { label: 'Certifications', icon: 'fa-certificate',    route: '/app/profile/certifications' },
+        { label: 'Endorsements',   icon: 'fa-handshake',      route: '/app/profile/endorsements' },
+        { label: 'Avis Clients',   icon: 'fa-star',           route: '/app/profile/reviews' },
+        { label: 'Carriere AI',    icon: 'fa-robot',          route: '/app/profile/career-path' }
+      ]
+    },
+    {
+      label: 'Decouvrir',
+      icon: 'fa-globe',
+      expanded: false,
+      children: [
+        { label: 'Freelancers',    icon: 'fa-users',          route: '/app/freelancers' },
+        { label: 'Mon profil pub', icon: 'fa-eye',            route: '' } // route dynamique
       ]
     }
   ];
@@ -72,13 +84,29 @@ export class SidebarComponent implements OnInit {
     { label: 'Evenements', icon: 'fa-calendar-days' }
   ];
 
-  constructor(public authService: AuthService, private userService: UserService) {}
+  constructor(
+    public authService: AuthService,
+    private userService: UserService,
+    private freelancerService: FreelancerProfileService
+  ) {}
 
   ngOnInit(): void {
-    this.currentUser = this.authService.getCurrentAuthUser();
+    this.currentUser   = this.authService.getCurrentAuthUser();
+    this.currentUserId = this.currentUser?.userId ?? 0;
+
     this.userService.getMyProfile().subscribe({
       next: (data: UserProfileResponse) => {
-        this.trustLevel = (data as any).trustLevel ?? 1;
+        this.trustLevel    = (data as any).trustLevel ?? 1;
+        this.currentUserId = (data as any).id ?? (data as any).userId ?? 0;
+
+        // Mettre à jour le lien "Mon profil pub" dynamiquement
+        const decouvrir = this.navGroups.find(g => g.label === 'Decouvrir');
+        if (decouvrir) {
+          const monProfil = decouvrir.children.find(c => c.label === 'Mon profil pub');
+          if (monProfil) {
+            monProfil.route = `/app/profile/public/${this.currentUserId}`;
+          }
+        }
       },
       error: () => { this.trustLevel = 1; }
     });

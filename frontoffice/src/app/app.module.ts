@@ -15,11 +15,13 @@ import { ProfileModule } from './features/profile/profile.module';
 
 import { tokenInterceptor } from './core/interceptors/token.interceptor';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { FreelancersListComponent } from './features/freelancers/freelancers-list/freelancers-list.component';
 
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    FreelancersListComponent
   ],
   imports: [
     BrowserModule,

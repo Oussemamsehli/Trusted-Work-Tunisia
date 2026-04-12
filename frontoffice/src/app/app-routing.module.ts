@@ -13,6 +13,7 @@ import { ResetPasswordComponent } from './features/auth/reset-password/reset-pas
 import { TwoFactorComponent } from './features/auth/two-factor/two-factor.component';
 import { CompleteProfileComponent } from './features/auth/complete-profile/complete-profile.component';
 import { OverviewComponent } from './features/dashboard/overview/overview.component';
+import { FreelancersListComponent } from './features/freelancers/freelancers-list/freelancers-list.component';
 
 import { authGuard } from './core/guards/auth.guard';
 import { completeProfileGuard } from './core/guards/complete-profile.guard';
@@ -43,14 +44,15 @@ const routes: Routes = [
     ]
   },
 
-  // DASHBOARD — Module 01 uniquement
+  // DASHBOARD
   {
     path: 'app',
     component: DashboardLayoutComponent,
     canActivate: [authGuard, completeProfileGuard],
     canActivateChild: [authGuard, completeProfileGuard],
     children: [
-      { path: 'dashboard', component: OverviewComponent },
+      { path: 'dashboard',    component: OverviewComponent },
+      { path: 'freelancers',  component: FreelancersListComponent },
       {
         path: 'profile',
         loadChildren: () =>
