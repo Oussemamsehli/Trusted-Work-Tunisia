@@ -1,16 +1,21 @@
 <div class="passport-page">
+
+  <!-- HERO -->
   <section class="passport-hero">
     <div class="passport-hero__glow passport-hero__glow--one"></div>
     <div class="passport-hero__glow passport-hero__glow--two"></div>
 
     <div class="passport-hero__content">
       <div class="passport-hero__copy">
+
         <div class="eyebrow-group">
           <span class="eyebrow">Trust Layer</span>
           <span class="eyebrow eyebrow--accent">Premium Passport</span>
         </div>
 
-        <h1>Activate a premium trust identity that validates your profile beyond a simple freelancer account.</h1>
+        <h1>
+          Activate a premium trust identity that validates your profile beyond a simple freelancer account.
+        </h1>
 
         <p>
           Your Trust Passport combines verification, reputation, expertise and business
@@ -19,55 +24,59 @@
         </p>
 
         <div class="hero-actions">
-          <button type="button" class="hero-btn hero-btn--primary">
+          <button class="hero-btn hero-btn--primary">
             <i class="fas fa-shield-halved"></i>
             <span>View trust status</span>
           </button>
 
-          <button type="button" class="hero-btn hero-btn--ghost">
+          <button class="hero-btn hero-btn--ghost">
             <i class="fas fa-arrow-trend-up"></i>
             <span>Improve passport</span>
           </button>
         </div>
       </div>
 
+      <!-- SCORE CARD -->
       <div class="hero-spotlight-card">
         <span class="card-kicker">Passport overview</span>
+
         <h2>Your premium trust identity is already a powerful differentiator.</h2>
 
         <div class="spotlight-score">
-          <strong>91/100</strong>
+          <strong>{{ overallPassportScore }}/100</strong>
           <span>Overall Trust Passport</span>
         </div>
 
         <div class="spotlight-chip">
           <span class="spotlight-chip__dot"></span>
-          Premium profile authority active
+          {{ passportStatusText }}
         </div>
       </div>
     </div>
   </section>
 
+  <!-- STATS -->
   <section class="stats-grid">
     <article class="stat-card" *ngFor="let stat of stats">
       <div class="stat-card__label">{{ stat.label }}</div>
-      <strong [ngClass]="getStatToneClass(stat.tone)">{{ stat.value }}</strong>
+      <strong [ngClass]="getStatToneClass(stat.tone)">
+        {{ stat.value }}
+      </strong>
     </article>
   </section>
 
+  <!-- MAIN LAYOUT -->
   <section class="passport-layout">
+
+    <!-- LEFT -->
     <div class="passport-main">
+
+      <!-- PILLARS -->
       <div class="panel-card">
         <div class="panel-head">
           <div>
             <span class="card-kicker">Trust architecture</span>
             <h2>Passport pillars</h2>
-          </div>
-
-          <div class="panel-head__filters">
-            <span class="filter-chip active">All pillars</span>
-            <span class="filter-chip">Strong</span>
-            <span class="filter-chip">Improve</span>
           </div>
         </div>
 
@@ -90,9 +99,10 @@
               <div class="pillar-progress__bar">
                 <div
                   class="pillar-progress__fill"
-                  [style.width.%]="pillar.score"
-                ></div>
+                  [style.width.%]="pillar.score">
+                </div>
               </div>
+
               <div class="pillar-progress__meta">
                 <span>Strength score</span>
                 <strong>{{ pillar.score }}%</strong>
@@ -102,6 +112,7 @@
         </div>
       </div>
 
+      <!-- TIMELINE -->
       <div class="panel-card">
         <div class="panel-head">
           <div>
@@ -131,10 +142,79 @@
           </article>
         </div>
       </div>
+
     </div>
 
+    <!-- RIGHT -->
     <aside class="passport-side">
+
+      <!-- QR -->
       <div class="panel-card panel-card--detail">
+        <div class="panel-head">
+          <div>
+            <span class="card-kicker">Secure verification</span>
+            <h2>Passport QR</h2>
+          </div>
+        </div>
+
+        <div class="passport-qr-card">
+
+          <div class="passport-qr-box" *ngIf="!loading">
+            <qrcode
+              [qrdata]="qrData"
+              [width]="180"
+              [errorCorrectionLevel]="'M'">
+            </qrcode>
+          </div>
+
+          <div class="qr-divider"></div>
+
+          <div class="passport-qr-meta">
+            <div class="qr-meta-title">
+              <i class="fas fa-shield-halved"></i>
+              <strong>TrustedWork Passport</strong>
+            </div>
+
+            <div class="qr-meta-row">
+              <span class="qr-meta-label">Email</span>
+              <span class="qr-meta-value">{{ userEmail || 'N/A' }}</span>
+            </div>
+
+            <div class="qr-meta-row">
+              <span class="qr-meta-label">Status</span>
+              <span
+                class="qr-status-chip"
+                [class.qr-status-chip--verified]="kycStatus === 'APPROVED'"
+                [class.qr-status-chip--pending]="kycStatus !== 'APPROVED'">
+                <i class="fas"
+                   [class.fa-circle-check]="kycStatus === 'APPROVED'"
+                   [class.fa-clock]="kycStatus !== 'APPROVED'">
+                </i>
+                {{ kycStatus === 'APPROVED' ? 'Identity verified' : 'Verification pending' }}
+              </span>
+            </div>
+
+            <div class="qr-meta-row">
+              <span class="qr-meta-label">Trust Level</span>
+              <span class="qr-meta-value qr-trust-level">
+                <span
+                  *ngFor="let i of [1,2,3,4,5]"
+                  class="qr-dot"
+                  [class.qr-dot--active]="i <= trustLevel">
+                </span>
+                {{ trustLevel }}/5
+              </span>
+            </div>
+          </div>
+
+          <p class="qr-help">
+            This QR code gives a quick verification snapshot of your passport trust status.
+          </p>
+        </div>
+      </div>
+
+      <!-- BADGES -->
+      <div class="panel-card panel-card--detail trust-badges-card">
         <div class="panel-head">
           <div>
             <span class="card-kicker">Unlocked credentials</span>
@@ -142,23 +222,50 @@
           </div>
         </div>
 
-        <div class="badges-grid">
+        <div class="badges-grid badges-grid--premium">
           <article
-            class="passport-badge"
+            class="passport-badge passport-badge--premium"
             *ngFor="let badge of badges"
-            [class.passport-badge--locked]="!badge.unlocked"
-          >
-            <div class="passport-badge__icon">
-              <i class="fas" [class.fa-check]="badge.unlocked" [class.fa-lock]="!badge.unlocked"></i>
+            [class.passport-badge--locked]="!badge.unlocked">
+
+            <div class="passport-badge__glow"></div>
+
+            <div class="passport-badge__icon passport-badge__icon--premium">
+              <i class="fas"
+                 [class.fa-award]="badge.unlocked"
+                 [class.fa-lock]="!badge.unlocked">
+              </i>
             </div>
-            <div>
-              <strong>{{ badge.title }}</strong>
-              <span>{{ badge.category }}</span>
+
+            <div class="passport-badge__content">
+              <div class="passport-badge__top">
+                <strong>{{ badge.title }}</strong>
+
+                <span
+                  class="badge-state"
+                  [class.badge-state--unlocked]="badge.unlocked"
+                  [class.badge-state--locked]="!badge.unlocked">
+                  <i class="fas"
+                     [class.fa-circle-check]="badge.unlocked"
+                     [class.fa-lock]="!badge.unlocked">
+                  </i>
+                  {{ badge.unlocked ? 'Unlocked' : 'Locked' }}
+                </span>
+              </div>
+
+              <span class="passport-badge__category">{{ badge.category }}</span>
+
+              <p class="passport-badge__description">
+                {{ badge.unlocked
+                  ? 'This credential strengthens your trust profile and increases marketplace confidence.'
+                  : 'Unlock this badge by completing more verification and trust-building steps.' }}
+              </p>
             </div>
           </article>
         </div>
       </div>
 
+      <!-- ADVANTAGES -->
       <div class="panel-card panel-card--dark">
         <div class="panel-head panel-head--dark">
           <div>
@@ -174,6 +281,9 @@
           </article>
         </div>
       </div>
+
     </aside>
+
   </section>
+
 </div>

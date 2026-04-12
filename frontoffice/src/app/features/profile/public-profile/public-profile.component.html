@@ -10,7 +10,7 @@
     <div class="profile-header-card">
       <div class="profile-header-info">
         <div class="profile-avatar">
-          {{ profile.headline.charAt(0) || '?' }}
+          {{ profile.headline.charAt(0) || 'F' }}
         </div>
         <div class="profile-main">
           <h1>{{ profile.headline || 'Freelancer' }}</h1>
@@ -18,35 +18,42 @@
           <div class="profile-meta">
             <span *ngIf="profile.region">📍 {{ profile.region }}</span>
             <span *ngIf="profile.hourlyRate">💰 {{ profile.hourlyRate }} TND/h</span>
-            <span class="availability" [class.available]="profile.availabilityStatus === 'AVAILABLE'">
+            <span class="availability"
+                  [class.available]="profile.availabilityStatus === 'AVAILABLE'">
               {{ profile.availabilityStatus === 'AVAILABLE' ? '🟢 Disponible' :
                  profile.availabilityStatus === 'BUSY' ? '🔴 Occupé' : '🟡 En vacances' }}
             </span>
           </div>
           <div class="rating-row" *ngIf="averageRating > 0">
-            <span class="star" *ngFor="let s of getStars(averageRating)">⭐</span>
+            <span *ngFor="let s of getStars(averageRating)">⭐</span>
             <span class="rating-value">{{ averageRating.toFixed(1) }}/5</span>
             <span class="review-count">({{ reviews.length }} avis)</span>
           </div>
         </div>
       </div>
 
-      <!-- Bouton avis — caché pour le propriétaire -->
+      <!-- Actions visiteur -->
       <div class="header-actions" *ngIf="!isOwner">
-        <button class="btn-primary" (click)="showReviewForm = !showReviewForm">
+        <button class="btn-primary"
+                (click)="showReviewForm = !showReviewForm; showReportForm = false">
           {{ showReviewForm ? 'Annuler' : '⭐ Laisser un avis' }}
         </button>
+        <button class="btn-danger-outline"
+                (click)="showReportForm = !showReportForm; showReviewForm = false">
+          {{ showReportForm ? 'Annuler' : '🚩 Signaler' }}
+        </button>
       </div>
+
       <div class="owner-badge" *ngIf="isOwner">
         <span>👤 Votre profil public</span>
       </div>
     </div>
 
     <!-- FORMULAIRE REVIEW -->
-    <div class="review-form-card" *ngIf="showReviewForm && !isOwner">
-      <h3>Laisser un avis</h3>
+    <div class="form-card" *ngIf="showReviewForm && !isOwner">
+      <h3>⭐ Laisser un avis</h3>
       <div class="form-group">
-        <label>Note (1-5)</label>
+        <label>Note (1–5)</label>
         <input type="number" [(ngModel)]="newReview.rating"
                min="1" max="5" class="form-control" />
       </div>
@@ -57,6 +64,23 @@
                   rows="3" class="form-control"></textarea>
       </div>
       <button class="btn-primary" (click)="submitReview()">Publier l'avis</button>
+    </div>
+
+    <!-- FORMULAIRE SIGNALEMENT -->
+    <div class="form-card form-card--danger" *ngIf="showReportForm && !isOwner">
+      <h3>🚩 Signaler ce profil</h3>
+      <p class="report-info">
+        Le signalement sera examiné par l'administration TrustedWork.
+      </p>
+      <div class="form-group">
+        <label>Raison du signalement *</label>
+        <textarea [(ngModel)]="reportReason"
+                  placeholder="Ex: Informations incorrectes, faux profil, contenu inapproprié..."
+                  rows="3" class="form-control"></textarea>
+      </div>
+      <button class="btn-danger" (click)="submitReport()">
+        Envoyer le signalement
+      </button>
     </div>
 
     <!-- SKILLS + ENDORSEMENTS -->
@@ -71,13 +95,9 @@
           <div class="skill-right">
             <span class="endorse-count">{{ skill.endorsementCount }} endorsement(s)</span>
             <div class="auth-bar-wrapper">
-              <div class="auth-bar"
-                   [style.width.%]="skill.authenticityScore * 100">
-              </div>
+              <div class="auth-bar" [style.width.%]="skill.authenticityScore * 100"></div>
             </div>
             <span class="auth-value">{{ (skill.authenticityScore * 100).toFixed(0) }}%</span>
-
-            <!-- Bouton Endorse — seulement pour les autres -->
             <ng-container *ngIf="!isOwner">
               <button class="btn-endorse"
                       (click)="toggleEndorse(skill.id)"
@@ -89,14 +109,33 @@
           </div>
         </div>
 
-        <!-- Formulaire endorsement inline -->
         <div class="endorse-form" *ngIf="endorsingSkillId">
           <textarea [(ngModel)]="endorseComment"
                     placeholder="Commentaire optionnel..."
                     rows="2" class="form-control"></textarea>
-          <button class="btn-primary" (click)="submitEndorsement(endorsingSkillId!)">
+          <button class="btn-primary"
+                  (click)="submitEndorsement(endorsingSkillId!)">
             Confirmer l'endorsement
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPERIENCES -->
+    <div class="section-card" *ngIf="experiences.length > 0">
+      <h2>Expériences</h2>
+      <div class="exp-list">
+        <div class="exp-item" *ngFor="let exp of experiences">
+          <div class="exp-left">
+            <span class="exp-title">{{ exp.jobTitle }}</span>
+            <span class="exp-company">{{ exp.company }}</span>
+          </div>
+          <div class="exp-right">
+            <span class="exp-date">
+              {{ exp.startDate | date:'MMM yyyy' }} —
+              {{ exp.isCurrent ? 'Présent' : (exp.endDate | date:'MMM yyyy') }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -110,7 +149,7 @@
           <p>{{ item.description }}</p>
           <span class="tech-tags">{{ item.technologies }}</span>
           <a *ngIf="item.projectUrl" [href]="item.projectUrl"
-             target="_blank" class="btn-link">Voir le projet</a>
+             target="_blank" class="btn-link">Voir le projet →</a>
         </div>
       </div>
     </div>
@@ -135,9 +174,7 @@
       <div class="reviews-list">
         <div class="review-item" *ngFor="let r of reviews">
           <div class="review-header">
-            <span class="review-stars">
-              <span *ngFor="let s of getStars(r.rating)">⭐</span>
-            </span>
+            <span><span *ngFor="let s of getStars(r.rating)">⭐</span></span>
             <span class="review-date">{{ r.reviewedAt | date:'dd MMM yyyy' }}</span>
           </div>
           <p class="review-comment">{{ r.comment }}</p>

@@ -164,4 +164,10 @@ export class FreelancerProfileService {
   deleteEducation(eduId: number, userId: number): Observable<void> {
     return this.http.delete<void>(`${this.BASE_URL}/educations/${eduId}/user/${userId}`);
   }
+
+  // ===== REPORTS =====
+
+reportProfile(profileId: number, data: { reporterId: number; reason: string }): Observable<any> {
+  return this.http.post(`${this.BASE_URL}/reports/profile/${profileId}`, data);
+}
 }

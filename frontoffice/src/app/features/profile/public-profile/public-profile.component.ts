@@ -15,8 +15,8 @@ import { forkJoin } from 'rxjs';
 /**
  * Profil public d'un freelancer
  * Accessible par n'importe quel utilisateur connecté
- * Permet d'endorser les skills et de laisser un avis
- * Le bouton Endorse est désactivé si l'utilisateur est le propriétaire
+ * Fonctionnalités : endorsement skills, avis client, signalement profil
+ * Protection : isOwner bloque auto-endorsement et auto-review
  */
 @Component({
   selector: 'app-public-profile',
@@ -48,6 +48,10 @@ export class PublicProfileComponent implements OnInit {
   showReviewForm = false;
   newReview = { rating: 5, comment: '' };
 
+  // Signalement
+  showReportForm = false;
+  reportReason = '';
+
   constructor(
     private route: ActivatedRoute,
     private profileService: FreelancerProfileService,
@@ -59,7 +63,6 @@ export class PublicProfileComponent implements OnInit {
     this.loadPublicProfile();
   }
 
-  // Vérifier si le visiteur est le propriétaire du profil
   get isOwner(): boolean {
     return this.authService.getCurrentAuthUser()?.userId === this.targetUserId;
   }
@@ -76,7 +79,6 @@ export class PublicProfileComponent implements OnInit {
         this.profile = profile;
         this.targetProfileId = profile.id;
 
-        // Charger toutes les données en parallèle
         forkJoin({
           skills:         this.profileService.getMySkills(this.targetUserId),
           portfolio:      this.profileService.getMyPortfolio(this.targetUserId),
@@ -154,6 +156,28 @@ export class PublicProfileComponent implements OnInit {
       },
       error: (err) => {
         this.errorMessage = err.error?.message || 'Erreur lors de l\'ajout de l\'avis.';
+        setTimeout(() => this.errorMessage = '', 3000);
+      }
+    });
+  }
+
+  // ===== SIGNALEMENT =====
+
+  submitReport(): void {
+    if (!this.reportReason.trim()) return;
+
+    this.profileService.reportProfile(this.targetProfileId, {
+      reporterId: this.currentUserId,
+      reason: this.reportReason.trim()
+    }).subscribe({
+      next: () => {
+        this.showReportForm = false;
+        this.reportReason = '';
+        this.successMessage = 'Signalement envoyé à l\'administration.';
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors du signalement.';
         setTimeout(() => this.errorMessage = '', 3000);
       }
     });

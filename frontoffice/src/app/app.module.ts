@@ -18,6 +18,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FreelancersListComponent } from './features/freelancers/freelancers-list/freelancers-list.component';
 
 
+import { QRCodeModule } from 'angularx-qrcode';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -33,7 +35,8 @@ import { FreelancersListComponent } from './features/freelancers/freelancers-lis
     AuthModule,
     DashboardModule,
     BrowserAnimationsModule,
-    ProfileModule
+    ProfileModule,
+    QRCodeModule  
   ],
   providers: [
     provideHttpClient(withInterceptors([tokenInterceptor]))
