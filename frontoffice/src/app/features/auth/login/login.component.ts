@@ -4,7 +4,9 @@ import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../../core/services/auth.service';
 import { GoogleOAuthService } from '../../../core/services/google-oauth.service';
+import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 import { AuthResponse } from '../../../core/models/auth.model';
+import { FreelancerProfile } from '../../../core/models/freelancer.model';
 
 @Component({
   selector: 'app-login',
@@ -19,13 +21,13 @@ export class LoginComponent implements OnInit {
   successMessage = '';
   errorMessage = '';
 
-  // URL du backoffice admin — à adapter selon l'environnement
   private readonly ADMIN_BACKOFFICE_URL = 'http://localhost:4201';
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private googleOAuthService: GoogleOAuthService,
+    private freelancerService: FreelancerProfileService,
     private router: Router
   ) {
     this.loginForm = this.fb.group({
@@ -68,7 +70,6 @@ export class LoginComponent implements OnInit {
       next: (res: AuthResponse) => {
         this.loading = false;
 
-        // Vérification 2FA en priorité
         if (res.twoFactorRequired) {
           this.successMessage = 'Code de vérification requis.';
           sessionStorage.setItem('2fa_email', payload.email);
@@ -77,7 +78,6 @@ export class LoginComponent implements OnInit {
           return;
         }
 
-        // Redirection selon le rôle
         this.redirectByRole(res);
       },
       error: (err: HttpErrorResponse) => {
@@ -89,29 +89,82 @@ export class LoginComponent implements OnInit {
         } else {
           this.errorMessage = 'Erreur serveur. Réessaye plus tard.';
         }
-        console.error('LOGIN ERROR', err);
       }
     });
   }
 
   /**
-   * Redirige l'utilisateur vers le bon dashboard selon son rôle.
-   * - ADMIN  → backoffice (port 4201) via auto-login avec token
-   * - autres → frontoffice dashboard (port 4200)
+   * Redirige selon le rôle.
+   * Pour FREELANCER : vérifie si le profil Module 02 existe.
+   * S'il n'existe pas → création automatique (lazy creation).
+   * Couplage faible : si Module 02 est down, on redirige quand même.
    */
   private redirectByRole(res: AuthResponse): void {
     const role = res.role?.toUpperCase();
 
     if (role === 'ADMIN') {
-      // Transmission du token au backoffice via query param sécurisé
       const token = res.accessToken;
       const redirectUrl = `${this.ADMIN_BACKOFFICE_URL}/auth/auto-login?token=${encodeURIComponent(token)}&userId=${res.userId}&email=${encodeURIComponent(res.email)}&role=${role}`;
       window.location.href = redirectUrl;
+      return;
+    }
+
+    if (role === 'FREELANCER' && res.userId) {
+      this.ensureFreelancerProfile(res.userId);
     } else {
-      // CLIENT, FREELANCER, etc. → dashboard frontoffice
       this.successMessage = 'Connexion réussie.';
       this.router.navigate(['/app/dashboard']);
     }
+  }
+
+  /**
+   * Vérifie si le profil freelancer existe dans Module 02.
+   * Pattern lazy creation : créé automatiquement au premier login.
+   */
+  private ensureFreelancerProfile(userId: number): void {
+    this.freelancerService.getProfileByUserId(userId).subscribe({
+      next: () => {
+        // Profil existe déjà → dashboard directement
+        this.successMessage = 'Connexion réussie.';
+        this.router.navigate(['/app/dashboard']);
+      },
+      error: (err: HttpErrorResponse) => {
+        if (err.status === 404) {
+          // Profil inexistant → création automatique
+          this.createFreelancerProfile(userId);
+        } else {
+          // Module 02 down ou autre erreur → fail open
+          this.router.navigate(['/app/dashboard']);
+        }
+      }
+    });
+  }
+
+  /**
+   * Crée le profil freelancer avec des valeurs par défaut.
+   * Le freelancer pourra le compléter depuis /app/profile/overview.
+   */
+  private createFreelancerProfile(userId: number): void {
+    const defaultProfile: Partial<FreelancerProfile> = {
+      userId: userId,
+      headline: '',
+      bio: '',
+      hourlyRate: 0,
+      availabilityStatus: 'AVAILABLE' as 'AVAILABLE',
+      visibility: 'PUBLIC' as 'PUBLIC',
+      projectType: 'BOTH' as 'BOTH',
+      region: 'Tunis'
+    };
+
+    this.freelancerService.createProfile(defaultProfile).subscribe({
+      next: () => {
+        this.successMessage = 'Connexion réussie.';
+        this.router.navigate(['/app/dashboard']);
+      },
+      error: () => {
+        this.router.navigate(['/app/dashboard']);
+      }
+    });
   }
 
   private onGoogleSuccess(response: AuthResponse): void {
@@ -123,6 +176,5 @@ export class LoginComponent implements OnInit {
   private onGoogleError(error: any): void {
     this.errorMessage = 'Échec de la connexion avec Google. Réessaye.';
     this.successMessage = '';
-    console.error('Google OAuth error:', error);
   }
 }
