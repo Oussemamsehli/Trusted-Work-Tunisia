@@ -72,8 +72,9 @@ export class LoginComponent implements OnInit {
 
         if (res.twoFactorRequired) {
           this.successMessage = 'Code de vérification requis.';
-          sessionStorage.setItem('2fa_email', payload.email);
-          sessionStorage.setItem('remember_me', String(rememberMe));
+          // CORRECTION : suppression du double stockage sessionStorage
+          // authService.login() appelle déjà savePendingTwoFactorState()
+          // qui sauvegarde 2fa_email, remember_me et 2fa_created_at
           this.router.navigate(['/auth/2fa']);
           return;
         }
@@ -125,7 +126,7 @@ export class LoginComponent implements OnInit {
    * Vérifie si le profil freelancer existe dans Module 02.
    * Pattern lazy creation : créé automatiquement au premier login.
    */
-   private ensureFreelancerProfile(userId: number): void {
+  private ensureFreelancerProfile(userId: number): void {
     this.freelancerService.getProfileByUserId(userId).subscribe({
       next: () => {
         // Profil existe → dashboard directement
@@ -143,9 +144,6 @@ export class LoginComponent implements OnInit {
       }
     });
   }
-
-  
- 
 
   private onGoogleSuccess(response: AuthResponse): void {
     this.successMessage = 'Connexion Google réussie.';

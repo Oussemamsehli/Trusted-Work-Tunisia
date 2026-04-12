@@ -42,12 +42,11 @@ public class JwtUtil {
 
     /**
      * Extrait le rôle depuis le claim "role" du token JWT.
-     * Le user-service stocke le rôle sous la clé "role" (ex: "ADMIN").
-     * Retourne "USER" par défaut si le claim est absent.
-     */
+    */
     public String extractRole(String token) {
         Claims claims = extractAllClaims(token);
-        Object role = claims.get("roles");
+
+        Object role = claims.get("role");
         return role != null ? role.toString() : "USER";
     }
 
