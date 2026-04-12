@@ -110,7 +110,11 @@ export class LoginComponent implements OnInit {
     }
 
     if (role === 'FREELANCER' && res.userId) {
-      this.ensureFreelancerProfile(res.userId);
+      // Attendre que le token soit bien sauvegardé en storage
+      // avant d'appeler le freelancer-service
+      setTimeout(() => {
+        this.ensureFreelancerProfile(res.userId!);
+      }, 300);
     } else {
       this.successMessage = 'Connexion réussie.';
       this.router.navigate(['/app/dashboard']);
@@ -121,51 +125,27 @@ export class LoginComponent implements OnInit {
    * Vérifie si le profil freelancer existe dans Module 02.
    * Pattern lazy creation : créé automatiquement au premier login.
    */
-  private ensureFreelancerProfile(userId: number): void {
+   private ensureFreelancerProfile(userId: number): void {
     this.freelancerService.getProfileByUserId(userId).subscribe({
       next: () => {
-        // Profil existe déjà → dashboard directement
+        // Profil existe → dashboard directement
         this.successMessage = 'Connexion réussie.';
-        this.router.navigate(['/app/dashboard']);
+        window.location.href = '/app/dashboard';
       },
       error: (err: HttpErrorResponse) => {
         if (err.status === 404) {
-          // Profil inexistant → création automatique
-          this.createFreelancerProfile(userId);
+          // Premier login → rediriger vers création de profil
+          window.location.href = '/app/profile/create';
         } else {
-          // Module 02 down ou autre erreur → fail open
-          this.router.navigate(['/app/dashboard']);
+          // Module 02 down → fail open
+          window.location.href = '/app/dashboard';
         }
       }
     });
   }
 
-  /**
-   * Crée le profil freelancer avec des valeurs par défaut.
-   * Le freelancer pourra le compléter depuis /app/profile/overview.
-   */
-  private createFreelancerProfile(userId: number): void {
-    const defaultProfile: Partial<FreelancerProfile> = {
-      userId: userId,
-      headline: '',
-      bio: '',
-      hourlyRate: 0,
-      availabilityStatus: 'AVAILABLE' as 'AVAILABLE',
-      visibility: 'PUBLIC' as 'PUBLIC',
-      projectType: 'BOTH' as 'BOTH',
-      region: 'Tunis'
-    };
-
-    this.freelancerService.createProfile(defaultProfile).subscribe({
-      next: () => {
-        this.successMessage = 'Connexion réussie.';
-        this.router.navigate(['/app/dashboard']);
-      },
-      error: () => {
-        this.router.navigate(['/app/dashboard']);
-      }
-    });
-  }
+  
+ 
 
   private onGoogleSuccess(response: AuthResponse): void {
     this.successMessage = 'Connexion Google réussie.';

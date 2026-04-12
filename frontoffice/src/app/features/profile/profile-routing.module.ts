@@ -11,6 +11,7 @@ import { WorkExperienceComponent } from './work-experience/work-experience.compo
 import { EndorsementsComponent } from './endorsements/endorsements.component';
 import { ReviewsComponent } from './reviews/reviews.component';
 import { EducationComponent } from './education/education.component';
+import { CreateProfileComponent } from './create-profile/create-profile.component';
 import { CareerRecommendationsComponent } from './career-recommendations/career-recommendations.component';
 const routes: Routes = [
   { path: '', redirectTo: 'overview', pathMatch: 'full' },
@@ -26,6 +27,7 @@ const routes: Routes = [
   { path: 'reviews', component: ReviewsComponent },
   { path: 'career-path', component: CareerRecommendationsComponent },
   { path: 'education', component: EducationComponent },
+  { path: 'create', component: CreateProfileComponent },
   
   { path: '**', redirectTo: 'overview' }
 ];
