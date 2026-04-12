@@ -150,4 +150,18 @@ export class FreelancerProfileService {
   getCareerPath(userId: number): Observable<CareerPathResponse> {
     return this.http.get<CareerPathResponse>(`${this.BASE_URL}/recommendations/user/${userId}/career-path`);
   }
+
+  // ===== EDUCATION =====
+
+  getMyEducations(userId: number): Observable<Education[]> {
+    return this.http.get<Education[]>(`${this.BASE_URL}/educations/user/${userId}`);
+  }
+
+  addEducation(userId: number, data: Partial<Education>): Observable<Education> {
+    return this.http.post<Education>(`${this.BASE_URL}/educations/user/${userId}`, data);
+  }
+
+  deleteEducation(eduId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.BASE_URL}/educations/${eduId}/user/${userId}`);
+  }
 }

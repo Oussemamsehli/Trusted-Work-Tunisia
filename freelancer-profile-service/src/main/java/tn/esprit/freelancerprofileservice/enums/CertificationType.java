@@ -5,6 +5,5 @@ package tn.esprit.freelancerprofileservice.enums;
  */
 public enum CertificationType {
     EXTERNAL,  // Certification externe (AWS, Google, etc.)
-    INTERNAL,  // Certification obtenue via Module 04 (Learning)
     ACADEMIC   // Diplôme académique
 }
