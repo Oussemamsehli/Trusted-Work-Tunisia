@@ -1,16 +1,16 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { UserService, UserDTO } from '../../../core/services/user.service';
+import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 
-interface NavItem {
+export interface NavItem {
   label: string;
   icon: string;
   route?: string;
   badge?: string | number;
   badgeType?: string;
-  children?: NavItem[];
-  expanded?: boolean;
-  separator?: boolean;
   sectionLabel?: string;
+  comingSoon?: boolean;
 }
 
 @Component({
@@ -22,7 +22,7 @@ export class SidebarComponent implements OnInit {
   @Input() collapsed = false;
   @Output() toggleCollapse = new EventEmitter<void>();
 
-  navItems: NavItem[] = [
+  activeItems: NavItem[] = [
     {
       sectionLabel: 'Overview',
       label: 'Dashboard',
@@ -33,15 +33,13 @@ export class SidebarComponent implements OnInit {
       sectionLabel: 'User Management',
       label: 'All Users',
       icon: 'fa-users',
-      route: '/admin/users',
-      badge: '',
-      badgeType: 'accent'
+      route: '/admin/users'
     },
     {
       label: 'KYC Requests',
       icon: 'fa-id-card',
       route: '/admin/users/kyc',
-      badge: '12',
+      badge: '',
       badgeType: 'warning'
     },
     {
@@ -54,7 +52,6 @@ export class SidebarComponent implements OnInit {
       icon: 'fa-ban',
       route: '/admin/suspensions'
     },
-    // ── Module 02 : Freelancer Profiles ──
     {
       sectionLabel: 'Freelancer Profiles',
       label: 'All Profiles',
@@ -72,72 +69,150 @@ export class SidebarComponent implements OnInit {
       label: 'Platform Stats',
       icon: 'fa-chart-pie',
       route: '/admin/freelancers/stats'
-    },
-    // ── Reputation Engine ──
+    }
+  ];
+
+  comingSoonItems: NavItem[] = [
     {
       sectionLabel: 'Reputation Engine',
       label: 'Reviews',
       icon: 'fa-star',
-      route: '/admin/reviews',
-    },
-    {
-      label: 'Reclamations',
-      icon: 'fa-flag',
-      route: '/admin/reviews/reclamations',
-      badge: '3',
-      badgeType: 'danger'
+      comingSoon: true
     },
     {
       label: 'Trust Scores',
       icon: 'fa-shield-halved',
-      route: '/admin/reviews/trust-scores',
+      comingSoon: true
     },
     {
       label: 'Badges',
       icon: 'fa-trophy',
-      route: '/admin/reviews/badges',
+      comingSoon: true
     },
     {
       label: 'Growth Profiles',
       icon: 'fa-chart-line',
-      route: '/admin/reviews/growth-profiles',
+      comingSoon: true
     },
     {
       sectionLabel: 'Platform',
       label: 'Contracts',
       icon: 'fa-file-contract',
-      route: '/admin/contracts',
+      comingSoon: true
     },
     {
       label: 'Job Listings',
       icon: 'fa-briefcase',
-      route: '/admin/jobs',
+      comingSoon: true
     },
     {
       label: 'Events',
       icon: 'fa-calendar-days',
-      route: '/admin/events',
+      comingSoon: true
     },
     {
       label: 'Recruitment',
       icon: 'fa-user-tie',
-      route: '/admin/recruitment',
-    },
+      comingSoon: true
+    }
   ];
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private userService: UserService,
+    private freelancerProfileService: FreelancerProfileService
+  ) {}
 
-  ngOnInit() {}
+  ngOnInit(): void {
+    this.loadDynamicBadges();
+  }
 
-  onToggle() {
+  onToggle(): void {
     this.toggleCollapse.emit();
   }
 
-  isActive(route: string): boolean {
-    return this.router.url === route;
+  loadDynamicBadges(): void {
+    this.loadPendingKycCount();
+    this.loadPendingReportsCount();
   }
 
-  isParentActive(route: string): boolean {
-    return this.router.url.startsWith(route);
+  loadPendingKycCount(): void {
+    this.userService.getAllUsers().subscribe({
+      next: (users: UserDTO[]) => {
+        const pendingCount = users.filter(user => user.kycStatus === 'PENDING').length;
+        this.setBadge('KYC Requests', pendingCount);
+      },
+      error: (err) => {
+        console.error('Erreur chargement badge KYC :', err);
+        this.setBadge('KYC Requests', 0);
+      }
+    });
+  }
+
+  loadPendingReportsCount(): void {
+    this.freelancerProfileService.getPendingReports().subscribe({
+      next: (reports) => {
+        this.setBadge('Profile Reports', reports.length);
+      },
+      error: (err) => {
+        console.error('Erreur chargement badge reports :', err);
+        this.setBadge('Profile Reports', 0);
+      }
+    });
+  }
+
+  setBadge(label: string, count: number): void {
+    const item = this.activeItems.find(navItem => navItem.label === label);
+    if (!item) return;
+
+    item.badge = count > 0 ? count : '';
+  }
+
+  hasBadge(item: NavItem): boolean {
+    return item.badge !== '' && item.badge !== undefined && item.badge !== null;
+  }
+
+  isActive(route: string): boolean {
+    const currentUrl = this.router.url.split('?')[0];
+
+    switch (route) {
+      case '/admin/dashboard':
+        return currentUrl === '/admin/dashboard';
+
+      case '/admin/users':
+        return currentUrl === '/admin/users' || /^\/admin\/users\/\d+$/.test(currentUrl);
+
+      case '/admin/users/kyc':
+        return currentUrl === '/admin/users/kyc';
+
+      case '/admin/audit-logs':
+        return currentUrl === '/admin/audit-logs';
+
+      case '/admin/suspensions':
+        return currentUrl === '/admin/suspensions';
+
+      case '/admin/freelancers':
+        return currentUrl === '/admin/freelancers' || /^\/admin\/freelancers\/\d+$/.test(currentUrl);
+
+      case '/admin/freelancers/reports':
+        return currentUrl === '/admin/freelancers/reports';
+
+      case '/admin/freelancers/stats':
+        return currentUrl === '/admin/freelancers/stats';
+
+      default:
+        return currentUrl === route;
+    }
+  }
+
+  getBadgeDotClass(item: NavItem): string {
+    switch (item.badgeType) {
+      case 'danger':
+        return 'danger';
+      case 'warning':
+        return 'warning';
+      default:
+        return 'accent';
+    }
   }
 }

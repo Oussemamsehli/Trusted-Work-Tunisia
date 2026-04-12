@@ -125,11 +125,22 @@
   position: relative;
   white-space: nowrap;
   margin-bottom: 2px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  outline: none;
+  box-shadow: none;
 }
 
 .nav-link:hover {
   background: var(--bg-card);
   color: var(--text-primary);
+}
+
+.nav-link:focus,
+.nav-link:focus-visible,
+.nav-link:active {
+  outline: none;
+  box-shadow: none;
 }
 
 .nav-link.active {
@@ -138,7 +149,9 @@
   border: 1px solid var(--border-accent);
 }
 
-.nav-link.active .nav-icon { color: var(--accent); }
+.nav-link.active .nav-icon {
+  color: var(--accent);
+}
 
 .nav-icon {
   width: 18px;
@@ -149,22 +162,44 @@
   font-size: 13px;
 }
 
-.nav-label { flex: 1; }
+.nav-label {
+  flex: 1;
+  min-width: 0;
+}
 
-.nav-badge { font-size: 10px; padding: 2px 7px; }
+.nav-badge {
+  font-size: 10px;
+  padding: 2px 7px;
+  line-height: 1.2;
+  flex-shrink: 0;
+  min-width: 18px;
+  text-align: center;
+}
 
 .nav-badge-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 8px;
+  right: 8px;
+  flex-shrink: 0;
 }
 
-.nav-badge-dot.danger  { background: var(--danger); }
-.nav-badge-dot.warning { background: var(--warning); }
-.nav-badge-dot.accent  { background: var(--accent); }
+.nav-badge-dot.danger {
+  background: var(--danger);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.45);
+}
+
+.nav-badge-dot.warning {
+  background: var(--warning);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.45);
+}
+
+.nav-badge-dot.accent {
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.45);
+}
 
 /* Footer */
 .sidebar-footer {
@@ -183,6 +218,9 @@
   font-size: 13px;
   font-weight: 500;
   transition: var(--transition);
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
 .collapse-btn:hover {
@@ -205,4 +243,37 @@
   align-items: center;
   font-size: 11px;
   color: var(--success);
+}
+
+/* Coming soon items */
+.nav-link--soon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  margin-bottom: 2px;
+  opacity: 0.45;
+  cursor: default;
+  user-select: none;
+}
+
+.nav-section-label--soon {
+  opacity: 0.5;
+}
+
+.nav-badge-soon {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--border);
+  color: var(--text-muted);
+  flex-shrink: 0;
 }

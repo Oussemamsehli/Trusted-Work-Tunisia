@@ -1,13 +1,12 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Freelancer Profiles</h1>
+    <h1 class="page-title">Profils freelancers</h1>
     <p class="page-subtitle">
       {{ filteredProfiles.length }} profil(s) trouvé(s)
     </p>
   </div>
 </div>
 
-<!-- Filtres -->
 <div class="card" style="margin-bottom: 20px;">
   <div class="filters-row">
     <div class="search-bar">
@@ -15,7 +14,7 @@
       <input
         type="text"
         class="form-control"
-        placeholder="Rechercher par headline..."
+        placeholder="Rechercher par titre ou bio..."
         [(ngModel)]="searchTerm"
         (input)="applyFilters()"
       />
@@ -36,14 +35,13 @@
       (change)="applyFilters()"
     >
       <option value="">Tous les statuts</option>
-      <option value="AVAILABLE">Available</option>
-      <option value="BUSY">Busy</option>
-      <option value="UNAVAILABLE">Unavailable</option>
+      <option value="AVAILABLE">Disponible</option>
+      <option value="BUSY">Occupé</option>
+      <option value="ON_VACATION">En vacances</option>
     </select>
   </div>
 </div>
 
-<!-- Loading -->
 <div *ngIf="loading" class="card">
   <div class="empty-state">
     <i class="fas fa-spinner fa-spin"></i>
@@ -51,7 +49,6 @@
   </div>
 </div>
 
-<!-- Erreur -->
 <div *ngIf="errorMsg && !loading" class="card">
   <div class="empty-state">
     <i class="fas fa-exclamation-triangle text-danger"></i>
@@ -62,25 +59,23 @@
   </div>
 </div>
 
-<!-- Tableau des profils -->
 <div class="card" *ngIf="!loading && !errorMsg">
 
-  <!-- Aucun résultat -->
   <div *ngIf="filteredProfiles.length === 0" class="empty-state">
     <i class="fas fa-user-slash"></i>
     <p>Aucun profil trouvé</p>
   </div>
 
-  <!-- Table -->
   <table class="tw-table" *ngIf="filteredProfiles.length > 0">
     <thead>
       <tr>
         <th>User ID</th>
         <th>Headline</th>
         <th>Région</th>
-        <th>Niveau</th>
+        <th>Rang régional</th>
         <th>Disponibilité</th>
         <th>Complétude</th>
+        <th>Vues</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -90,11 +85,11 @@
         <td>{{ p.headline || '—' }}</td>
         <td>{{ p.region || '—' }}</td>
         <td>
-          <span class="badge badge-accent">{{ p.experienceLevel || '—' }}</span>
+          <span class="badge badge-accent">#{{ p.regionalRank || '—' }}</span>
         </td>
         <td>
           <span class="badge" [ngClass]="getStatusBadge(p.availabilityStatus)">
-            {{ p.availabilityStatus || '—' }}
+            {{ getStatusLabel(p.availabilityStatus) }}
           </span>
         </td>
         <td>
@@ -102,9 +97,10 @@
             {{ p.completenessScore }}%
           </span>
         </td>
-       <td>
+        <td>{{ p.totalViews || 0 }}</td>
+        <td>
           <a
-            [routerLink]="['/admin/freelancers', p.profileId]"
+            [routerLink]="['/admin/freelancers', p.id]"
             class="btn btn-ghost btn-sm"
           >
             <i class="fas fa-eye"></i> Voir

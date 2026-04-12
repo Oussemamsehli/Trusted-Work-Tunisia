@@ -5,6 +5,7 @@
       {{ reports.length }} signalement(s) en attente
     </p>
   </div>
+
   <div class="page-actions">
     <button class="btn btn-ghost btn-sm" (click)="loadReports()">
       <i class="fas fa-refresh"></i> Rafraîchir
@@ -12,9 +13,10 @@
   </div>
 </div>
 
-<!-- Message de succès -->
+<!-- Message succès -->
 <div *ngIf="successMsg" class="alert-success">
-  <i class="fas fa-check-circle"></i> {{ successMsg }}
+  <i class="fas fa-check-circle"></i>
+  {{ successMsg }}
 </div>
 
 <!-- Loading -->
@@ -44,7 +46,7 @@
   </div>
 </div>
 
-<!-- Liste des signalements -->
+<!-- Liste -->
 <div *ngIf="!loading && !errorMsg && reports.length > 0" class="card">
   <table class="tw-table">
     <thead>
@@ -53,31 +55,45 @@
         <th>Profil</th>
         <th>Signalé par</th>
         <th>Raison</th>
-        <th>Description</th>
-        <th>Date</th>
+        <th>Date du signalement</th>
         <th>Actions</th>
       </tr>
     </thead>
+
     <tbody>
       <tr *ngFor="let r of reports">
-        <td>#{{ r.reportId }}</td>
+        <td>#{{ r.id }}</td>
+
         <td>
-          <a [routerLink]="['/admin/freelancers', r.profileId]" class="text-accent">
-            Profil #{{ r.profileId }}
-          </a>
+          <ng-container *ngIf="r.profile?.id; else noProfile">
+            <a [routerLink]="['/admin/freelancers', r.profile?.id]" class="text-accent">
+              Profil #{{ r.profile?.id }}
+            </a>
+          </ng-container>
+          <ng-template #noProfile>
+            <span class="text-muted">Profil indisponible</span>
+          </ng-template>
         </td>
-        <td>User #{{ r.reporterUserId }}</td>
-        <td>
+
+        <td>User #{{ r.reporterId }}</td>
+
+        <td class="description-cell">
           <span class="badge badge-warning">{{ r.reason }}</span>
         </td>
-        <td class="description-cell">{{ r.description || '—' }}</td>
-        <td>{{ r.createdAt | date:'dd/MM/yyyy' }}</td>
+
+        <td>{{ r.reportedAt | date:'dd/MM/yyyy' }}</td>
+
         <td>
           <div class="action-btns">
-            <button class="btn btn-success btn-sm" (click)="resolve(r.reportId, 'RESOLVED')">
+            <button
+              class="btn btn-success btn-sm"
+              (click)="resolve(r.id, 'RESOLVED')">
               <i class="fas fa-check"></i> Résoudre
             </button>
-            <button class="btn btn-danger btn-sm" (click)="resolve(r.reportId, 'REJECTED')">
+
+            <button
+              class="btn btn-danger btn-sm"
+              (click)="resolve(r.id, 'REJECTED')">
               <i class="fas fa-times"></i> Rejeter
             </button>
           </div>

@@ -9,7 +9,11 @@ import { UserService, UserDTO } from '../../../core/services/user.service';
 export class UsersListComponent implements OnInit {
   users: UserDTO[] = [];
   filteredUsers: UserDTO[] = [];
+
   loading = true;
+  errorMsg = '';
+  successMsg = '';
+
   searchQuery = '';
   selectedRole = 'ALL';
   selectedStatus = 'ALL';
@@ -26,6 +30,8 @@ export class UsersListComponent implements OnInit {
 
   loadUsers(): void {
     this.loading = true;
+    this.errorMsg = '';
+
     this.userService.getAllUsers().subscribe({
       next: (data) => {
         this.users = data;
@@ -34,22 +40,25 @@ export class UsersListComponent implements OnInit {
       },
       error: (error) => {
         console.error('Erreur chargement users:', error);
+        this.errorMsg = 'Erreur lors du chargement des utilisateurs';
         this.loading = false;
       }
     });
   }
 
   applyFilters(): void {
-    this.filteredUsers = this.users.filter((u) => {
-      const query = this.searchQuery.trim().toLowerCase();
+    const query = this.searchQuery.trim().toLowerCase();
 
+    this.filteredUsers = this.users.filter((u) => {
       const matchSearch =
         !query ||
-        u.firstName?.toLowerCase().includes(query) ||
-        u.lastName?.toLowerCase().includes(query) ||
-        u.email?.toLowerCase().includes(query);
+        (u.firstName || '').toLowerCase().includes(query) ||
+        (u.lastName || '').toLowerCase().includes(query) ||
+        (u.email || '').toLowerCase().includes(query);
 
-      const matchRole = this.selectedRole === 'ALL' || u.role === this.selectedRole;
+      const matchRole =
+        this.selectedRole === 'ALL' || u.role === this.selectedRole;
+
       const matchStatus =
         this.selectedStatus === 'ALL' || u.accountStatus === this.selectedStatus;
 
@@ -81,14 +90,18 @@ export class UsersListComponent implements OnInit {
     }
 
     this.actionLoading = user.id;
+    this.errorMsg = '';
+    this.successMsg = '';
 
     this.userService.suspendUser(user.id, reason.trim()).subscribe({
       next: () => {
+        this.successMsg = 'Utilisateur suspendu avec succès';
         this.loadUsers();
         this.actionLoading = null;
       },
       error: (error) => {
         console.error('Erreur suspension:', error);
+        this.errorMsg = 'Erreur lors de la suspension de l’utilisateur';
         this.actionLoading = null;
       }
     });
@@ -96,14 +109,18 @@ export class UsersListComponent implements OnInit {
 
   activateUser(user: UserDTO): void {
     this.actionLoading = user.id;
+    this.errorMsg = '';
+    this.successMsg = '';
 
     this.userService.liftSuspension(user.id).subscribe({
       next: () => {
+        this.successMsg = 'Suspension levée avec succès';
         this.loadUsers();
         this.actionLoading = null;
       },
       error: (error) => {
         console.error('Erreur activation:', error);
+        this.errorMsg = 'Erreur lors de l’activation de l’utilisateur';
         this.actionLoading = null;
       }
     });
@@ -131,8 +148,39 @@ export class UsersListComponent implements OnInit {
     return map[role] || 'badge-muted';
   }
 
+  getRoleLabel(role: string): string {
+    switch (role) {
+      case 'FREELANCER':
+        return 'Freelancer';
+      case 'CLIENT':
+        return 'Client';
+      case 'ADMIN':
+        return 'Admin';
+      default:
+        return role || '—';
+    }
+  }
+
   getStatusBadge(status: string): string {
-    return status === 'ACTIVE' ? 'badge-success' : 'badge-danger';
+    switch (status) {
+      case 'ACTIVE':
+        return 'badge-success';
+      case 'SUSPENDED':
+        return 'badge-danger';
+      default:
+        return 'badge-muted';
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'ACTIVE':
+        return 'Actif';
+      case 'SUSPENDED':
+        return 'Suspendu';
+      default:
+        return status || '—';
+    }
   }
 
   getKycBadge(kyc: string): string {
@@ -142,5 +190,10 @@ export class UsersListComponent implements OnInit {
       REJECTED: 'badge-danger'
     };
     return map[kyc] || 'badge-muted';
+  }
+
+  clearMessages(): void {
+    this.errorMsg = '';
+    this.successMsg = '';
   }
 }

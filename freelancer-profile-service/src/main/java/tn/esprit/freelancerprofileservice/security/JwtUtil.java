@@ -20,7 +20,6 @@ public class JwtUtil {
     private String jwtSecret;
 
     private Key getSigningKey() {
-        // ✅ Plain text → bytes directement (pas de décodage Base64)
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -39,6 +38,17 @@ public class JwtUtil {
     public Long extractUserId(String token) {
         Claims claims = extractAllClaims(token);
         return claims.get("userId", Long.class);
+    }
+
+    /**
+     * Extrait le rôle depuis le claim "role" du token JWT.
+     * Le user-service stocke le rôle sous la clé "role" (ex: "ADMIN").
+     * Retourne "USER" par défaut si le claim est absent.
+     */
+    public String extractRole(String token) {
+        Claims claims = extractAllClaims(token);
+        Object role = claims.get("roles");
+        return role != null ? role.toString() : "USER";
     }
 
     public boolean isTokenValid(String token) {

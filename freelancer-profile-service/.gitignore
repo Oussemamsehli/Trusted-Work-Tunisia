@@ -35,3 +35,10 @@ build/
 
 # ===== VS Code =====
 .vscode/
+
+# Fichiers uploadés par les utilisateurs (données personnelles - RGPD)
+backend/uploads/
+
+# Credentials sensibles
+backend/src/main/resources/application.properties
+freelancer-profile-service/src/main/resources/application.properties

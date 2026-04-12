@@ -14,12 +14,10 @@ export class ProfilesListComponent implements OnInit {
   loading = true;
   errorMsg = '';
 
-  // Filtres
   searchTerm = '';
   selectedRegion = '';
   selectedStatus = '';
 
-  // Liste des régions pour le filtre (extraite dynamiquement)
   regions: string[] = [];
 
   constructor(private profileService: FreelancerProfileService) {}
@@ -30,12 +28,13 @@ export class ProfilesListComponent implements OnInit {
 
   loadProfiles(): void {
     this.loading = true;
+    this.errorMsg = '';
+
     this.profileService.getAllProfiles().subscribe({
       next: (data) => {
         this.profiles = data;
         this.filteredProfiles = data;
-        // Extraire les régions uniques pour le filtre
-        this.regions = [...new Set(data.map(p => p.region).filter(r => r))];
+        this.regions = [...new Set(data.map(p => p.region).filter(r => !!r))].sort();
         this.loading = false;
       },
       error: (err) => {
@@ -47,9 +46,8 @@ export class ProfilesListComponent implements OnInit {
   }
 
   applyFilters(): void {
-    let result = this.profiles;
+    let result = [...this.profiles];
 
-    // Filtre par recherche (headline, bio)
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
       result = result.filter(p =>
@@ -58,12 +56,10 @@ export class ProfilesListComponent implements OnInit {
       );
     }
 
-    // Filtre par région
     if (this.selectedRegion) {
       result = result.filter(p => p.region === this.selectedRegion);
     }
 
-    // Filtre par statut de disponibilité
     if (this.selectedStatus) {
       result = result.filter(p => p.availabilityStatus === this.selectedStatus);
     }
@@ -71,17 +67,32 @@ export class ProfilesListComponent implements OnInit {
     this.filteredProfiles = result;
   }
 
-  // Couleur du badge selon le statut de disponibilité
   getStatusBadge(status: string): string {
     switch (status) {
-      case 'AVAILABLE':   return 'badge-success';
-      case 'BUSY':        return 'badge-warning';
-      case 'UNAVAILABLE': return 'badge-danger';
-      default:            return 'badge-muted';
+      case 'AVAILABLE':
+        return 'badge-success';
+      case 'BUSY':
+        return 'badge-warning';
+      case 'ON_VACATION':
+        return 'badge-danger';
+      default:
+        return 'badge-muted';
     }
   }
 
-  // Couleur du score de complétude
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'AVAILABLE':
+        return 'Disponible';
+      case 'BUSY':
+        return 'Occupé';
+      case 'ON_VACATION':
+        return 'En vacances';
+      default:
+        return status || '—';
+    }
+  }
+
   getScoreClass(score: number): string {
     if (score >= 80) return 'text-success';
     if (score >= 50) return 'text-warning';

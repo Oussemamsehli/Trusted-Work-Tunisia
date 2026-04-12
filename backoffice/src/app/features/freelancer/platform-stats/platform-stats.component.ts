@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { FreelancerProfile } from '../../../core/models/freelancer.model';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+import { FreelancerProfile, Skill } from '../../../core/models/freelancer.model';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 
 @Component({
@@ -13,21 +16,24 @@ export class PlatformStatsComponent implements OnInit {
   loading = true;
   errorMsg = '';
 
-  // Stats calculées
+  // Stats globales
   totalProfiles = 0;
   avgCompleteness = 0;
   availableCount = 0;
   busyCount = 0;
-  unavailableCount = 0;
+  vacationCount = 0;
 
-  // Top skills (nom + nombre d'occurrences)
+  // Stats détaillées
   topSkills: { name: string; count: number }[] = [];
-
-  // Répartition par région
   regionStats: { region: string; count: number }[] = [];
+  projectTypeStats: { type: string; count: number }[] = [];
 
-  // Répartition par niveau d'expérience
-  levelStats: { level: string; count: number }[] = [];
+  // Classement régional
+  availableRegions: string[] = [];
+  selectedRegion = '';
+  regionRanking: FreelancerProfile[] = [];
+  rankingLoading = false;
+  rankingError = '';
 
   constructor(private profileService: FreelancerProfileService) {}
 
@@ -37,70 +43,141 @@ export class PlatformStatsComponent implements OnInit {
 
   loadStats(): void {
     this.loading = true;
+    this.errorMsg = '';
+
     this.profileService.getAllProfiles().subscribe({
-      next: (data) => {
-        this.profiles = data;
-        this.totalProfiles = data.length;
-        this.computeStats(data);
-        this.loading = false;
+      next: (profiles) => {
+        this.profiles = profiles;
+        this.totalProfiles = profiles.length;
+
+        if (profiles.length === 0) {
+          this.resetStats();
+          this.loading = false;
+          return;
+        }
+
+        const regions = profiles
+          .map(p => p.region)
+          .filter((r): r is string => !!r && r.trim() !== '');
+        this.availableRegions = [...new Set(regions)].sort();
+
+        const skillRequests = profiles.map(profile =>
+          this.profileService.getSkillsByUserId(profile.userId).pipe(
+            catchError((err) => {
+              console.error(`Erreur skills user ${profile.userId}`, err);
+              return of([] as Skill[]);
+            })
+          )
+        );
+
+        forkJoin(skillRequests).subscribe({
+          next: (skillsPerProfile) => {
+            this.computeStats(profiles, skillsPerProfile);
+            this.loading = false;
+          },
+          error: (err) => {
+            this.errorMsg = 'Erreur lors du chargement des statistiques des compétences';
+            this.loading = false;
+            console.error(err);
+          }
+        });
       },
       error: (err) => {
-        this.errorMsg = 'Erreur lors du chargement des statistiques';
+        this.errorMsg = 'Erreur lors du chargement des profils';
         this.loading = false;
         console.error(err);
       }
     });
   }
 
-  private computeStats(profiles: FreelancerProfile[]): void {
-    if (profiles.length === 0) return;
+  onRegionChange(region: string): void {
+    this.selectedRegion = region;
 
-    // Moyenne de complétude
+    if (!region) {
+      this.regionRanking = [];
+      this.rankingError = '';
+      return;
+    }
+
+    this.loadRegionRanking(region);
+  }
+
+  loadRegionRanking(region: string): void {
+    this.rankingLoading = true;
+    this.rankingError = '';
+    this.regionRanking = [];
+
+    this.profileService.getRankingByRegion(region).subscribe({
+      next: (profiles) => {
+        this.regionRanking = profiles;
+        this.rankingLoading = false;
+      },
+      error: (err) => {
+        this.rankingError = 'Impossible de charger le classement pour cette région.';
+        this.rankingLoading = false;
+        console.error(err);
+      }
+    });
+  }
+
+  private computeStats(profiles: FreelancerProfile[], skillsPerProfile: Skill[][]): void {
     const totalScore = profiles.reduce((sum, p) => sum + (p.completenessScore || 0), 0);
     this.avgCompleteness = Math.round(totalScore / profiles.length);
 
-    // Comptage par statut de disponibilité
     this.availableCount = profiles.filter(p => p.availabilityStatus === 'AVAILABLE').length;
     this.busyCount = profiles.filter(p => p.availabilityStatus === 'BUSY').length;
-    this.unavailableCount = profiles.filter(p => p.availabilityStatus === 'UNAVAILABLE').length;
+    this.vacationCount = profiles.filter(p => p.availabilityStatus === 'ON_VACATION').length;
 
-    // Top skills — compter les occurrences de chaque skill
     const skillMap = new Map<string, number>();
-    profiles.forEach(p => {
-      if (p.skills) {
-        p.skills.forEach(s => {
-          const name = s.skillName;
-          skillMap.set(name, (skillMap.get(name) || 0) + 1);
-        });
-      }
+    skillsPerProfile.forEach((skills: Skill[]) => {
+      skills.forEach((skill: Skill) => {
+        const name = skill.name?.trim();
+        if (!name) return;
+        skillMap.set(name, (skillMap.get(name) || 0) + 1);
+      });
     });
+
     this.topSkills = Array.from(skillMap.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // Répartition par région
     const regionMap = new Map<string, number>();
     profiles.forEach(p => {
-      const region = p.region || 'Non définie';
+      const region = p.region?.trim() || 'Non définie';
       regionMap.set(region, (regionMap.get(region) || 0) + 1);
     });
+
     this.regionStats = Array.from(regionMap.entries())
       .map(([region, count]) => ({ region, count }))
       .sort((a, b) => b.count - a.count);
 
-    // Répartition par niveau d'expérience
-    const levelMap = new Map<string, number>();
+    const projectTypeMap = new Map<string, number>();
     profiles.forEach(p => {
-      const level = p.experienceLevel || 'Non défini';
-      levelMap.set(level, (levelMap.get(level) || 0) + 1);
+      const type = p.projectType || 'Non défini';
+      projectTypeMap.set(type, (projectTypeMap.get(type) || 0) + 1);
     });
-    this.levelStats = Array.from(levelMap.entries())
-      .map(([level, count]) => ({ level, count }))
+
+    this.projectTypeStats = Array.from(projectTypeMap.entries())
+      .map(([type, count]) => ({ type, count }))
       .sort((a, b) => b.count - a.count);
   }
 
-  // Pourcentage pour les barres de progression
+  private resetStats(): void {
+    this.totalProfiles = 0;
+    this.avgCompleteness = 0;
+    this.availableCount = 0;
+    this.busyCount = 0;
+    this.vacationCount = 0;
+    this.topSkills = [];
+    this.regionStats = [];
+    this.projectTypeStats = [];
+    this.availableRegions = [];
+    this.regionRanking = [];
+    this.selectedRegion = '';
+    this.rankingError = '';
+  }
+
   getPercent(count: number): number {
     if (this.totalProfiles === 0) return 0;
     return Math.round((count / this.totalProfiles) * 100);
@@ -110,5 +187,44 @@ export class PlatformStatsComponent implements OnInit {
     if (score >= 80) return 'text-success';
     if (score >= 50) return 'text-warning';
     return 'text-danger';
+  }
+
+  getAvailabilityClass(status: string): string {
+    switch (status) {
+      case 'AVAILABLE':
+        return 'badge-success';
+      case 'BUSY':
+        return 'badge-warning';
+      case 'ON_VACATION':
+        return 'badge-danger';
+      default:
+        return 'badge-muted';
+    }
+  }
+
+  getAvailabilityLabel(status: string): string {
+    switch (status) {
+      case 'AVAILABLE':
+        return 'Disponible';
+      case 'BUSY':
+        return 'Occupé';
+      case 'ON_VACATION':
+        return 'En vacances';
+      default:
+        return status || '—';
+    }
+  }
+
+  getProjectTypeLabel(type: string): string {
+    switch (type) {
+      case 'SHORT_TERM':
+        return 'Court terme';
+      case 'LONG_TERM':
+        return 'Long terme';
+      case 'BOTH':
+        return 'Les deux';
+      default:
+        return type || 'Non défini';
+    }
   }
 }

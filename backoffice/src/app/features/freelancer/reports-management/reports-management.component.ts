@@ -12,8 +12,6 @@ export class ReportsManagementComponent implements OnInit {
   reports: ProfileReport[] = [];
   loading = true;
   errorMsg = '';
-
-  // Pour afficher un message de succès temporaire
   successMsg = '';
 
   constructor(private profileService: FreelancerProfileService) {}
@@ -25,6 +23,8 @@ export class ReportsManagementComponent implements OnInit {
   loadReports(): void {
     this.loading = true;
     this.errorMsg = '';
+    this.successMsg = '';
+
     this.profileService.getPendingReports().subscribe({
       next: (data) => {
         this.reports = data;
@@ -38,14 +38,11 @@ export class ReportsManagementComponent implements OnInit {
     });
   }
 
-  /** Résoudre un signalement — status = RESOLVED ou REJECTED */
-  resolve(reportId: number, status: string): void {
+  resolve(reportId: number, status: 'RESOLVED' | 'REJECTED'): void {
     this.profileService.resolveReport(reportId, status).subscribe({
       next: () => {
-        // Retirer le signalement traité de la liste
-        this.reports = this.reports.filter(r => r.reportId !== reportId);
-        this.successMsg = `Signalement #${reportId} → ${status}`;
-        // Masquer le message après 3 secondes
+        this.reports = this.reports.filter(r => r.id !== reportId);
+        this.successMsg = `Signalement #${reportId} → ${status === 'RESOLVED' ? 'Résolu' : 'Rejeté'}`;
         setTimeout(() => this.successMsg = '', 3000);
       },
       error: (err) => {
@@ -53,5 +50,9 @@ export class ReportsManagementComponent implements OnInit {
         console.error(err);
       }
     });
+  }
+
+  getProfileId(report: ProfileReport): number | null {
+    return report.profile?.id ?? null;
   }
 }

@@ -1,130 +1,140 @@
-
-
-// --- Profil principal du freelancer ---
+// --- ProfileResponse ---
 export interface FreelancerProfile {
-  profileId: number;
+  id: number;
   userId: number;
   headline: string;
   bio: string;
-  region: string;
-  availabilityStatus: string;       // AVAILABLE, BUSY, UNAVAILABLE
+  avatarUrl: string;
   hourlyRate: number;
-  experienceLevel: string;          // JUNIOR, MID, SENIOR, EXPERT
-  profilePictureUrl: string;
-  completenessScore: number;        // 0–100
-  trustLevel: string;
+  availabilityStatus: 'AVAILABLE' | 'BUSY' | 'ON_VACATION';
+  visibility: 'PUBLIC' | 'PRIVATE' | 'CONNECTIONS_ONLY';
+  projectType: 'SHORT_TERM' | 'LONG_TERM' | 'BOTH';
+  completenessScore: number;
+  region: string;
+  regionalRank: number;
+  totalViews: number;
   createdAt: string;
   updatedAt: string;
-  skills: Skill[];
-  portfolio: PortfolioItem[];
-  certifications: Certification[];
-  endorsements: Endorsement[];
-  workExperiences: WorkExperience[];
-  educations: Education[];
 }
 
-// --- Compétence ---
+// --- SkillResponse ---
 export interface Skill {
-  skillId: number;
-  userId: number;
-  skillName: string;
-  category: string;
-  proficiencyLevel: string;         // BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
-  yearsOfExperience: number;
-  verified: boolean;
+  id: number;
+  name: string;
+  level: string;
+  authenticityScore: number;
+  examScore: number;
+  endorsementCount: number;
 }
 
-// --- Élément du portfolio ---
+// --- PortfolioResponse ---
 export interface PortfolioItem {
-  portfolioId: number;
-  userId: number;
+  id: number;
   title: string;
   description: string;
   projectUrl: string;
   imageUrl: string;
-  tags: string;
-  createdAt: string;
+  technologies: string;
+  completionDate: string;
 }
 
-// --- Certification ---
+// --- CertificationResponse ---
 export interface Certification {
-  certificationId: number;
-  name: string;
-  issuingOrganization: string;
+  id: number;
+  title: string;
+  issuer: string;
+  type: string;
   issueDate: string;
   expiryDate: string;
-  credentialUrl: string;
+  certificateUrl: string;
+  isExpired: boolean;
 }
 
-// --- Endorsement (recommandation) ---
+// --- EndorsementResponse ---
 export interface Endorsement {
-  endorsementId: number;
+  id: number;
   endorserId: number;
-  endorsedUserId: number;
-  skillName: string;
   comment: string;
-  createdAt: string;
+  endorsedAt: string;
 }
 
-// --- Avis sur un profil ---
+// --- ReviewResponse ---
 export interface ProfileReview {
-  reviewId: number;
-  profileId: number;
-  reviewerUserId: number;
-  rating: number;                   // 1–5
+  id: number;
+  clientId: number;
+  rating: number;
   comment: string;
-  createdAt: string;
+  status: string;
+  reviewedAt: string;
 }
 
-// --- Signalement de profil (admin) ---
+// --- ProfileReport ---
 export interface ProfileReport {
-  reportId: number;
-  profileId: number;
-  reporterUserId: number;
+  id: number;
+  reporterId: number;
   reason: string;
-  description: string;
-  status: string;                   // PENDING, RESOLVED, REJECTED
-  createdAt: string;
-  resolvedAt: string;
+  status: 'PENDING' | 'RESOLVED' | 'REJECTED';
+  reportedAt: string;
+  resolvedAt: string | null;
+  profile?: {
+    id: number;
+    userId: number;
+    headline: string;
+    region: string;
+  };
 }
 
-// --- Expérience professionnelle ---
+// --- WorkExperienceResponse ---
 export interface WorkExperience {
-  experienceId: number;
-  title: string;
+  id: number;
+  jobTitle: string;
   company: string;
-  startDate: string;
-  endDate: string;
   description: string;
-  current: boolean;
-}
-
-// --- Formation ---
-export interface Education {
-  educationId: number;
-  institution: string;
-  degree: string;
-  fieldOfStudy: string;
   startDate: string;
   endDate: string;
+  isCurrent: boolean;
 }
 
-// --- Réponse score de complétude ---
+// --- EducationResponse ---
+export interface Education {
+  id: number;
+  degree: string;
+  institution: string;
+  fieldOfStudy: string;
+  graduationYear: number;
+}
+
+// --- CompletenessResponse ---
 export interface CompletenessResponse {
-  completenessScore: number;
+  score: number;
+  bioScore: number;
+  avatarScore: number;
+  skillsScore: number;
+  portfolioScore: number;
+  certifScore: number;
+  workExpScore: number;
   suggestions: string[];
 }
 
-// --- Réponse parcours de carrière ---
+// --- CareerPathResponse ---
 export interface CareerPathResponse {
-  currentLevel: string;
-  nextLevel: string;
-  recommendations: string[];
-  estimatedTimeMonths: number;
+  detectedPath: string;
+  description: string;
+  nextSteps: string[];
+  currentSkills: string[];
+  missingSkills: string[];
 }
 
-// --- Réponse analyse des lacunes en compétences ---
+// --- SkillGapResponse ---
 export interface SkillGapResponse {
+  mySkills: string[];
+  topSkills: string[];
+  gapSkills: string[];
+  gapCount: number;
+}
+
+// --- SkillGapRecommendation (endpoint recommendations/skill-gap) ---
+export interface SkillGapRecommendation {
   missingSkills: string[];
   recommendedCourses: string[];
   marketDemand: { [skill: string]: number };
