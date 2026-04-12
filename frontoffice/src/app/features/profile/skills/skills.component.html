@@ -1,210 +1,100 @@
-<div class="skills-page">
-  <section class="skills-hero">
-    <div class="skills-hero__glow skills-hero__glow--one"></div>
-    <div class="skills-hero__glow skills-hero__glow--two"></div>
+<!-- Section Skills — connectée au freelancer-profile-service -->
+<div class="skills-container">
 
-    <div class="skills-hero__content">
-      <div class="skills-hero__copy">
-        <div class="eyebrow-group">
-          <span class="eyebrow">Profile Expertise</span>
-          <span class="eyebrow eyebrow--accent">Talent Positioning</span>
-        </div>
+  <!-- En-tête -->
+  <div class="section-header">
+    <div class="header-left">
+      <h2>Mes Compétences</h2>
+      <p class="subtitle">{{ skills.length }} compétence(s) déclarée(s)</p>
+    </div>
+    <button class="btn-primary" (click)="toggleForm()">
+      {{ showForm ? 'Annuler' : '+ Ajouter' }}
+    </button>
+  </div>
 
-        <h1>Showcase the skills that make your profile premium and client-ready.</h1>
+  <!-- Message d'erreur -->
+  <div class="error-banner" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
 
-        <p>
-          Organize your core expertise, highlight high-value competencies and
-          present a stronger professional profile for premium freelance opportunities.
-        </p>
-
-        <div class="hero-actions">
-          <button type="button" class="hero-btn hero-btn--primary">
-            <i class="fas fa-plus"></i>
-            <span>Add skill</span>
-          </button>
-
-          <button type="button" class="hero-btn hero-btn--ghost">
-            <i class="fas fa-chart-line"></i>
-            <span>Optimize profile</span>
-          </button>
-        </div>
+  <!-- Formulaire d'ajout -->
+  <div class="add-form" *ngIf="showForm">
+    <h3>Nouvelle compétence</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nom du skill *</label>
+        <input
+          type="text"
+          [(ngModel)]="newSkill.name"
+          placeholder="Ex: Spring Boot, Angular, Docker..."
+          class="form-control"
+        />
       </div>
-
-      <div class="hero-spotlight-card">
-        <span class="card-kicker">Profile skill score</span>
-        <h2>Your expertise positioning is strong and marketable.</h2>
-
-        <div class="spotlight-score">
-          <strong>92%</strong>
-          <span>Profile strength</span>
-        </div>
-
-        <div class="spotlight-meta">
-          <div class="spotlight-chip">
-            <span class="spotlight-chip__dot"></span>
-            High-value profile
-          </div>
-          <p>Skills aligned with premium missions and trusted delivery.</p>
-        </div>
+      <div class="form-group">
+        <label>Score d'examen (0–100)</label>
+        <input
+          type="number"
+          [(ngModel)]="newSkill.examScore"
+          min="0"
+          max="100"
+          class="form-control"
+        />
+        <small>Correspond à votre score sur la plateforme Module 04</small>
       </div>
     </div>
-  </section>
+    <button class="btn-primary" (click)="addSkill()">Enregistrer</button>
+  </div>
 
-  <section class="stats-grid">
-    <article class="stat-card" *ngFor="let stat of stats">
-      <div class="stat-card__label">{{ stat.label }}</div>
-      <strong>{{ stat.value }}</strong>
-    </article>
-  </section>
+  <!-- Loader -->
+  <div class="loading" *ngIf="isLoading">Chargement...</div>
 
-  <section class="skills-layout">
-    <div class="skills-main">
-      <div class="panel-card">
-        <div class="panel-head">
-          <div>
-            <span class="card-kicker">Expertise library</span>
-            <h2>Your skills</h2>
+  <!-- Liste vide -->
+  <div class="empty-state" *ngIf="!isLoading && skills.length === 0">
+    <p>Aucune compétence déclarée. Ajoutez votre premier skill.</p>
+  </div>
+
+  <!-- Liste des skills -->
+  <div class="skills-grid" *ngIf="!isLoading && skills.length > 0">
+    <div class="skill-card" *ngFor="let skill of skills">
+
+      <div class="skill-header">
+        <span class="skill-name">{{ skill.name }}</span>
+        <span class="skill-level" [ngClass]="getLevelClass(skill.level)">
+          {{ getLevelLabel(skill.level) }}
+        </span>
+      </div>
+
+      <div class="skill-scores">
+        <!-- Score d'authenticité -->
+        <div class="score-row">
+          <span class="score-label">Authenticité</span>
+          <div class="score-bar-wrapper">
+            <div
+              class="score-bar"
+              [ngClass]="getAuthenticityClass(skill.authenticityScore)"
+              [style.width.%]="skill.authenticityScore * 100"
+            ></div>
           </div>
-
-          <div class="panel-head__filters">
-            <span class="filter-chip active">All</span>
-            <span class="filter-chip">Top skills</span>
-            <span class="filter-chip">Trending</span>
-          </div>
+          <span class="score-value">{{ (skill.authenticityScore * 100).toFixed(0) }}%</span>
         </div>
 
-        <div class="categories-row">
-          <article class="category-chip" *ngFor="let category of categories">
-            <strong>{{ category.name }}</strong>
-            <span>{{ category.count }} skills</span>
-          </article>
-        </div>
-
-        <div class="skills-list">
-          <article
-            class="skill-card"
-            *ngFor="let skill of skills"
-            [class.skill-card--active]="skill.id === activeSkillId"
-            (click)="selectSkill(skill.id)"
-          >
-            <div class="skill-card__top">
-              <div class="skill-card__identity">
-                <div class="skill-icon">
-                  <i class="fas fa-bolt"></i>
-                </div>
-
-                <div>
-                  <div class="skill-title-row">
-                    <h3>{{ skill.name }}</h3>
-                    <span *ngIf="skill.trending" class="trending-chip">Trending</span>
-                  </div>
-                  <p>{{ skill.category }} • {{ skill.experience }}</p>
-                </div>
-              </div>
-
-              <div class="skill-score">{{ skill.level }}%</div>
-            </div>
-
-            <div class="skill-progress">
-              <div class="skill-progress__bar">
-                <div
-                  class="skill-progress__fill"
-                  [style.width.%]="skill.level"
-                ></div>
-              </div>
-            </div>
-
-            <div class="skill-meta">
-              <span>{{ skill.projects }} completed projects</span>
-              <span>Verified relevance for premium work</span>
-            </div>
-          </article>
+        <!-- Endorsements -->
+        <div class="score-row">
+          <span class="score-label">Endorsements</span>
+          <span class="score-value">{{ skill.endorsementCount }}</span>
         </div>
       </div>
+
+      <div class="skill-actions">
+        <button class="btn-secondary" (click)="refreshAuthenticity(skill.id)" title="Recalculer le score">
+          Recalculer
+        </button>
+        <button class="btn-danger" (click)="deleteSkill(skill.id)">
+          Supprimer
+        </button>
+      </div>
+
     </div>
+  </div>
 
-    <aside class="skills-side">
-      <div class="panel-card panel-card--detail">
-        <div class="panel-head">
-          <div>
-            <span class="card-kicker">Selected skill</span>
-            <h2>{{ activeSkill.name }}</h2>
-          </div>
-        </div>
-
-        <div class="detail-score-card">
-          <div>
-            <span>Mastery level</span>
-            <strong>{{ activeSkill.level }}%</strong>
-          </div>
-          <div class="detail-score-card__pill">High demand</div>
-        </div>
-
-        <div class="big-progress">
-          <div
-            class="big-progress__fill"
-            [style.width.%]="activeSkill.level"
-          ></div>
-        </div>
-
-        <div class="detail-block">
-          <div class="detail-row">
-            <span>Category</span>
-            <strong>{{ activeSkill.category }}</strong>
-          </div>
-
-          <div class="detail-row">
-            <span>Experience</span>
-            <strong>{{ activeSkill.experience }}</strong>
-          </div>
-
-          <div class="detail-row">
-            <span>Projects delivered</span>
-            <strong>{{ activeSkill.projects }}</strong>
-          </div>
-
-          <div class="detail-row">
-            <span>Portfolio impact</span>
-            <strong class="accent-value">Strong positioning</strong>
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <h3>Why this skill matters</h3>
-
-          <div class="insight-list">
-            <article class="insight-item">
-              <div class="insight-item__icon">
-                <i class="fas fa-shield-halved"></i>
-              </div>
-              <div>
-                <strong>Trust signal</strong>
-                <p>Supports your profile credibility and helps clients assess expertise faster.</p>
-              </div>
-            </article>
-
-            <article class="insight-item">
-              <div class="insight-item__icon">
-                <i class="fas fa-briefcase"></i>
-              </div>
-              <div>
-                <strong>Job matching</strong>
-                <p>Improves visibility for relevant opportunities and premium mission targeting.</p>
-              </div>
-            </article>
-
-            <article class="insight-item">
-              <div class="insight-item__icon">
-                <i class="fas fa-star"></i>
-              </div>
-              <div>
-                <strong>Portfolio value</strong>
-                <p>Positions your profile with a clearer and more premium specialization.</p>
-              </div>
-            </article>
-          </div>
-        </div>
-      </div>
-    </aside>
-  </section>
 </div>

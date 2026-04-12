@@ -1,92 +1,128 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { Skill } from '../../../core/models/freelancer.model';
 
-interface Skill {
-  id: string;
-  name: string;
-  category: string;
-  level: number;
-  experience: string;
-  projects: number;
-  trending?: boolean;
-}
-
-interface SkillCategory {
-  name: string;
-  count: number;
-}
 
 @Component({
   selector: 'app-skills',
   templateUrl: './skills.component.html',
   styleUrls: ['./skills.component.css']
 })
-export class SkillsComponent {
+export class SkillsComponent implements OnInit {
 
-  activeSkillId = 'skill-1';
+  skills: Skill[] = [];
+  isLoading = false;
+  errorMessage = '';
+  showForm = false;
 
-  stats = [
-    { label: 'Total skills', value: '18' },
-    { label: 'Top expertise', value: 'UI/UX' },
-    { label: 'Projects delivered', value: '42' },
-    { label: 'Profile strength', value: '92%' }
-  ];
+  // Formulaire d'ajout
+  newSkill: { name: string; examScore: number } = {
+    name: '',
+    examScore: 0
+  };
 
-  categories: SkillCategory[] = [
-    { name: 'Design', count: 6 },
-    { name: 'Frontend', count: 5 },
-    { name: 'Backend', count: 3 },
-    { name: 'Soft Skills', count: 4 }
-  ];
+  constructor(
+    private profileService: FreelancerProfileService,
+    private authService: AuthService
+  ) {}
 
-  skills: Skill[] = [
-    {
-      id: 'skill-1',
-      name: 'UI/UX Design',
-      category: 'Design',
-      level: 95,
-      experience: '4 years',
-      projects: 22,
-      trending: true
-    },
-    {
-      id: 'skill-2',
-      name: 'Angular',
-      category: 'Frontend',
-      level: 90,
-      experience: '3 years',
-      projects: 18
-    },
-    {
-      id: 'skill-3',
-      name: 'Figma',
-      category: 'Design',
-      level: 92,
-      experience: '4 years',
-      projects: 25
-    },
-    {
-      id: 'skill-4',
-      name: 'Spring Boot',
-      category: 'Backend',
-      level: 85,
-      experience: '3 years',
-      projects: 14
-    },
-    {
-      id: 'skill-5',
-      name: 'Communication',
-      category: 'Soft Skills',
-      level: 88,
-      experience: '5 years',
-      projects: 40
-    }
-  ];
-
-  get activeSkill(): Skill {
-    return this.skills.find(s => s.id === this.activeSkillId)!;
+  ngOnInit(): void {
+    this.loadSkills();
   }
 
-  selectSkill(id: string): void {
-    this.activeSkillId = id;
+  private get currentUserId(): number {
+    return this.authService.getCurrentAuthUser()!.userId;
+  }
+
+  // Charger les skills depuis le backend
+  loadSkills(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.profileService.getMySkills(this.currentUserId).subscribe({
+      next: (data) => {
+        this.skills = data;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Impossible de charger les compétences.';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  // Ajouter un skill
+  addSkill(): void {
+    if (!this.newSkill.name.trim()) return;
+
+    // examScore envoyé entre 0.0 et 1.0
+    const payload = {
+      name: this.newSkill.name.trim(),
+      examScore: this.newSkill.examScore / 100
+    };
+
+    this.profileService.addSkill(this.currentUserId, payload).subscribe({
+      next: () => {
+        this.newSkill = { name: '', examScore: 0 };
+        this.showForm = false;
+        this.loadSkills();
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors de l\'ajout du skill.';
+      }
+    });
+  }
+
+  // Supprimer un skill
+  deleteSkill(skillId: number): void {
+    if (!confirm('Supprimer ce skill ?')) return;
+    this.profileService.deleteSkill(skillId, this.currentUserId).subscribe({
+      next: () => this.loadSkills(),
+      error: () => {
+        this.errorMessage = 'Erreur lors de la suppression.';
+      }
+    });
+  }
+
+  // Calculer et afficher le score d'authenticité
+  refreshAuthenticity(skillId: number): void {
+    this.profileService.getSkillAuthenticity(skillId).subscribe({
+      next: () => this.loadSkills(),
+      error: () => {
+        this.errorMessage = 'Erreur lors du calcul d\'authenticité.';
+      }
+    });
+  }
+
+  // Retourner le label du niveau
+  getLevelLabel(level: string): string {
+    const labels: Record<string, string> = {
+      'JUNIOR': 'Junior',
+      'CONFIRMED': 'Confirmé',
+      'EXPERT': 'Expert'
+    };
+    return labels[level] ?? level;
+  }
+
+  // Retourner la classe CSS selon le niveau
+  getLevelClass(level: string): string {
+    const classes: Record<string, string> = {
+      'JUNIOR': 'level-junior',
+      'CONFIRMED': 'level-confirmed',
+      'EXPERT': 'level-expert'
+    };
+    return classes[level] ?? '';
+  }
+
+  // Retourner la classe CSS selon le score d'authenticité
+  getAuthenticityClass(score: number): string {
+    if (score >= 0.75) return 'auth-high';
+    if (score >= 0.40) return 'auth-medium';
+    return 'auth-low';
+  }
+
+  toggleForm(): void {
+    this.showForm = !this.showForm;
+    this.errorMessage = '';
   }
 }
