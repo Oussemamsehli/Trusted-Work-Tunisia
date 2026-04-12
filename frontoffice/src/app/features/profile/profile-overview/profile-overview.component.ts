@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 import { UserService, UserProfileResponse } from '../../../core/services/user.service';
 import { ApiService } from '../../../core/services/api.service';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
-import { Skill, CompletenessResponse } from '../../../core/models/freelancer.model';
+import { Skill, CompletenessResponse, FreelancerProfile } from '../../../core/models/freelancer.model';
 
 const API_BASE = 'http://localhost:8081/api';
 const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
@@ -26,10 +26,20 @@ interface ProfileModel {
   certificationsAdded: boolean; trustPassportCompleted: boolean;
 }
 
+// Données éditables du profil Module 02
+interface FreelancerDraft {
+  headline: string;
+  bio: string;
+  hourlyRate: number | null;
+  region: string;
+  availabilityStatus: 'AVAILABLE' | 'BUSY' | 'ON_VACATION';
+  visibility: 'PUBLIC' | 'PRIVATE' | 'CONNECTIONS_ONLY';
+  projectType: 'SHORT_TERM' | 'LONG_TERM' | 'BOTH';
+}
+
 /**
  * Vue générale du profil — Module 01 + Module 02
- * Skills et completeness chargés depuis freelancer-profile-service (port 8082)
- * Infos identité chargées depuis user-service (port 8081)
+ * saveProfile() sauvegarde les deux modules en parallèle (forkJoin)
  */
 @Component({
   selector: 'app-profile-overview',
@@ -47,9 +57,30 @@ export class ProfileOverviewComponent implements OnInit {
 
   private userId: number | null = null;
 
-  // Skills réels depuis le freelancer-profile-service
   skills: Skill[] = [];
   completeness: CompletenessResponse | null = null;
+
+  // Profil Module 02 chargé
+  freelancerProfile: FreelancerProfile | null = null;
+
+  // Draft Module 02 en mode édition
+  freelancerDraft: FreelancerDraft = {
+    headline: '',
+    bio: '',
+    hourlyRate: null,
+    region: '',
+    availabilityStatus: 'AVAILABLE',
+    visibility: 'PUBLIC',
+    projectType: 'BOTH'
+  };
+
+  regions = [
+    'Tunis', 'Sfax', 'Sousse', 'Kairouan', 'Bizerte',
+    'Gabès', 'Ariana', 'Gafsa', 'Monastir', 'Ben Arous',
+    'Kasserine', 'Médenine', 'Nabeul', 'Tataouine', 'Béja',
+    'Jendouba', 'Mahdia', 'Sidi Bouzid', 'Siliana', 'Kébili',
+    'Le Kef', 'Manouba', 'Zaghouan', 'Tozeur'
+  ];
 
   profile: ProfileModel = {
     fullName: '', firstName: '', lastName: '',
@@ -78,7 +109,6 @@ export class ProfileOverviewComponent implements OnInit {
     return `${API_BASE}${photo}`;
   }
 
-  // Charger les données user (Module 01) puis skills + completeness (Module 02)
   loadProfile(): void {
     this.loading = true;
     this.error = '';
@@ -111,7 +141,6 @@ export class ProfileOverviewComponent implements OnInit {
 
         this.draftProfile = { ...this.profile };
 
-        // Charger skills + completeness depuis Module 02 si userId disponible
         if (this.userId) {
           this.loadFreelancerData(this.userId);
         }
@@ -122,25 +151,36 @@ export class ProfileOverviewComponent implements OnInit {
     });
   }
 
-  // Appels vers freelancer-profile-service (Module 02)
   private loadFreelancerData(userId: number): void {
     forkJoin({
+      profile:      this.freelancerService.getProfileByUserId(userId),
       skills:       this.freelancerService.getMySkills(userId),
       completeness: this.freelancerService.getCompleteness(userId)
     }).subscribe({
-      next: ({ skills, completeness }) => {
-        this.skills       = skills;
-        this.completeness = completeness;
+      next: ({ profile, skills, completeness }) => {
+        this.freelancerProfile = profile;
+        this.skills            = skills;
+        this.completeness      = completeness;
+
+        // Initialiser le draft Module 02
+        this.freelancerDraft = {
+          headline:           profile.headline || '',
+          bio:                profile.bio || '',
+          hourlyRate:         profile.hourlyRate || null,
+          region:             profile.region || '',
+          availabilityStatus: profile.availabilityStatus || 'AVAILABLE',
+          visibility:         profile.visibility || 'PUBLIC',
+          projectType:        profile.projectType || 'BOTH'
+        };
       },
       error: () => {
-        // Couplage faible : si Module 02 est indisponible, on continue sans erreur bloquante
-        this.skills       = [];
-        this.completeness = null;
+        this.skills            = [];
+        this.completeness      = null;
+        this.freelancerProfile = null;
       }
     });
   }
 
-  // Score de complétude : utilise le score backend si disponible, sinon calcul local
   get completion(): number {
     if (this.completeness) return this.completeness.score;
     const checks = [
@@ -154,7 +194,6 @@ export class ProfileOverviewComponent implements OnInit {
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   }
 
-  // Items de progression affichés dans la vue
   get completionItems(): { label: string; done: boolean }[] {
     return [
       { label: 'Basic info',      done: !!this.profile.fullName },
@@ -166,7 +205,6 @@ export class ProfileOverviewComponent implements OnInit {
     ];
   }
 
-  // Suggestions de complétude retournées par le backend Module 02
   get completionSuggestions(): string[] {
     return this.completeness?.suggestions ?? [];
   }
@@ -176,6 +214,18 @@ export class ProfileOverviewComponent implements OnInit {
     if (!this.editMode) {
       this.draftProfile = { ...this.profile };
       this.selectedAvatarFile = null;
+      // Reset draft Module 02
+      if (this.freelancerProfile) {
+        this.freelancerDraft = {
+          headline:           this.freelancerProfile.headline || '',
+          bio:                this.freelancerProfile.bio || '',
+          hourlyRate:         this.freelancerProfile.hourlyRate || null,
+          region:             this.freelancerProfile.region || '',
+          availabilityStatus: this.freelancerProfile.availabilityStatus || 'AVAILABLE',
+          visibility:         this.freelancerProfile.visibility || 'PUBLIC',
+          projectType:        this.freelancerProfile.projectType || 'BOTH'
+        };
+      }
     }
     this.editMode = !this.editMode;
   }
@@ -187,10 +237,15 @@ export class ProfileOverviewComponent implements OnInit {
     this.error = ''; this.successMessage = '';
   }
 
+  /**
+   * Sauvegarde simultanée Module 01 (user-service) + Module 02 (freelancer-service)
+   * forkJoin : les deux appels partent en parallèle
+   */
   saveProfile(): void {
     if (!this.profile.cin) { this.error = 'CIN introuvable.'; return; }
     this.saving = true; this.error = ''; this.successMessage = '';
 
+    // Module 01 — FormData avec photo optionnelle
     const formData = new FormData();
     formData.append('firstName', this.draftProfile.firstName || '');
     formData.append('lastName',  this.draftProfile.lastName  || '');
@@ -200,7 +255,24 @@ export class ProfileOverviewComponent implements OnInit {
     formData.append('bio',       this.draftProfile.bio       || '');
     if (this.selectedAvatarFile) formData.append('photo', this.selectedAvatarFile);
 
-    this.api.put(`/users/${this.profile.cin}`, formData).pipe(
+    const saveUser$ = this.api.put(`/users/${this.profile.cin}`, formData);
+
+    // Module 02 — JSON avec les champs freelancer
+    const freelancerPayload: Partial<FreelancerProfile> = {
+      headline:           this.freelancerDraft.headline,
+      bio:                this.freelancerDraft.bio,
+      hourlyRate:         this.freelancerDraft.hourlyRate ?? undefined,
+      region:             this.freelancerDraft.region,
+      availabilityStatus: this.freelancerDraft.availabilityStatus,
+      visibility:         this.freelancerDraft.visibility,
+      projectType:        this.freelancerDraft.projectType
+    };
+
+    const saveFreelancer$ = this.freelancerService.updateProfile(
+      this.userId!, freelancerPayload
+    );
+
+    forkJoin({ user: saveUser$, freelancer: saveFreelancer$ }).pipe(
       finalize(() => (this.saving = false))
     ).subscribe({
       next: () => {
@@ -210,7 +282,7 @@ export class ProfileOverviewComponent implements OnInit {
         this.loadProfile();
       },
       error: (err: HttpErrorResponse) => {
-        this.error = err?.error?.error || err?.error?.message || err?.error?.details || 'Erreur lors de la sauvegarde.';
+        this.error = err?.error?.error || err?.error?.message || 'Erreur lors de la sauvegarde.';
       }
     });
   }

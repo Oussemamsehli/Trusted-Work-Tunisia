@@ -625,3 +625,47 @@
     grid-template-columns: 1fr;
   }
 }
+/* ---------- SELECTS MODULE 02 ---------- */
+
+.form-field select {
+  width: 100%;
+  border: 1px solid rgba(16, 32, 58, 0.12);
+  background: rgba(255, 255, 255, 0.75);
+  color: #142136;
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2348576b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 44px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-field select:focus {
+  border-color: rgba(200, 92, 59, 0.5);
+  box-shadow: 0 0 0 4px rgba(200, 92, 59, 0.12);
+  background-color: #ffffff;
+}
+
+/* Séparateur visuel entre les sections Module 01 et Module 02 */
+.module-divider {
+  margin: 20px 0 16px;
+  border: none;
+  border-top: 1px solid rgba(16, 32, 58, 0.08);
+}
+
+.module-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c85c3b;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
