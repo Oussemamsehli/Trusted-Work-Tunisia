@@ -15,6 +15,8 @@ import { WorkExperienceComponent } from './work-experience/work-experience.compo
 import { EndorsementsComponent } from './endorsements/endorsements.component';
 import { ReviewsComponent } from './reviews/reviews.component';
 import { CareerRecommendationsComponent } from './career-recommendations/career-recommendations.component';
+import { EducationComponent } from './education/education.component';
+
 @NgModule({
   declarations: [
     ProfileOverviewComponent,
@@ -27,7 +29,8 @@ import { CareerRecommendationsComponent } from './career-recommendations/career-
     WorkExperienceComponent,
     EndorsementsComponent,
     ReviewsComponent,
-    CareerRecommendationsComponent
+    CareerRecommendationsComponent,
+    EducationComponent
   ],
   imports: [
     CommonModule,

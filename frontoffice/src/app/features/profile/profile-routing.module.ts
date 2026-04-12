@@ -10,6 +10,7 @@ import { PortfolioComponent } from './portfolio/portfolio.component';
 import { WorkExperienceComponent } from './work-experience/work-experience.component';
 import { EndorsementsComponent } from './endorsements/endorsements.component';
 import { ReviewsComponent } from './reviews/reviews.component';
+import { EducationComponent } from './education/education.component';
 import { CareerRecommendationsComponent } from './career-recommendations/career-recommendations.component';
 const routes: Routes = [
   { path: '', redirectTo: 'overview', pathMatch: 'full' },
@@ -24,6 +25,8 @@ const routes: Routes = [
   { path: 'endorsements', component: EndorsementsComponent },
   { path: 'reviews', component: ReviewsComponent },
   { path: 'career-path', component: CareerRecommendationsComponent },
+  { path: 'education', component: EducationComponent },
+  
   { path: '**', redirectTo: 'overview' }
 ];
 @NgModule({
