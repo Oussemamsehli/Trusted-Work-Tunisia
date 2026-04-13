@@ -14,13 +14,15 @@ import { Certification } from '../../../core/models/freelancer.model';
   styleUrls: ['./certifications.component.css']
 })
 export class CertificationsComponent implements OnInit {
-
   certifications: Certification[] = [];
   isLoading = false;
+  isSaving = false;
+  deletingCertId: number | null = null;
+
   errorMessage = '';
+  successMessage = '';
   showForm = false;
 
-  // Formulaire d'ajout
   newCert: {
     title: string;
     issuer: string;
@@ -50,23 +52,60 @@ export class CertificationsComponent implements OnInit {
     return this.authService.getCurrentAuthUser()!.userId;
   }
 
+  get canSave(): boolean {
+    return !!this.newCert.title.trim() &&
+           !!this.newCert.issuer.trim() &&
+           !this.isSaving;
+  }
+
+  get validCount(): number {
+    return this.certifications.filter(c => !c.isExpired).length;
+  }
+
+  get expiredCount(): number {
+    return this.certifications.filter(c => c.isExpired).length;
+  }
+
+  get academicCount(): number {
+    return this.certifications.filter(c => c.type === 'ACADEMIC').length;
+  }
+
+  get externalCount(): number {
+    return this.certifications.filter(c => c.type === 'EXTERNAL').length;
+  }
+
   loadCertifications(): void {
     this.isLoading = true;
     this.errorMessage = '';
+
     this.profileService.getMyCertifications(this.currentUserId).subscribe({
       next: (data) => {
-        this.certifications = data;
+        this.certifications = data || [];
         this.isLoading = false;
       },
       error: () => {
         this.errorMessage = 'Impossible de charger les certifications.';
         this.isLoading = false;
+        this.autoClearMessages();
       }
     });
   }
 
+  openForm(): void {
+    this.clearMessages();
+    this.showForm = true;
+  }
+
+  closeForm(): void {
+    this.showForm = false;
+    this.resetForm();
+  }
+
   addCertification(): void {
-    if (!this.newCert.title.trim() || !this.newCert.issuer.trim()) return;
+    if (!this.canSave) return;
+
+    this.clearMessages();
+    this.isSaving = true;
 
     const payload: Partial<Certification> = {
       title: this.newCert.title.trim(),
@@ -79,61 +118,82 @@ export class CertificationsComponent implements OnInit {
 
     this.profileService.addCertification(this.currentUserId, payload).subscribe({
       next: () => {
-        this.newCert = {
-          title: '',
-          issuer: '',
-          type: 'EXTERNAL',
-          issueDate: '',
-          expiryDate: '',
-          certificateUrl: ''
-        };
+        this.isSaving = false;
+        this.successMessage = 'Certification ajoutée avec succès.';
+        this.resetForm();
         this.showForm = false;
         this.loadCertifications();
+        this.autoClearMessages();
       },
       error: () => {
-        this.errorMessage = 'Erreur lors de l\'ajout de la certification.';
+        this.isSaving = false;
+        this.errorMessage = 'Erreur lors de l’ajout de la certification.';
+        this.autoClearMessages();
       }
     });
   }
 
   deleteCertification(certId: number): void {
     if (!confirm('Supprimer cette certification ?')) return;
+
+    this.clearMessages();
+    this.deletingCertId = certId;
+
     this.profileService.deleteCertification(certId, this.currentUserId).subscribe({
-      next: () => this.loadCertifications(),
+      next: () => {
+        this.deletingCertId = null;
+        this.successMessage = 'Certification supprimée avec succès.';
+        this.loadCertifications();
+        this.autoClearMessages();
+      },
       error: () => {
+        this.deletingCertId = null;
         this.errorMessage = 'Erreur lors de la suppression.';
+        this.autoClearMessages();
       }
     });
   }
 
+  resetForm(): void {
+    this.newCert = {
+      title: '',
+      issuer: '',
+      type: 'EXTERNAL',
+      issueDate: '',
+      expiryDate: '',
+      certificateUrl: ''
+    };
+  }
+
+  clearMessages(): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  autoClearMessages(): void {
+    setTimeout(() => {
+      this.errorMessage = '';
+      this.successMessage = '';
+    }, 3500);
+  }
+
   getTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'EXTERNAL': 'Externe',
-      'ACADEMIC': 'Académique'
+      EXTERNAL: 'Externe',
+      ACADEMIC: 'Académique'
     };
     return labels[type] ?? type;
   }
 
   getTypeClass(type: string): string {
     const classes: Record<string, string> = {
-      'EXTERNAL': 'type-external',
-      'ACADEMIC': 'type-academic'
+      EXTERNAL: 'type-external',
+      ACADEMIC: 'type-academic'
     };
     return classes[type] ?? '';
   }
 
-  // Compter les certifications valides (non expirées)
-  get validCount(): number {
-    return this.certifications.filter(c => !c.isExpired).length;
-  }
-
-  // Compter les certifications expirées
-  get expiredCount(): number {
-    return this.certifications.filter(c => c.isExpired).length;
-  }
-
-  toggleForm(): void {
-    this.showForm = !this.showForm;
-    this.errorMessage = '';
+  trackByCertification(index: number, cert: Certification): number {
+    return cert.id;
   }
 }
