@@ -718,3 +718,22 @@ button:disabled {
     width: 100%;
   }
 }
+.reviewer-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reviewer-role {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.12);
+  color: #a5b4fc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid rgba(99, 102, 241, 0.16);
+}

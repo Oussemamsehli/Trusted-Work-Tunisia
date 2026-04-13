@@ -1,11 +1,9 @@
 <div class="profile-overview-page">
-
-  <section class="profile-hero-card">
+  <section class="profile-hero-card" *ngIf="!loading; else loadingState">
     <div class="profile-hero-card__glow"></div>
 
     <div class="profile-hero-card__content">
       <div class="profile-identity">
-
         <div class="avatar-shell">
           <div class="avatar-ring"></div>
 
@@ -20,7 +18,7 @@
             *ngIf="editMode"
             class="avatar-edit-btn"
             for="profileAvatarInput"
-            title="Change avatar">
+            title="Changer avatar">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 17.25V20h2.75L17.81 8.94l-2.75-2.75L4 17.25Zm15.71-9.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.92 3.92 1.96-1.96Z"/>
             </svg>
@@ -34,7 +32,6 @@
             (change)="onAvatarSelected($event)" />
         </div>
 
-        <!-- VIEW MODE -->
         <div class="profile-main-copy" *ngIf="!editMode">
           <div class="profile-badge-row">
             <span class="eyebrow-badge">Freelancer Profile</span>
@@ -43,18 +40,24 @@
               <span class="trust-pill__dot"></span>
               Trust Level {{ profile.trustLevel }}/5
             </span>
+
+            <span class="status-pill">
+              {{ availabilityLabel }}
+            </span>
           </div>
 
-          <h1>{{ profile.fullName }}</h1>
+          <h1>{{ profile.fullName || 'Votre profil' }}</h1>
 
           <p class="profile-headline">
-            {{ profile.headline || 'Add a professional headline' }}
+            {{ freelancerProfile?.headline || profile.headline || 'Ajoutez un headline professionnel' }}
           </p>
 
           <div class="profile-meta">
-            <span>{{ profile.location }}</span>
+            <span>{{ freelancerProfile?.region || profile.location }}</span>
             <span class="meta-divider"></span>
-            <span>{{ skills.length }} skills listed</span>
+            <span>{{ skills.length }} compétence(s)</span>
+            <span class="meta-divider"></span>
+            <span>{{ freelancerProfile?.hourlyRate || 0 }} TND / heure</span>
             <span class="meta-divider"></span>
             <span>
               {{ profile.kycStatus === 'APPROVED' ? '✓ KYC Approved' : 'KYC ' + profile.kycStatus }}
@@ -62,7 +65,6 @@
           </div>
         </div>
 
-        <!-- EDIT MODE -->
         <div class="profile-main-copy profile-main-copy--edit" *ngIf="editMode">
           <div class="field-grid">
             <div class="form-field">
@@ -100,17 +102,17 @@
             </div>
           </div>
 
+          <hr class="module-divider" />
+          <p class="module-section-label">Profil Freelancer</p>
+
           <div class="form-field">
             <label>Headline</label>
             <input
               type="text"
-              [(ngModel)]="draftProfile.headline"
-              placeholder="Your professional title" />
+              [(ngModel)]="freelancerDraft.headline"
+              placeholder="Votre titre professionnel" />
           </div>
-<!-- Séparateur Module 02 -->
-          <hr class="module-divider" />
-          <p class="module-section-label">Profil Freelancer</p>
-          <!-- Champs Module 02 — freelancer-profile-service -->
+
           <div class="field-grid">
             <div class="form-field">
               <label>Taux horaire (TND)</label>
@@ -120,6 +122,7 @@
                 placeholder="Ex: 35"
                 min="1" />
             </div>
+
             <div class="form-field">
               <label>Gouvernorat</label>
               <select [(ngModel)]="freelancerDraft.region">
@@ -138,6 +141,7 @@
                 <option value="ON_VACATION">En vacances</option>
               </select>
             </div>
+
             <div class="form-field">
               <label>Type de projets</label>
               <select [(ngModel)]="freelancerDraft.projectType">
@@ -148,27 +152,30 @@
             </div>
           </div>
 
-          <div class="form-field">
-            <label>Visibilité</label>
-            <select [(ngModel)]="freelancerDraft.visibility">
-              <option value="PUBLIC">Public</option>
-              <option value="CONNECTIONS_ONLY">Connexions uniquement</option>
-              <option value="PRIVATE">Privé</option>
-            </select>
+          <div class="field-grid field-grid--full">
+            <div class="form-field">
+              <label>Visibilité</label>
+              <select [(ngModel)]="freelancerDraft.visibility">
+                <option value="PUBLIC">Public</option>
+                <option value="CONNECTIONS_ONLY">Connexions uniquement</option>
+                <option value="PRIVATE">Privé</option>
+              </select>
+            </div>
           </div>
         </div>
-
       </div>
 
       <div class="hero-actions">
         <button *ngIf="!editMode" class="primary-btn" (click)="toggleEdit()">
-          <i class="fas fa-pen"></i> Edit Profile
+          <i class="fas fa-pen"></i>
+          Modifier le profil
         </button>
 
         <div *ngIf="editMode" class="action-group">
           <button class="success-btn" (click)="saveProfile()" [disabled]="saving">
             {{ saving ? 'Saving...' : 'Save' }}
           </button>
+
           <button class="ghost-btn" (click)="cancelEdit()" [disabled]="saving">
             Cancel
           </button>
@@ -177,16 +184,21 @@
     </div>
   </section>
 
-  <div class="two-factor-alert two-factor-alert--error" *ngIf="error">
+  <ng-template #loadingState>
+    <section class="profile-hero-card loading-card">
+      <div class="loading-text">Chargement du profil...</div>
+    </section>
+  </ng-template>
+
+  <div class="app-alert app-alert--error" *ngIf="error">
     {{ error }}
   </div>
 
-  <div class="two-factor-alert two-factor-alert--success" *ngIf="successMessage">
+  <div class="app-alert app-alert--success" *ngIf="successMessage">
     {{ successMessage }}
   </div>
 
-  <!-- COMPLETION -->
-  <section class="completion-card">
+  <section class="completion-card" *ngIf="!loading">
     <div class="section-heading">
       <div>
         <h2>Profile Strength</h2>
@@ -209,7 +221,6 @@
       </span>
     </div>
 
-    <!-- Suggestions -->
     <div class="suggestions" *ngIf="completionSuggestions.length > 0">
       <p *ngFor="let s of completionSuggestions" class="suggestion-item">
         💡 {{ s }}
@@ -217,8 +228,7 @@
     </div>
   </section>
 
-  <!-- ABOUT + SIGNALS -->
-  <div class="content-grid">
+  <div class="content-grid" *ngIf="!loading">
     <section class="content-card about-card">
       <div class="card-header">
         <div>
@@ -228,14 +238,14 @@
       </div>
 
       <div *ngIf="!editMode" class="about-content">
-        <p>{{ profile.bio || 'Add a short and professional bio to strengthen your profile.' }}</p>
+        <p>{{ freelancerProfile?.bio || 'Ajoute une bio professionnelle pour renforcer ton profil.' }}</p>
       </div>
 
       <div *ngIf="editMode" class="about-editor">
         <label>Professional bio</label>
         <textarea
-          [(ngModel)]="draftProfile.bio"
-          placeholder="Write a strong introduction about your expertise, positioning and delivery style."></textarea>
+          [(ngModel)]="freelancerDraft.bio"
+          placeholder="Présente ton expertise, ton positionnement et ta manière de travailler."></textarea>
       </div>
     </section>
 
@@ -271,12 +281,19 @@
             <span>{{ profile.portfolioAttached ? 'Attached' : 'Not added yet' }}</span>
           </div>
         </div>
+
+        <div class="signal-item">
+          <div class="signal-item__icon">AV</div>
+          <div>
+            <strong>Disponibilité</strong>
+            <span>{{ freelancerProfile?.availabilityStatus || freelancerDraft.availabilityStatus }}</span>
+          </div>
+        </div>
       </div>
     </section>
   </div>
 
-  <!-- SKILLS -->
-  <section class="content-card skills-card">
+  <section class="content-card skills-card" *ngIf="!loading">
     <div class="card-header">
       <div>
         <h2>Skills</h2>
@@ -285,7 +302,7 @@
     </div>
 
     <div class="skills-cloud">
-      <span class="skill-chip" *ngFor="let skill of skills">
+      <span class="skill-chip" *ngFor="let skill of skills; trackBy: trackBySkill">
         {{ skill.name }}
       </span>
 
@@ -294,5 +311,4 @@
       </span>
     </div>
   </section>
-
 </div>

@@ -1,18 +1,24 @@
 import { Component, OnInit } from '@angular/core';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService } from '../../../core/services/api.service';
 import { ProfileReview } from '../../../core/models/freelancer.model';
 
-/**
- * Composant Reviews — avis clients reçus sur le profil freelancer
- */
+interface ReviewViewModel extends ProfileReview {
+  reviewerFullName: string;
+  reviewerRoleLabel: string;
+  reviewerInitials: string;
+}
+
 @Component({
   selector: 'app-reviews',
   templateUrl: './reviews.component.html',
   styleUrls: ['./reviews.component.css']
 })
 export class ReviewsComponent implements OnInit {
-  reviews: ProfileReview[] = [];
+  reviews: ReviewViewModel[] = [];
   averageRating = 0;
   profileId: number | null = null;
 
@@ -22,7 +28,8 @@ export class ReviewsComponent implements OnInit {
 
   constructor(
     private profileService: FreelancerProfileService,
-    private authService: AuthService
+    private authService: AuthService,
+    private api: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -60,8 +67,55 @@ export class ReviewsComponent implements OnInit {
 
     this.profileService.getReviews(this.profileId).subscribe({
       next: (reviews) => {
-        this.reviews = reviews || [];
-        this.isLoading = false;
+        const safeReviews = reviews || [];
+
+        if (safeReviews.length === 0) {
+          this.reviews = [];
+          this.isLoading = false;
+          return;
+        }
+
+        const enrichedRequests = safeReviews.map((review) =>
+          this.api.get<any>(`/users/${review.clientId}`).pipe(
+            catchError(() =>
+              of({
+                firstName: '',
+                lastName: '',
+                role: 'CLIENT'
+              })
+            )
+          )
+        );
+
+        forkJoin(enrichedRequests).subscribe({
+          next: (users) => {
+            this.reviews = safeReviews.map((review, index) => {
+              const user = users[index] || {};
+
+              const firstName = (user.firstName || user.firstname || user.prenom || '').trim();
+              const lastName = (user.lastName || user.lastname || user.nom || '').trim();
+              const fullName = `${firstName} ${lastName}`.trim();
+
+              return {
+                ...review,
+                reviewerFullName: fullName || 'Utilisateur',
+                reviewerRoleLabel: this.getRoleLabel(user.role),
+                reviewerInitials: this.getInitials(firstName, lastName, fullName)
+              };
+            });
+
+            this.isLoading = false;
+          },
+          error: () => {
+            this.reviews = safeReviews.map((review) => ({
+              ...review,
+              reviewerFullName: 'Utilisateur',
+              reviewerRoleLabel: 'Client',
+              reviewerInitials: 'U'
+            }));
+            this.isLoading = false;
+          }
+        });
       },
       error: () => {
         this.errorMessage = 'Erreur lors du chargement des avis.';
@@ -104,8 +158,37 @@ export class ReviewsComponent implements OnInit {
     return 'Faible';
   }
 
-  getReviewerInitial(clientId: number): string {
-    return `U${clientId}`;
+  getRoleLabel(role?: string): string {
+    const normalized = (role || '').toUpperCase();
+
+    if (normalized === 'CLIENT') return 'Client';
+    if (normalized === 'FREELANCER') return 'Freelancer';
+    if (normalized === 'ADMIN') return 'Admin';
+
+    return 'Utilisateur';
+  }
+
+  getInitials(firstName?: string, lastName?: string, fallback?: string): string {
+    const first = (firstName || '').trim();
+    const last = (lastName || '').trim();
+
+    if (first && last) {
+      return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+    }
+
+    if (first) {
+      return first.charAt(0).toUpperCase();
+    }
+
+    if (fallback && fallback.trim()) {
+      const parts = fallback.trim().split(' ').filter(Boolean);
+      if (parts.length >= 2) {
+        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+      }
+      return parts[0][0].toUpperCase();
+    }
+
+    return 'U';
   }
 
   autoClearMessages(): void {
@@ -115,7 +198,7 @@ export class ReviewsComponent implements OnInit {
     }, 3500);
   }
 
-  trackByReview(index: number, review: ProfileReview): number {
+  trackByReview(index: number, review: ReviewViewModel): number {
     return review.id;
   }
 }

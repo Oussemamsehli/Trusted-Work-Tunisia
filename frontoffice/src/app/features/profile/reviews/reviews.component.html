@@ -1,7 +1,6 @@
 <div class="reviews-page">
   <div class="reviews-shell">
 
-    <!-- Toasts -->
     <div class="toast-stack" *ngIf="errorMessage || successMessage">
       <div class="alert-banner alert-banner--error" *ngIf="errorMessage">
         <span class="alert-icon">⚠️</span>
@@ -16,7 +15,6 @@
       </div>
     </div>
 
-    <!-- Hero -->
     <section class="reviews-hero">
       <div class="reviews-hero__glow reviews-hero__glow--one"></div>
       <div class="reviews-hero__glow reviews-hero__glow--two"></div>
@@ -71,13 +69,11 @@
       </div>
     </section>
 
-    <!-- Loading -->
     <div class="loading-state" *ngIf="isLoading">
       <div class="loading-spinner"></div>
       <p>Chargement des avis...</p>
     </div>
 
-    <!-- Empty state -->
     <section class="empty-state-card" *ngIf="!isLoading && reviews.length === 0">
       <div class="empty-state">
         <div class="empty-icon">⭐</div>
@@ -89,7 +85,6 @@
       </div>
     </section>
 
-    <!-- Reviews list -->
     <section class="reviews-list-section" *ngIf="!isLoading && reviews.length > 0">
       <div class="section-head">
         <div>
@@ -102,10 +97,13 @@
         <article class="review-card" *ngFor="let review of reviews; trackBy: trackByReview">
           <div class="review-header">
             <div class="reviewer-info">
-              <div class="reviewer-avatar">{{ getReviewerInitial(review.clientId) }}</div>
+              <div class="reviewer-avatar">{{ review.reviewerInitials }}</div>
 
               <div class="reviewer-meta">
-                <span class="reviewer-name">Client #{{ review.clientId }}</span>
+                <div class="reviewer-line">
+                  <span class="reviewer-name">{{ review.reviewerFullName }}</span>
+                  <span class="reviewer-role">{{ review.reviewerRoleLabel }}</span>
+                </div>
                 <span class="review-date">{{ review.reviewedAt | date:'dd MMM yyyy' }}</span>
               </div>
             </div>
