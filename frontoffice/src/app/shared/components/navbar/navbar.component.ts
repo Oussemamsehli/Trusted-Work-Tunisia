@@ -37,12 +37,12 @@ export class NavbarComponent implements OnInit {
   activeDropdown: string | null = null;
 
   quickSearchItems: QuickSearchItem[] = [
-    { label: 'Mon Profil',     route: '/app/profile/overview' },
-    { label: 'KYC',            route: '/app/profile/kyc' },
+    { label: 'Mon Profil', route: '/app/profile/overview' },
+    { label: 'KYC', route: '/app/profile/kyc' },
     { label: 'Trust Passport', route: '/app/profile/trust-passport' },
-    { label: 'Parametres',     route: '/app/profile/settings' },
-    { label: 'Portfolio',      route: '/app/profile/portfolio' },
-    { label: 'Carriere AI',    route: '/app/profile/career-path' }
+    { label: 'Parametres', route: '/app/profile/settings' },
+    { label: 'Portfolio', route: '/app/profile/portfolio' },
+    { label: 'Carriere AI', route: '/app/profile/career-path' }
   ];
 
   navItems: NavItem[] = [
@@ -50,28 +50,28 @@ export class NavbarComponent implements OnInit {
     {
       label: 'Identite et Acces',
       children: [
-        { label: 'Vue generale',   route: '/app/profile/overview',       description: 'Resume de votre profil' },
-        { label: 'KYC',            route: '/app/profile/kyc',            description: 'Verification identite CIN' },
+        { label: 'Vue generale', route: '/app/profile/overview', description: 'Resume de votre profil' },
+        { label: 'KYC', route: '/app/profile/kyc', description: 'Verification identite CIN' },
         { label: 'Trust Passport', route: '/app/profile/trust-passport', description: 'Score de confiance' },
-        { label: 'Parametres',     route: '/app/profile/settings',       description: 'Securite et 2FA' }
+        { label: 'Parametres', route: '/app/profile/settings', description: 'Securite et 2FA' }
       ]
     },
     {
       label: 'Profil Freelancer',
       children: [
-        { label: 'Portfolio',    route: '/app/profile/portfolio',       description: 'Mes projets realises' },
-        { label: 'Experiences',  route: '/app/profile/work-experience', description: 'Parcours professionnel' },
-        { label: 'Endorsements', route: '/app/profile/endorsements',    description: 'Validation des competences' },
-        { label: 'Avis Clients', route: '/app/profile/reviews',         description: 'Reputation publique' },
-        { label: 'Carriere AI',  route: '/app/profile/career-path',     description: 'Recommandations intelligentes' }
+        { label: 'Portfolio', route: '/app/profile/portfolio', description: 'Mes projets realises' },
+        { label: 'Experiences', route: '/app/profile/work-experience', description: 'Parcours professionnel' },
+        { label: 'Endorsements', route: '/app/profile/endorsements', description: 'Validation des competences' },
+        { label: 'Avis Clients', route: '/app/profile/reviews', description: 'Reputation publique' },
+        { label: 'Carriere AI', route: '/app/profile/career-path', description: 'Recommandations intelligentes' }
       ]
     },
     {
       label: 'Marketplace',
       children: [
         { label: 'Offres Freelance', description: 'Missions disponibles', disabled: true },
-        { label: 'Contrats',         description: 'Gestion des contrats', disabled: true },
-        { label: 'Escrow',           description: 'Paiements securises',  disabled: true }
+        { label: 'Contrats', description: 'Gestion des contrats', disabled: true },
+        { label: 'Escrow', description: 'Paiements securises', disabled: true }
       ]
     },
     {
@@ -79,7 +79,7 @@ export class NavbarComponent implements OnInit {
       children: [
         { label: 'Evenements', description: 'Hackathons et meetups', disabled: true },
         { label: 'Challenges', description: 'Defis et gamification', disabled: true },
-        { label: 'Agences',    description: 'Equipes freelance',     disabled: true }
+        { label: 'Agences', description: 'Equipes freelance', disabled: true }
       ]
     }
   ];
@@ -90,22 +90,84 @@ export class NavbarComponent implements OnInit {
     this.currentUser = this.authService.getCurrentAuthUser();
   }
 
+  get displayName(): string {
+    if (!this.currentUser) return 'User';
+
+    const user: any = this.currentUser;
+
+    const firstName =
+      user.firstName ||
+      user.firstname ||
+      user.prenom ||
+      '';
+
+    const lastName =
+      user.lastName ||
+      user.lastname ||
+      user.nom ||
+      '';
+
+    const fullName =
+      user.fullName ||
+      `${firstName} ${lastName}`.trim();
+
+    if (fullName) {
+      return fullName;
+    }
+
+    if (this.currentUser.email) {
+      const localPart = this.currentUser.email.split('@')[0];
+      const cleaned = localPart
+        .replace(/[._-]+/g, ' ')
+        .replace(/\b\w/g, (c: string) => c.toUpperCase())
+        .trim();
+
+      return cleaned || 'User';
+    }
+
+    return 'User';
+  }
+
   hasChildren(item: NavItem): boolean {
     return !!item.children && item.children.length > 0;
   }
 
-  toggleDropdown(label: string): void {
-    this.activeDropdown = this.activeDropdown === label ? null : label;
+  openDropdown(label: string): void {
+    this.activeDropdown = label;
   }
 
-  closeDropdown(): void { this.activeDropdown = null; }
-  isDropdownOpen(label: string): boolean { return this.activeDropdown === label; }
-  onToggleSidebar(): void { this.toggleSidebar.emit(); }
-  toggleSearch(): void { this.searchOpen = !this.searchOpen; }
-  closeSearch(): void { this.searchOpen = false; this.activeDropdown = null; }
-  onQuickNavigate(): void { this.closeSearch(); }
-  trackByLabel(index: number, item: QuickSearchItem): string { return item.label; }
-  stopProp(event: Event): void { event.stopPropagation(); }
+  closeDropdown(): void {
+    this.activeDropdown = null;
+  }
+
+  isDropdownOpen(label: string): boolean {
+    return this.activeDropdown === label;
+  }
+
+  onToggleSidebar(): void {
+    this.toggleSidebar.emit();
+  }
+
+  toggleSearch(): void {
+    this.searchOpen = !this.searchOpen;
+  }
+
+  closeSearch(): void {
+    this.searchOpen = false;
+    this.activeDropdown = null;
+  }
+
+  onQuickNavigate(): void {
+    this.closeSearch();
+  }
+
+  trackByLabel(index: number, item: QuickSearchItem): string {
+    return item.label;
+  }
+
+  stopProp(event: Event): void {
+    event.stopPropagation();
+  }
 
   onLogout(): void {
     this.closeSearch();
