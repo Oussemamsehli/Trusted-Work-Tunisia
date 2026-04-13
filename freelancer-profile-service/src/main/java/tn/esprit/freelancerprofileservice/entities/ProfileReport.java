@@ -1,5 +1,6 @@
 package tn.esprit.freelancerprofileservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import tn.esprit.freelancerprofileservice.enums.ReportStatus;
@@ -19,7 +20,7 @@ public class ProfileReport {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ID de l'utilisateur qui signale (référence Module 01)
+    // ID de l'utilisateur qui signale
     @Column(name = "reporter_id", nullable = false)
     private Long reporterId;
 
@@ -30,9 +31,10 @@ public class ProfileReport {
     private ReportStatus status = ReportStatus.PENDING;
 
     private LocalDateTime reportedAt = LocalDateTime.now();
-    private LocalDateTime resolvedAt; // Null tant que non traité
+    private LocalDateTime resolvedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private FreelancerProfile profile;
 }

@@ -75,7 +75,13 @@
           </ng-template>
         </td>
 
-        <td>User #{{ r.reporterId }}</td>
+        <!-- ✅ Nom + prénom du reporter -->
+        <td>
+          <div class="reporter-cell">
+            <div class="reporter-avatar">{{ r.reporterInitials }}</div>
+            <span>{{ r.reporterFullName }}</span>
+          </div>
+        </td>
 
         <td class="description-cell">
           <span class="badge badge-warning">{{ r.reason }}</span>

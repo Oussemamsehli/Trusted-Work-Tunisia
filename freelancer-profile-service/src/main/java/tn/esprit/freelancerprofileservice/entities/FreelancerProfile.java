@@ -1,5 +1,6 @@
 package tn.esprit.freelancerprofileservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import tn.esprit.freelancerprofileservice.enums.AvailabilityStatus;
@@ -27,14 +28,14 @@ public class FreelancerProfile {
     private Long userId;
 
     @Column(length = 100)
-    private String headline; // Ex: "Développeur Spring Boot Senior"
+    private String headline;
 
     @Column(columnDefinition = "TEXT")
     private String bio;
 
     private String avatarUrl;
 
-    private Double hourlyRate; // Taux horaire en TND
+    private Double hourlyRate;
 
     @Enumerated(EnumType.STRING)
     private AvailabilityStatus availabilityStatus = AvailabilityStatus.AVAILABLE;
@@ -45,41 +46,45 @@ public class FreelancerProfile {
     @Enumerated(EnumType.STRING)
     private ProjectType projectType = ProjectType.BOTH;
 
-    // Score de complétude du profil (0-100) — calculé par CompletenessService
     private Integer completenessScore = 0;
 
-    // Classement régional (gouvernorat tunisien)
     private String region;
     private Integer regionalRank;
 
-    // Nombre total de vues du profil
     private Integer totalViews = 0;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Relations OneToMany — cascade delete propre
+    @JsonIgnore
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Skill> skills;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PortfolioItem> portfolioItems;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Certification> certifications;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WorkExperience> workExperiences;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Education> educations;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProfileReview> reviews;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProfileReport> reports;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProfileView> views;
 

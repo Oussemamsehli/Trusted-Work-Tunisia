@@ -46,7 +46,10 @@ public class JwtUtil {
     public String extractRole(String token) {
         Claims claims = extractAllClaims(token);
 
-        Object role = claims.get("role");
+        //  "roles" = claim utilisé par le user-service
+        Object role = claims.get("roles");
+        if (role == null) role = claims.get("role"); // fallback
+
         return role != null ? role.toString() : "USER";
     }
 
