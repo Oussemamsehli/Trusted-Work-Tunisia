@@ -1,105 +1,206 @@
-<div class="portfolio-container">
+<div class="portfolio-page">
+  <div class="portfolio-shell">
 
-  <!-- En-tête -->
-  <div class="portfolio-header">
-    <div class="header-left">
-      <h2>💼 Mon Portfolio</h2>
-      <span class="badge-count">{{ portfolioItems.length }} projet(s)</span>
-    </div>
-    <button class="btn-add" (click)="showForm = !showForm">
-      {{ showForm ? '✕ Annuler' : '+ Ajouter un projet' }}
-    </button>
-  </div>
+    <!-- Header -->
+    <div class="portfolio-header">
+      <div class="header-left">
+        <span class="page-chip">Portfolio</span>
 
-  <!-- Message d'erreur -->
-  <div class="alert-error" *ngIf="errorMessage">
-    {{ errorMessage }}
-    <button (click)="errorMessage = ''">✕</button>
-  </div>
+        <div class="title-row">
+          <h1>Mon Portfolio</h1>
+          <span class="badge-count">{{ projectsCountLabel }}</span>
+        </div>
 
-  <!-- Formulaire d'ajout -->
-  <div class="form-card" *ngIf="showForm">
-    <h3>Nouveau projet</h3>
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Titre *</label>
-        <input type="text" [(ngModel)]="newItem.title"
-               placeholder="Ex: Plateforme e-commerce" />
+        <p>
+          Présentez vos réalisations pour renforcer votre crédibilité et valoriser
+          votre expertise auprès des clients.
+        </p>
       </div>
-      <div class="form-group">
-        <label>Technologies</label>
-        <input type="text" [(ngModel)]="newItem.technologies"
-               placeholder="Ex: Spring Boot, Angular, MySQL" />
-      </div>
-      <div class="form-group full-width">
-        <label>Description</label>
-        <textarea [(ngModel)]="newItem.description"
-                  placeholder="Décrivez votre projet..." rows="3"></textarea>
-      </div>
-      <div class="form-group">
-        <label>URL du projet</label>
-        <input type="url" [(ngModel)]="newItem.projectUrl"
-               placeholder="https://github.com/..." />
-      </div>
-      <div class="form-group">
-        <label>Date de réalisation</label>
-        <input type="date" [(ngModel)]="newItem.completionDate" />
+
+      <div class="header-actions">
+        <button class="btn-add" (click)="showForm = !showForm">
+          {{ showForm ? 'Fermer le formulaire' : '+ Ajouter un projet' }}
+        </button>
       </div>
     </div>
-    <div class="form-actions">
-      <button class="btn-save" (click)="addItem()"
-              [disabled]="!newItem.title.trim()">
-        💾 Enregistrer
-      </button>
-      <button class="btn-cancel" (click)="showForm = false; resetForm()">
-        Annuler
-      </button>
+
+    <!-- Erreur -->
+    <div class="alert-error" *ngIf="errorMessage">
+      <span>{{ errorMessage }}</span>
+      <button type="button" (click)="errorMessage = ''">✕</button>
     </div>
-  </div>
 
-  <!-- Loading -->
-  <div class="loading" *ngIf="isLoading">
-    <span>Chargement...</span>
-  </div>
+    <!-- Formulaire -->
+    <div class="form-card" *ngIf="showForm">
+      <div class="form-card__header">
+        <span class="section-chip">Nouveau projet</span>
+        <h2>Ajoutez une réalisation à votre portfolio</h2>
+        <p>
+          Mettez en avant un projet concret, les technologies utilisées et, si possible,
+          un lien de démonstration ou de repository.
+        </p>
+      </div>
 
-  <!-- Liste des projets -->
-  <div class="projects-grid" *ngIf="!isLoading">
+      <div class="form-grid">
+        <div class="mini-section-title">Informations principales</div>
 
-    <!-- Etat vide -->
-    <div class="empty-state" *ngIf="portfolioItems.length === 0">
-      <div class="empty-icon">📁</div>
-      <h3>Aucun projet pour l'instant</h3>
-      <p>Ajoutez vos réalisations pour renforcer votre profil</p>
+        <div class="form-group">
+          <label for="title">Titre du projet <span>*</span></label>
+          <input
+            id="title"
+            type="text"
+            [(ngModel)]="newItem.title"
+            placeholder="Ex: Plateforme e-commerce"
+            class="form-control"
+          />
+          <div class="field-meta">
+            <small>Choisissez un titre clair et professionnel.</small>
+            <small>{{ titleLength }}/120</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="technologies">Technologies</label>
+          <input
+            id="technologies"
+            type="text"
+            [(ngModel)]="newItem.technologies"
+            placeholder="Ex: Spring Boot, Angular, MySQL"
+            class="form-control"
+          />
+          <small>Séparez les technologies par des virgules.</small>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="description">Description</label>
+          <textarea
+            id="description"
+            [(ngModel)]="newItem.description"
+            placeholder="Décrivez l’objectif du projet, votre rôle, les fonctionnalités clés et la valeur apportée..."
+            rows="4"
+            class="form-control"
+          ></textarea>
+        </div>
+
+        <div class="mini-section-title">Liens et finalisation</div>
+
+        <div class="form-group">
+          <label for="projectUrl">URL du projet</label>
+          <input
+            id="projectUrl"
+            type="url"
+            [(ngModel)]="newItem.projectUrl"
+            placeholder="https://github.com/... ou https://demo.com"
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="completionDate">Date de réalisation</label>
+          <input
+            id="completionDate"
+            type="date"
+            [(ngModel)]="newItem.completionDate"
+            class="form-control"
+          />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button
+          class="btn-save"
+          (click)="addItem()"
+          [disabled]="!newItem.title.trim()"
+        >
+          Enregistrer le projet
+        </button>
+
+        <button
+          class="btn-cancel"
+          type="button"
+          (click)="showForm = false; resetForm()"
+        >
+          Annuler
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loading-spinner"></div>
+      <p>Chargement du portfolio...</p>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" *ngIf="!isLoading && !hasItems">
+      <div class="empty-state__icon">📁</div>
+      <h3>Aucun projet pour l’instant</h3>
+      <p>
+        Ajoutez vos réalisations pour donner plus de poids à votre profil freelancer.
+      </p>
       <button class="btn-add" (click)="showForm = true">
         + Ajouter mon premier projet
       </button>
     </div>
 
-    <!-- Cards projets -->
-    <div class="project-card" *ngFor="let item of portfolioItems">
-      <div class="card-header">
-        <h3>{{ item.title }}</h3>
-        <button class="btn-delete" (click)="deleteItem(item.id)">🗑</button>
-      </div>
+    <!-- Liste -->
+    <div class="projects-grid" *ngIf="!isLoading && hasItems">
+      <article
+        class="project-card"
+        *ngFor="let item of portfolioItems; trackBy: trackByProjectId"
+      >
+        <div class="project-card__top">
+          <div class="project-card__icon">🚀</div>
 
-      <p class="card-description">{{ item.description }}</p>
+          <button
+            class="btn-delete"
+            type="button"
+            (click)="deleteItem(item.id)"
+            title="Supprimer ce projet"
+          >
+            ✕
+          </button>
+        </div>
 
-      <!-- Technologies -->
-      <div class="tech-tags" *ngIf="item.technologies">
-        <span class="tech-tag" *ngFor="let tech of getTechArray(item.technologies)">
-          {{ tech }}
-        </span>
-      </div>
+        <div class="project-card__body">
+          <h3>{{ item.title }}</h3>
 
-      <div class="card-footer">
-        <span class="completion-date" *ngIf="item.completionDate">
-          📅 {{ item.completionDate | date:'MMM yyyy' }}
-        </span>
-        <a *ngIf="item.projectUrl" [href]="item.projectUrl"
-           target="_blank" class="btn-link">
-          🔗 Voir le projet
-        </a>
-      </div>
+          <p class="card-description" *ngIf="item.description; else noDescription">
+            {{ item.description }}
+          </p>
+
+          <ng-template #noDescription>
+            <p class="card-description card-description--muted">
+              Aucune description fournie pour ce projet.
+            </p>
+          </ng-template>
+
+          <div class="tech-tags" *ngIf="item.technologies">
+            <span
+              class="tech-tag"
+              *ngFor="let tech of getTechArray(item.technologies)"
+            >
+              {{ tech }}
+            </span>
+          </div>
+        </div>
+
+        <div class="project-card__footer">
+          <span class="completion-date" *ngIf="item.completionDate">
+            {{ item.completionDate | date:'MMM yyyy' }}
+          </span>
+
+          <a
+            *ngIf="item.projectUrl"
+            [href]="item.projectUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-link"
+          >
+            Voir le projet
+          </a>
+        </div>
+      </article>
     </div>
 
   </div>

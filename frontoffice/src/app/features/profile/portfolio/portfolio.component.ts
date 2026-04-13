@@ -12,13 +12,11 @@ import { PortfolioItem } from '../../../core/models/freelancer.model';
   styleUrls: ['./portfolio.component.css']
 })
 export class PortfolioComponent implements OnInit {
-
   portfolioItems: PortfolioItem[] = [];
   isLoading = false;
   errorMessage = '';
   showForm = false;
 
-  // Formulaire d'ajout
   newItem = {
     title: '',
     description: '',
@@ -37,34 +35,54 @@ export class PortfolioComponent implements OnInit {
     this.loadPortfolio();
   }
 
-get currentUserId(): number {
-  return this.authService.getCurrentAuthUser()!.userId;
-}
+  get currentUserId(): number {
+    return this.authService.getCurrentAuthUser()!.userId;
+  }
+
+  get projectsCountLabel(): string {
+    return `${this.portfolioItems.length} projet(s)`;
+  }
+
+  get hasItems(): boolean {
+    return this.portfolioItems.length > 0;
+  }
+
+  get titleLength(): number {
+    return this.newItem.title.trim().length;
+  }
+
   loadPortfolio(): void {
     this.isLoading = true;
+    this.errorMessage = '';
+
     this.profileService.getMyPortfolio(this.currentUserId).subscribe({
       next: (items) => {
         this.portfolioItems = items;
         this.isLoading = false;
       },
-      error: (err) => {
-        this.errorMessage = 'Erreur lors du chargement du portfolio';
+      error: () => {
+        this.errorMessage = 'Erreur lors du chargement du portfolio.';
         this.isLoading = false;
       }
     });
   }
 
   addItem(): void {
-    if (!this.newItem.title.trim()) return;
+    if (!this.newItem.title.trim()) {
+      this.errorMessage = 'Le titre du projet est obligatoire.';
+      return;
+    }
+
+    this.errorMessage = '';
 
     this.profileService.addPortfolioItem(this.currentUserId, this.newItem).subscribe({
       next: (item) => {
-        this.portfolioItems.push(item);
+        this.portfolioItems = [item, ...this.portfolioItems];
         this.resetForm();
         this.showForm = false;
       },
       error: () => {
-        this.errorMessage = 'Erreur lors de l\'ajout du projet';
+        this.errorMessage = 'Erreur lors de l’ajout du projet.';
       }
     });
   }
@@ -77,7 +95,7 @@ get currentUserId(): number {
         this.portfolioItems = this.portfolioItems.filter(i => i.id !== itemId);
       },
       error: () => {
-        this.errorMessage = 'Erreur lors de la suppression';
+        this.errorMessage = 'Erreur lors de la suppression.';
       }
     });
   }
@@ -96,5 +114,9 @@ get currentUserId(): number {
   getTechArray(technologies: string): string[] {
     if (!technologies) return [];
     return technologies.split(',').map(t => t.trim()).filter(t => t.length > 0);
+  }
+
+  trackByProjectId(index: number, item: PortfolioItem): number {
+    return item.id;
   }
 }
