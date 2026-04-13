@@ -4,7 +4,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ProfileReview } from '../../../core/models/freelancer.model';
 
 /**
- * Composant Reviews — avis clients sur le profil freelancer
+ * Composant Reviews — avis clients reçus sur le profil freelancer
  */
 @Component({
   selector: 'app-reviews',
@@ -17,19 +17,8 @@ export class ReviewsComponent implements OnInit {
   profileId: number | null = null;
 
   isLoading = false;
-  isSaving = false;
-
   errorMessage = '';
   successMessage = '';
-  showForm = false;
-
-  newReview = {
-    clientId: 0,
-    rating: 5,
-    comment: ''
-  };
-
-  stars = [1, 2, 3, 4, 5];
 
   constructor(
     private profileService: FreelancerProfileService,
@@ -42,10 +31,6 @@ export class ReviewsComponent implements OnInit {
 
   get currentUserId(): number {
     return this.authService.getCurrentAuthUser()!.userId;
-  }
-
-  get canSubmit(): boolean {
-    return !!this.profileId && this.newReview.rating >= 1 && this.newReview.rating <= 5 && !this.isSaving;
   }
 
   get latestRating(): number {
@@ -99,40 +84,6 @@ export class ReviewsComponent implements OnInit {
     });
   }
 
-  submitReview(): void {
-    if (!this.profileId || !this.canSubmit) return;
-
-    this.clearMessages();
-    this.isSaving = true;
-
-    const payload = {
-      clientId: this.newReview.clientId || this.currentUserId,
-      rating: this.newReview.rating,
-      comment: this.newReview.comment.trim()
-    };
-
-    this.profileService.addReview(this.profileId, payload).subscribe({
-      next: (review) => {
-        this.reviews.unshift(review);
-        this.averageRating = this.calculateAverage();
-        this.isSaving = false;
-        this.resetForm();
-        this.showForm = false;
-        this.successMessage = 'Avis ajouté avec succès.';
-        this.autoClearMessages();
-      },
-      error: (err) => {
-        this.isSaving = false;
-        this.errorMessage = err.error?.message || 'Erreur lors de l’ajout de l’avis.';
-        this.autoClearMessages();
-      }
-    });
-  }
-
-  setRating(star: number): void {
-    this.newReview.rating = star;
-  }
-
   calculateAverage(): number {
     if (this.reviews.length === 0) return 0;
     const sum = this.reviews.reduce((acc, r) => acc + r.rating, 0);
@@ -155,19 +106,6 @@ export class ReviewsComponent implements OnInit {
 
   getReviewerInitial(clientId: number): string {
     return `U${clientId}`;
-  }
-
-  resetForm(): void {
-    this.newReview = {
-      clientId: 0,
-      rating: 5,
-      comment: ''
-    };
-  }
-
-  clearMessages(): void {
-    this.errorMessage = '';
-    this.successMessage = '';
   }
 
   autoClearMessages(): void {

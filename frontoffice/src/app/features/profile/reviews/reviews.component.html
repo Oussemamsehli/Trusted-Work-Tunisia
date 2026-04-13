@@ -31,20 +31,10 @@
               <span class="badge-count">{{ reviews.length }} avis</span>
             </div>
             <p class="subtitle">
-              Consultez les retours de vos clients et renforcez la crédibilité de votre profil
-              grâce à une preuve sociale visible et soignée.
+              Consultez les retours laissés par vos clients. Les nouveaux avis
+              sont publiés depuis votre profil public.
             </p>
           </div>
-        </div>
-
-        <div class="header-actions">
-          <button class="btn-primary" *ngIf="!showForm" (click)="showForm = true">
-            + Laisser un avis
-          </button>
-
-          <button class="btn-secondary" *ngIf="showForm" (click)="showForm = false; resetForm()">
-            ✕ Annuler
-          </button>
         </div>
       </div>
 
@@ -81,54 +71,6 @@
       </div>
     </section>
 
-    <!-- Form -->
-    <section class="form-card" *ngIf="showForm">
-      <div class="form-card__header">
-        <div>
-          <span class="section-chip">Nouveau feedback</span>
-          <h3>Publier un avis</h3>
-          <p>Ajoutez une note et un commentaire pour enrichir la réputation du profil.</p>
-        </div>
-      </div>
-
-      <div class="rating-selector">
-        <label>Note *</label>
-        <div class="stars-input">
-          <span
-            *ngFor="let star of stars"
-            class="star-btn"
-            [class.active]="star <= newReview.rating"
-            (click)="setRating(star)">
-            ★
-          </span>
-
-          <span class="rating-text">
-            {{ newReview.rating }}/5 · {{ getRatingLabel(newReview.rating) }}
-          </span>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label>Commentaire</label>
-        <textarea
-          [(ngModel)]="newReview.comment"
-          placeholder="Partagez votre expérience avec ce freelancer..."
-          rows="4"
-          class="form-control"
-        ></textarea>
-      </div>
-
-      <div class="form-actions">
-        <button class="btn-primary" (click)="submitReview()" [disabled]="!canSubmit">
-          {{ isSaving ? 'Publication...' : 'Publier l’avis' }}
-        </button>
-
-        <button class="btn-ghost" (click)="showForm = false; resetForm()" [disabled]="isSaving">
-          Annuler
-        </button>
-      </div>
-    </section>
-
     <!-- Loading -->
     <div class="loading-state" *ngIf="isLoading">
       <div class="loading-spinner"></div>
@@ -140,8 +82,10 @@
       <div class="empty-state">
         <div class="empty-icon">⭐</div>
         <h3>Aucun avis pour l’instant</h3>
-        <p>Les avis de vos clients apparaîtront ici pour renforcer la confiance autour de votre profil.</p>
-        <button class="btn-primary" (click)="showForm = true">+ Laisser un avis</button>
+        <p>
+          Les avis publiés par vos clients apparaîtront ici automatiquement
+          depuis votre profil public.
+        </p>
       </div>
     </section>
 

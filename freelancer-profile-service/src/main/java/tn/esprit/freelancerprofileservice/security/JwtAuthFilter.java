@@ -56,11 +56,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(username, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
-                // ← et celle-ci
                 System.out.println(">>> JWT INVALID — token rejected");
             }
         } catch (Exception e) {
-            // ← et celle-ci
             System.out.println(">>> JWT EXCEPTION — " + e.getMessage());
             SecurityContextHolder.clearContext();
         }
