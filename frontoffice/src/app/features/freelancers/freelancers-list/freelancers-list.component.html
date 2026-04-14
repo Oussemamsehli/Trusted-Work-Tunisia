@@ -1,11 +1,11 @@
 <div class="freelancers-container">
-
   <div class="section-header">
     <h2>Freelancers</h2>
     <p class="subtitle">Découvrez les profils de la communauté TrustedWork Tunisia</p>
   </div>
 
   <div class="loading" *ngIf="isLoading">Chargement...</div>
+
   <div class="error-banner" *ngIf="errorMessage">{{ errorMessage }}</div>
 
   <div class="empty-state" *ngIf="!isLoading && freelancers.length === 0">
@@ -16,18 +16,23 @@
     <div class="freelancer-card" *ngFor="let f of freelancers"
          (click)="viewProfile(f.userId)">
 
+      <!-- Avatar avec initiales réelles du freelancer -->
       <div class="card-avatar">
-        {{ f.headline.charAt(0) || 'F' }}
+        {{ f.initials }}
       </div>
 
       <div class="card-info">
-        <h3>{{ f.headline || 'Freelancer' }}</h3>
+        <!-- Nom complet résolu depuis user-service -->
+        <h3>{{ f.fullName }}</h3>
+        <p class="card-headline">{{ f.headline }}</p>
         <p class="card-bio">{{ f.bio | slice:0:80 }}{{ (f.bio.length || 0) > 80 ? '...' : '' }}</p>
+
         <div class="card-meta">
           <span *ngIf="f.region">📍 {{ f.region }}</span>
           <span *ngIf="f.hourlyRate">💰 {{ f.hourlyRate }} TND/h</span>
           <span class="score">🏆 {{ f.completenessScore }}% complet</span>
         </div>
+
         <span class="availability-badge"
               [class.available]="f.availabilityStatus === 'AVAILABLE'">
           {{ f.availabilityStatus === 'AVAILABLE' ? 'Disponible' :
@@ -38,8 +43,6 @@
       <div class="card-action">
         <span class="view-btn">Voir le profil →</span>
       </div>
-
     </div>
   </div>
-
 </div>

@@ -12,7 +12,6 @@ import java.util.List;
 
 /**
  * Entité principale du profil freelancer
- * Référence l'userId du Module 01 (user-service) — pas de FK cross-service
  */
 @Entity
 @Table(name = "freelancer_profiles")
@@ -23,7 +22,7 @@ public class FreelancerProfile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Référence vers user-service (Module 01) — ID uniquement, pas de @ManyToOne
+
     @Column(nullable = false, unique = true)
     private Long userId;
 

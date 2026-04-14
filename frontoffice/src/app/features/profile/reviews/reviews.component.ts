@@ -75,8 +75,11 @@ export class ReviewsComponent implements OnInit {
           return;
         }
 
+        // CORRECTION : utiliser /identity/users/{clientId}
+        // C'est l'endpoint public du IdentityController — pas besoin d'auth
+        // Retourne PublicUserDTO : firstName, lastName, role, kycStatus, trustLevel
         const enrichedRequests = safeReviews.map((review) =>
-          this.api.get<any>(`/users/${review.clientId}`).pipe(
+          this.api.get<any>(`/identity/users/${review.clientId}`).pipe(
             catchError(() =>
               of({
                 firstName: '',
@@ -92,26 +95,27 @@ export class ReviewsComponent implements OnInit {
             this.reviews = safeReviews.map((review, index) => {
               const user = users[index] || {};
 
-              const firstName = (user.firstName || user.firstname || user.prenom || '').trim();
-              const lastName = (user.lastName || user.lastname || user.nom || '').trim();
-              const fullName = `${firstName} ${lastName}`.trim();
+              const firstName = (user.firstName || '').trim();
+              const lastName  = (user.lastName  || '').trim();
+              const fullName  = `${firstName} ${lastName}`.trim();
 
               return {
                 ...review,
-                reviewerFullName: fullName || 'Utilisateur',
+                reviewerFullName:  fullName || 'Utilisateur',
                 reviewerRoleLabel: this.getRoleLabel(user.role),
-                reviewerInitials: this.getInitials(firstName, lastName, fullName)
+                reviewerInitials:  this.getInitials(firstName, lastName, fullName)
               };
             });
 
             this.isLoading = false;
           },
           error: () => {
+            // Fail-open : si user-service down → afficher "Utilisateur"
             this.reviews = safeReviews.map((review) => ({
               ...review,
-              reviewerFullName: 'Utilisateur',
+              reviewerFullName:  'Utilisateur',
               reviewerRoleLabel: 'Client',
-              reviewerInitials: 'U'
+              reviewerInitials:  'U'
             }));
             this.isLoading = false;
           }
@@ -160,17 +164,15 @@ export class ReviewsComponent implements OnInit {
 
   getRoleLabel(role?: string): string {
     const normalized = (role || '').toUpperCase();
-
-    if (normalized === 'CLIENT') return 'Client';
+    if (normalized === 'CLIENT')     return 'Client';
     if (normalized === 'FREELANCER') return 'Freelancer';
-    if (normalized === 'ADMIN') return 'Admin';
-
+    if (normalized === 'ADMIN')      return 'Admin';
     return 'Utilisateur';
   }
 
   getInitials(firstName?: string, lastName?: string, fallback?: string): string {
     const first = (firstName || '').trim();
-    const last = (lastName || '').trim();
+    const last  = (lastName  || '').trim();
 
     if (first && last) {
       return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
@@ -193,7 +195,7 @@ export class ReviewsComponent implements OnInit {
 
   autoClearMessages(): void {
     setTimeout(() => {
-      this.errorMessage = '';
+      this.errorMessage  = '';
       this.successMessage = '';
     }, 3500);
   }

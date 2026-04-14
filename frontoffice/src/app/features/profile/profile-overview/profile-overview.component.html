@@ -4,13 +4,24 @@
 
     <div class="profile-hero-card__content">
       <div class="profile-identity">
+
+        <!-- ===== AVATAR ===== -->
         <div class="avatar-shell">
           <div class="avatar-ring"></div>
 
+          <!-- Photo réelle si uploadée -->
           <img
+            *ngIf="hasRealPhoto()"
             class="avatar-image"
             [src]="editMode ? draftProfile.avatar : profile.avatar"
             [alt]="(editMode ? draftProfile.fullName : profile.fullName) + ' avatar'" />
+
+          <!-- Initiales si pas de photo — ex: "OM" pour Oussema Msehli -->
+          <div
+            *ngIf="!hasRealPhoto()"
+            class="avatar-image avatar-initials-box">
+            {{ getInitials() }}
+          </div>
 
           <span class="avatar-status"></span>
 
@@ -32,6 +43,7 @@
             (change)="onAvatarSelected($event)" />
         </div>
 
+        <!-- ===== INFOS MODE LECTURE ===== -->
         <div class="profile-main-copy" *ngIf="!editMode">
           <div class="profile-badge-row">
             <span class="eyebrow-badge">Freelancer Profile</span>
@@ -46,8 +58,10 @@
             </span>
           </div>
 
+          <!-- Nom complet — firstName + lastName depuis user-service -->
           <h1>{{ profile.fullName || 'Votre profil' }}</h1>
 
+          <!-- Headline professionnel depuis freelancer-profile-service -->
           <p class="profile-headline">
             {{ freelancerProfile?.headline || profile.headline || 'Ajoutez un headline professionnel' }}
           </p>
@@ -65,40 +79,41 @@
           </div>
         </div>
 
+        <!-- ===== FORMULAIRE MODE ÉDITION ===== -->
         <div class="profile-main-copy profile-main-copy--edit" *ngIf="editMode">
           <div class="field-grid">
             <div class="form-field">
-              <label>First name</label>
+              <label>Prénom</label>
               <input
                 type="text"
                 [(ngModel)]="draftProfile.firstName"
-                placeholder="Enter your first name" />
+                placeholder="Votre prénom" />
             </div>
 
             <div class="form-field">
-              <label>Last name</label>
+              <label>Nom</label>
               <input
                 type="text"
                 [(ngModel)]="draftProfile.lastName"
-                placeholder="Enter your last name" />
+                placeholder="Votre nom" />
             </div>
           </div>
 
           <div class="field-grid">
             <div class="form-field">
-              <label>Location</label>
+              <label>Localisation</label>
               <input
                 type="text"
                 [(ngModel)]="draftProfile.location"
-                placeholder="Enter your location" />
+                placeholder="Votre ville" />
             </div>
 
             <div class="form-field">
-              <label>Phone</label>
+              <label>Téléphone</label>
               <input
                 type="text"
                 [(ngModel)]="draftProfile.phone"
-                placeholder="Enter your phone number" />
+                placeholder="Votre numéro" />
             </div>
           </div>
 
@@ -165,6 +180,7 @@
         </div>
       </div>
 
+      <!-- ===== BOUTONS ===== -->
       <div class="hero-actions">
         <button *ngIf="!editMode" class="primary-btn" (click)="toggleEdit()">
           <i class="fas fa-pen"></i>
@@ -173,11 +189,10 @@
 
         <div *ngIf="editMode" class="action-group">
           <button class="success-btn" (click)="saveProfile()" [disabled]="saving">
-            {{ saving ? 'Saving...' : 'Save' }}
+            {{ saving ? 'Sauvegarde...' : 'Sauvegarder' }}
           </button>
-
           <button class="ghost-btn" (click)="cancelEdit()" [disabled]="saving">
-            Cancel
+            Annuler
           </button>
         </div>
       </div>
@@ -190,14 +205,10 @@
     </section>
   </ng-template>
 
-  <div class="app-alert app-alert--error" *ngIf="error">
-    {{ error }}
-  </div>
+  <div class="app-alert app-alert--error" *ngIf="error">{{ error }}</div>
+  <div class="app-alert app-alert--success" *ngIf="successMessage">{{ successMessage }}</div>
 
-  <div class="app-alert app-alert--success" *ngIf="successMessage">
-    {{ successMessage }}
-  </div>
-
+  <!-- ===== COMPLETION ===== -->
   <section class="completion-card" *ngIf="!loading">
     <div class="section-heading">
       <div>
@@ -228,7 +239,10 @@
     </div>
   </section>
 
+  <!-- ===== CONTENU ===== -->
   <div class="content-grid" *ngIf="!loading">
+
+    <!-- About -->
     <section class="content-card about-card">
       <div class="card-header">
         <div>
@@ -242,13 +256,15 @@
       </div>
 
       <div *ngIf="editMode" class="about-editor">
-        <label>Professional bio</label>
+        <label>Bio professionnelle</label>
         <textarea
           [(ngModel)]="freelancerDraft.bio"
-          placeholder="Présente ton expertise, ton positionnement et ta manière de travailler."></textarea>
+          placeholder="Présente ton expertise, ton positionnement et ta manière de travailler.">
+        </textarea>
       </div>
     </section>
 
+    <!-- Profile Signals -->
     <section class="content-card quick-stats-card">
       <div class="card-header">
         <div>
@@ -286,13 +302,14 @@
           <div class="signal-item__icon">AV</div>
           <div>
             <strong>Disponibilité</strong>
-            <span>{{ freelancerProfile?.availabilityStatus || freelancerDraft.availabilityStatus }}</span>
+            <span>{{ availabilityLabel }}</span>
           </div>
         </div>
       </div>
     </section>
   </div>
 
+  <!-- ===== SKILLS ===== -->
   <section class="content-card skills-card" *ngIf="!loading">
     <div class="card-header">
       <div>
@@ -305,10 +322,10 @@
       <span class="skill-chip" *ngFor="let skill of skills; trackBy: trackBySkill">
         {{ skill.name }}
       </span>
-
       <span *ngIf="skills.length === 0" class="empty-text">
         No skills added yet.
       </span>
     </div>
   </section>
+
 </div>

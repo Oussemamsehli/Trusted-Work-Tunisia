@@ -14,14 +14,12 @@ public class UpdateProfileRequest {
     @Size(min = 2, max = 50)
     private String lastName;
 
-    // ⚠ IMPORTANT: aligné avec frontend
     private String phone;
 
-    //  NOUVEAUX champs (UX premium)
     private String headline;
     private String location;
     private String bio;
 
-    //  chemin image stocké (pas base64)
+    //  chemin image stocké
     private String photo;
 }

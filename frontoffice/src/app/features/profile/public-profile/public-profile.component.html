@@ -14,7 +14,6 @@
           <span>{{ errorMessage }}</span>
         </div>
       </div>
-
       <div class="alert-banner alert-banner--success" *ngIf="successMessage">
         <div class="alert-banner__icon">✓</div>
         <div class="alert-banner__content">
@@ -32,8 +31,15 @@
 
         <div class="hero-main">
           <div class="hero-identity">
+
+            <!-- Avatar : photo réelle ou initiales -->
             <div class="profile-avatar">
-              {{ profileInitial }}
+              <img
+                *ngIf="hasRealPhoto()"
+                [src]="targetUserPhoto"
+                [alt]="targetUserFullName"
+                style="width:100%; height:100%; object-fit:cover; border-radius:inherit;" />
+              <span *ngIf="!hasRealPhoto()">{{ targetUserInitials }}</span>
             </div>
 
             <div class="hero-copy">
@@ -45,15 +51,20 @@
                 </span>
               </div>
 
-              <h1>{{ profile.headline || 'Freelancer' }}</h1>
+              <!-- Nom complet résolu depuis user-service -->
+              <h1>{{ targetUserFullName }}</h1>
+
+              <!-- Headline professionnel depuis freelancer-profile-service -->
+              <p class="profile-headline-sub" *ngIf="profile.headline">
+                {{ profile.headline }}
+              </p>
 
               <p class="profile-bio" *ngIf="profile.bio; else emptyBio">
                 {{ profile.bio }}
               </p>
-
               <ng-template #emptyBio>
                 <p class="profile-bio profile-bio--muted">
-                  Ce freelancer n’a pas encore ajouté de bio détaillée.
+                  Ce freelancer n'a pas encore ajouté de bio détaillée.
                 </p>
               </ng-template>
 
@@ -77,15 +88,12 @@
           <div class="hero-actions" *ngIf="!isOwner">
             <button
               class="btn-primary"
-              (click)="showReviewForm = !showReviewForm; showReportForm = false"
-            >
-              <span>{{ showReviewForm ? 'Fermer l’avis' : 'Laisser un avis' }}</span>
+              (click)="showReviewForm = !showReviewForm; showReportForm = false">
+              <span>{{ showReviewForm ? 'Fermer l\'avis' : 'Laisser un avis' }}</span>
             </button>
-
             <button
               class="btn-secondary-danger"
-              (click)="showReportForm = !showReportForm; showReviewForm = false"
-            >
+              (click)="showReportForm = !showReportForm; showReviewForm = false">
               <span>{{ showReportForm ? 'Fermer le signalement' : 'Signaler ce profil' }}</span>
             </button>
           </div>
@@ -101,19 +109,16 @@
             <strong>{{ averageRating > 0 ? (averageRating.toFixed(1) + '/5') : 'N/A' }}</strong>
             <small>Basée sur les retours clients</small>
           </div>
-
           <div class="stat-card">
             <span class="stat-label">Endorsements</span>
             <strong>{{ totalEndorsements }}</strong>
             <small>Compétences validées par la communauté</small>
           </div>
-
           <div class="stat-card">
             <span class="stat-label">Authenticité moyenne</span>
             <strong>{{ averageAuthenticity.toFixed(0) }}%</strong>
             <small>Indice de crédibilité des skills</small>
           </div>
-
           <div class="stat-card">
             <span class="stat-label">Expériences</span>
             <strong>{{ experiences.length }}</strong>
@@ -122,63 +127,49 @@
         </div>
       </section>
 
+      <!-- Formulaire avis -->
       <section class="action-card" *ngIf="showReviewForm && !isOwner">
         <div class="action-card__header">
           <span class="section-chip">Avis client</span>
           <h2>Laisser un avis</h2>
           <p>Partagez une expérience honnête et utile pour renforcer la confiance sur la plateforme.</p>
         </div>
-
         <div class="form-grid form-grid--compact">
           <div class="form-group form-group--sm">
             <label>Note (1 à 5)</label>
-            <input
-              type="number"
-              [(ngModel)]="newReview.rating"
-              min="1"
-              max="5"
-              class="form-control"
-            />
+            <input type="number" [(ngModel)]="newReview.rating" min="1" max="5" class="form-control" />
           </div>
-
           <div class="form-group full-width">
             <label>Commentaire *</label>
-            <textarea
-              [(ngModel)]="newReview.comment"
+            <textarea [(ngModel)]="newReview.comment"
               placeholder="Décrivez votre expérience avec ce freelancer..."
-              rows="4"
-              class="form-control"
-            ></textarea>
+              rows="4" class="form-control"></textarea>
           </div>
         </div>
-
         <div class="form-actions">
-          <button class="btn-primary" (click)="submitReview()">Publier l’avis</button>
+          <button class="btn-primary" (click)="submitReview()">Publier l'avis</button>
         </div>
       </section>
 
+      <!-- Formulaire signalement -->
       <section class="action-card action-card--danger" *ngIf="showReportForm && !isOwner">
         <div class="action-card__header">
           <span class="section-chip section-chip--danger">Modération</span>
           <h2>Signaler ce profil</h2>
-          <p>Le signalement sera transmis à l’administration TrustedWork pour vérification.</p>
+          <p>Le signalement sera transmis à l'administration TrustedWork pour vérification.</p>
         </div>
-
         <div class="form-group">
           <label>Raison du signalement *</label>
-          <textarea
-            [(ngModel)]="reportReason"
+          <textarea [(ngModel)]="reportReason"
             placeholder="Ex: informations trompeuses, faux profil, contenu inapproprié..."
-            rows="4"
-            class="form-control"
-          ></textarea>
+            rows="4" class="form-control"></textarea>
         </div>
-
         <div class="form-actions">
           <button class="btn-danger" (click)="submitReport()">Envoyer le signalement</button>
         </div>
       </section>
 
+      <!-- Skills -->
       <section class="section-card" *ngIf="skills.length > 0">
         <div class="section-head">
           <div>
@@ -187,7 +178,6 @@
           </div>
           <span class="section-count">{{ skills.length }} skill(s)</span>
         </div>
-
         <div class="skills-list">
           <article class="skill-row" *ngFor="let skill of skills; trackBy: trackBySkill">
             <div class="skill-left">
@@ -195,57 +185,47 @@
                 <span class="skill-name">{{ skill.name }}</span>
                 <span class="skill-level">{{ skill.level }}</span>
               </div>
-
               <div class="skill-meta">
                 <span>{{ skill.endorsementCount }} endorsement(s)</span>
                 <span>{{ (skill.authenticityScore * 100).toFixed(0) }}% authenticité</span>
               </div>
-
               <div class="auth-bar-wrapper">
                 <div class="auth-bar" [style.width.%]="skill.authenticityScore * 100"></div>
               </div>
             </div>
-
             <div class="skill-right">
               <ng-container *ngIf="!isOwner">
-                <button
-                  class="btn-endorse"
+                <button class="btn-endorse"
                   (click)="toggleEndorse(skill.id)"
-                  [class.active]="endorsingSkillId === skill.id"
-                >
+                  [class.active]="endorsingSkillId === skill.id">
                   {{ endorsingSkillId === skill.id ? 'Annuler' : '👍 Endorser' }}
                 </button>
               </ng-container>
-
               <span class="owner-label" *ngIf="isOwner">Vos compétences</span>
             </div>
           </article>
 
           <div class="endorse-form" *ngIf="endorsingSkillId">
             <div class="endorse-form__header">
-              <h3>Confirmer l’endorsement</h3>
+              <h3>Confirmer l'endorsement</h3>
               <p>Ajoutez un commentaire optionnel pour contextualiser votre validation.</p>
             </div>
-
             <div class="form-group">
               <label>Commentaire optionnel</label>
-              <textarea
-                [(ngModel)]="endorseComment"
+              <textarea [(ngModel)]="endorseComment"
                 placeholder="Ajoutez un retour court sur cette compétence..."
-                rows="3"
-                class="form-control"
-              ></textarea>
+                rows="3" class="form-control"></textarea>
             </div>
-
             <div class="form-actions">
               <button class="btn-primary" (click)="submitEndorsement(endorsingSkillId!)">
-                Confirmer l’endorsement
+                Confirmer l'endorsement
               </button>
             </div>
           </div>
         </div>
       </section>
 
+      <!-- Expériences -->
       <section class="section-card" *ngIf="experiences.length > 0">
         <div class="section-head">
           <div>
@@ -254,7 +234,6 @@
           </div>
           <span class="section-count">{{ experiences.length }} poste(s)</span>
         </div>
-
         <div class="timeline">
           <article class="timeline-item" *ngFor="let exp of experiences">
             <div class="timeline-dot"></div>
@@ -274,6 +253,7 @@
         </div>
       </section>
 
+      <!-- Portfolio -->
       <section class="section-card" *ngIf="portfolio.length > 0">
         <div class="section-head">
           <div>
@@ -282,42 +262,30 @@
           </div>
           <span class="section-count">{{ portfolio.length }} projet(s)</span>
         </div>
-
         <div class="portfolio-grid">
           <article class="portfolio-item" *ngFor="let item of portfolio; trackBy: trackByPortfolio">
             <div class="portfolio-item__top">
               <div class="portfolio-icon">🚀</div>
             </div>
-
             <h3>{{ item.title }}</h3>
-
-            <p *ngIf="item.description; else noPortfolioDesc">
-              {{ item.description }}
-            </p>
-
+            <p *ngIf="item.description; else noPortfolioDesc">{{ item.description }}</p>
             <ng-template #noPortfolioDesc>
               <p class="muted-text">Aucune description fournie pour ce projet.</p>
             </ng-template>
-
             <div class="tech-badges" *ngIf="item.technologies">
               <span class="tech-tag" *ngFor="let tech of item.technologies.split(',')">
                 {{ tech.trim() }}
               </span>
             </div>
-
-            <a
-              *ngIf="item.projectUrl"
-              [href]="item.projectUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn-link"
-            >
+            <a *ngIf="item.projectUrl" [href]="item.projectUrl"
+               target="_blank" rel="noopener noreferrer" class="btn-link">
               Voir le projet →
             </a>
           </article>
         </div>
       </section>
 
+      <!-- Certifications -->
       <section class="section-card" *ngIf="certifications.length > 0">
         <div class="section-head">
           <div>
@@ -326,7 +294,6 @@
           </div>
           <span class="section-count">{{ certifications.length }} certification(s)</span>
         </div>
-
         <div class="cert-list">
           <article class="cert-item" *ngFor="let cert of certifications">
             <div class="cert-icon">🏅</div>
@@ -341,6 +308,7 @@
         </div>
       </section>
 
+      <!-- Reviews -->
       <section class="section-card" *ngIf="reviews.length > 0">
         <div class="section-head">
           <div>
@@ -349,7 +317,6 @@
           </div>
           <span class="section-count">{{ reviews.length }} avis</span>
         </div>
-
         <div class="reviews-list">
           <article class="review-item" *ngFor="let r of reviews; trackBy: trackByReview">
             <div class="review-header">
@@ -358,16 +325,17 @@
               </div>
               <span class="review-date">{{ r.reviewedAt | date:'dd MMM yyyy' }}</span>
             </div>
-
             <p class="review-comment">{{ r.comment }}</p>
           </article>
         </div>
       </section>
 
-      <section class="empty-state-card" *ngIf="!skills.length && !portfolio.length && !certifications.length && !experiences.length && !reviews.length">
+      <!-- Empty state -->
+      <section class="empty-state-card"
+        *ngIf="!skills.length && !portfolio.length && !certifications.length && !experiences.length && !reviews.length">
         <div class="empty-state-icon">📄</div>
         <h3>Profil encore léger</h3>
-        <p>Ce freelancer n’a pas encore enrichi suffisamment son profil public.</p>
+        <p>Ce freelancer n'a pas encore enrichi suffisamment son profil public.</p>
       </section>
 
     </ng-container>

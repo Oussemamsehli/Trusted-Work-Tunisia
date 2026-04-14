@@ -8,13 +8,6 @@ import { FreelancerProfileService } from '../../../core/services/freelancer-prof
 import { Skill, CompletenessResponse, FreelancerProfile } from '../../../core/models/freelancer.model';
 
 const API_BASE = 'http://localhost:8081/api';
-const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
-  <rect width="160" height="160" rx="24" fill="#1e293b"/>
-  <circle cx="80" cy="60" r="28" fill="#94a3b8"/>
-  <path d="M40 128c8-22 28-34 40-34s32 12 40 34" fill="#94a3b8"/>
-</svg>
-`);
 
 interface ProfileModel {
   fullName: string;
@@ -113,8 +106,39 @@ export class ProfileOverviewComponent implements OnInit {
     this.loadProfile();
   }
 
+  // ==================== AVATAR ====================
+
+  /**
+   * Vérifie si l'utilisateur a une vraie photo uploadée
+   * (pas le SVG par défaut, pas vide)
+   */
+  hasRealPhoto(): boolean {
+    const photo = this.editMode ? this.draftProfile.photo : this.profile.photo;
+    return !!photo &&
+           !photo.includes('data:image/svg') &&
+           photo.trim() !== '';
+  }
+
+  /**
+   * Retourne les initiales du nom complet
+   * Ex: "Oussema Msehli" → "OM"
+   */
+  getInitials(): string {
+    const source = this.editMode ? this.draftProfile : this.profile;
+    const f = (source.firstName || '').trim();
+    const l = (source.lastName  || '').trim();
+    if (f && l) return `${f.charAt(0)}${l.charAt(0)}`.toUpperCase();
+    if (f)      return f.charAt(0).toUpperCase();
+    const full = (source.fullName || '').trim().split(' ').filter(Boolean);
+    if (full.length >= 2) return `${full[0][0]}${full[1][0]}`.toUpperCase();
+    if (full.length === 1) return full[0][0].toUpperCase();
+    return 'F';
+  }
+
+  // ==================== LOAD ====================
+
   private resolvePhotoUrl(photo?: string): string {
-    if (!photo) return DEFAULT_AVATAR;
+    if (!photo) return '';
     if (
       photo.startsWith('http://') ||
       photo.startsWith('https://') ||
@@ -138,23 +162,23 @@ export class ProfileOverviewComponent implements OnInit {
           this.userId = (data as any).id ?? (data as any).userId ?? null;
 
           this.profile = {
-            fullName: `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+            fullName:  `${data.firstName || ''} ${data.lastName || ''}`.trim(),
             firstName: data.firstName || '',
-            lastName: data.lastName || '',
-            headline: (data as any).headline || '',
-            location: (data as any).location || 'Tunisie',
-            bio: (data as any).bio || '',
-            phone: (data as any).phone || '',
-            photo: photoUrl,
-            avatar: photoUrl,
+            lastName:  data.lastName  || '',
+            headline:  (data as any).headline || '',
+            location:  (data as any).location || 'Tunisie',
+            bio:       (data as any).bio      || '',
+            phone:     (data as any).phone    || '',
+            photo:     photoUrl,
+            avatar:    photoUrl,
             cin: typeof (data as any).cin === 'number'
               ? (data as any).cin
               : Number((data as any).cin) || null,
-            trustLevel: (data as any).trustLevel ?? 1,
-            kycStatus: (data as any).kycStatus || 'PENDING',
-            twoFactorEnabled: !!(data as any).twoFactorEnabled,
-            portfolioAttached: false,
-            certificationsAdded: (data as any).kycStatus === 'APPROVED',
+            trustLevel:           (data as any).trustLevel    ?? 1,
+            kycStatus:            (data as any).kycStatus     || 'PENDING',
+            twoFactorEnabled:     !!(data as any).twoFactorEnabled,
+            portfolioAttached:    false,
+            certificationsAdded:  (data as any).kycStatus === 'APPROVED',
             trustPassportCompleted: ((data as any).trustLevel ?? 1) >= 3
           };
 
@@ -175,44 +199,44 @@ export class ProfileOverviewComponent implements OnInit {
 
   private loadFreelancerData(userId: number): void {
     forkJoin({
-      profile: this.freelancerService.getProfileByUserId(userId),
-      skills: this.freelancerService.getMySkills(userId),
+      profile:      this.freelancerService.getProfileByUserId(userId),
+      skills:       this.freelancerService.getMySkills(userId),
       completeness: this.freelancerService.getCompleteness(userId)
     }).subscribe({
       next: ({ profile, skills, completeness }) => {
         this.freelancerProfile = profile;
-        this.skills = skills || [];
-        this.completeness = completeness;
+        this.skills            = skills || [];
+        this.completeness      = completeness;
 
         this.freelancerDraft = {
-          headline: profile?.headline || '',
-          bio: profile?.bio || '',
-          hourlyRate: profile?.hourlyRate || null,
-          region: profile?.region || '',
+          headline:           profile?.headline           || '',
+          bio:                profile?.bio                || '',
+          hourlyRate:         profile?.hourlyRate         || null,
+          region:             profile?.region             || '',
           availabilityStatus: profile?.availabilityStatus || 'AVAILABLE',
-          visibility: profile?.visibility || 'PUBLIC',
-          projectType: profile?.projectType || 'BOTH'
+          visibility:         profile?.visibility         || 'PUBLIC',
+          projectType:        profile?.projectType        || 'BOTH'
         };
 
         if (!this.draftProfile.headline && this.freelancerDraft.headline) {
           this.draftProfile.headline = this.freelancerDraft.headline;
         }
-
         if (!this.profile.headline && this.freelancerDraft.headline) {
           this.profile.headline = this.freelancerDraft.headline;
         }
       },
       error: () => {
-        this.skills = [];
-        this.completeness = null;
+        this.skills            = [];
+        this.completeness      = null;
         this.freelancerProfile = null;
       }
     });
   }
 
+  // ==================== COMPUTED ====================
+
   get completion(): number {
     if (this.completeness) return this.completeness.score;
-
     const checks = [
       !!this.profile.fullName,
       !!this.profile.phone,
@@ -221,18 +245,17 @@ export class ProfileOverviewComponent implements OnInit {
       this.profile.trustLevel >= 3,
       this.skills.length > 0
     ];
-
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   }
 
   get completionItems(): { label: string; done: boolean }[] {
     return [
-      { label: 'Informations de base', done: !!this.profile.fullName },
-      { label: 'Téléphone', done: !!this.profile.phone },
-      { label: 'KYC approuvé', done: this.profile.kycStatus === 'APPROVED' },
-      { label: '2FA activé', done: this.profile.twoFactorEnabled },
-      { label: 'Trust Level ≥ 3', done: this.profile.trustLevel >= 3 },
-      { label: 'Compétences ajoutées', done: this.skills.length > 0 }
+      { label: 'Informations de base',  done: !!this.profile.fullName },
+      { label: 'Téléphone',             done: !!this.profile.phone },
+      { label: 'KYC approuvé',          done: this.profile.kycStatus === 'APPROVED' },
+      { label: '2FA activé',            done: this.profile.twoFactorEnabled },
+      { label: 'Trust Level ≥ 3',       done: this.profile.trustLevel >= 3 },
+      { label: 'Compétences ajoutées',  done: this.skills.length > 0 }
     ];
   }
 
@@ -242,84 +265,73 @@ export class ProfileOverviewComponent implements OnInit {
 
   get availabilityLabel(): string {
     switch (this.freelancerDraft.availabilityStatus) {
-      case 'AVAILABLE':
-        return 'Disponible';
-      case 'BUSY':
-        return 'Occupé';
-      default:
-        return 'En vacances';
+      case 'AVAILABLE': return 'Disponible';
+      case 'BUSY':      return 'Occupé';
+      default:          return 'En vacances';
     }
   }
+
+  // ==================== ACTIONS ====================
 
   toggleEdit(): void {
     this.error = '';
     this.successMessage = '';
-
     if (!this.editMode) {
-      this.draftProfile = { ...this.profile };
-      this.selectedAvatarFile = null;
-
+      this.draftProfile        = { ...this.profile };
+      this.selectedAvatarFile  = null;
       if (this.freelancerProfile) {
         this.freelancerDraft = {
-          headline: this.freelancerProfile.headline || '',
-          bio: this.freelancerProfile.bio || '',
-          hourlyRate: this.freelancerProfile.hourlyRate || null,
-          region: this.freelancerProfile.region || '',
+          headline:           this.freelancerProfile.headline           || '',
+          bio:                this.freelancerProfile.bio                || '',
+          hourlyRate:         this.freelancerProfile.hourlyRate         || null,
+          region:             this.freelancerProfile.region             || '',
           availabilityStatus: this.freelancerProfile.availabilityStatus || 'AVAILABLE',
-          visibility: this.freelancerProfile.visibility || 'PUBLIC',
-          projectType: this.freelancerProfile.projectType || 'BOTH'
+          visibility:         this.freelancerProfile.visibility         || 'PUBLIC',
+          projectType:        this.freelancerProfile.projectType        || 'BOTH'
         };
       }
     }
-
     this.editMode = !this.editMode;
   }
 
   cancelEdit(): void {
-    this.draftProfile = { ...this.profile };
+    this.draftProfile       = { ...this.profile };
     this.selectedAvatarFile = null;
-
     if (this.freelancerProfile) {
       this.freelancerDraft = {
-        headline: this.freelancerProfile.headline || '',
-        bio: this.freelancerProfile.bio || '',
-        hourlyRate: this.freelancerProfile.hourlyRate || null,
-        region: this.freelancerProfile.region || '',
+        headline:           this.freelancerProfile.headline           || '',
+        bio:                this.freelancerProfile.bio                || '',
+        hourlyRate:         this.freelancerProfile.hourlyRate         || null,
+        region:             this.freelancerProfile.region             || '',
         availabilityStatus: this.freelancerProfile.availabilityStatus || 'AVAILABLE',
-        visibility: this.freelancerProfile.visibility || 'PUBLIC',
-        projectType: this.freelancerProfile.projectType || 'BOTH'
+        visibility:         this.freelancerProfile.visibility         || 'PUBLIC',
+        projectType:        this.freelancerProfile.projectType        || 'BOTH'
       };
     }
-
-    this.editMode = false;
-    this.error = '';
+    this.editMode   = false;
+    this.error      = '';
     this.successMessage = '';
   }
 
   saveProfile(): void {
-    if (!this.profile.cin) {
-      this.error = 'CIN introuvable.';
-      return;
-    }
-
-    if (!this.userId) {
-      this.error = 'User ID introuvable.';
-      return;
-    }
+    if (!this.profile.cin) { this.error = 'CIN introuvable.';   return; }
+    if (!this.userId)       { this.error = 'User ID introuvable.'; return; }
 
     this.saving = true;
-    this.error = '';
+    this.error  = '';
     this.successMessage = '';
 
-    const normalizedHeadline = this.freelancerDraft.headline?.trim() || this.draftProfile.headline?.trim() || '';
+    const normalizedHeadline =
+      this.freelancerDraft.headline?.trim() ||
+      this.draftProfile.headline?.trim()    || '';
 
     const formData = new FormData();
     formData.append('firstName', this.draftProfile.firstName || '');
-    formData.append('lastName', this.draftProfile.lastName || '');
-    formData.append('phone', this.draftProfile.phone || '');
-    formData.append('headline', normalizedHeadline);
-    formData.append('location', this.draftProfile.location || '');
-    formData.append('bio', this.draftProfile.bio || '');
+    formData.append('lastName',  this.draftProfile.lastName  || '');
+    formData.append('phone',     this.draftProfile.phone     || '');
+    formData.append('headline',  normalizedHeadline);
+    formData.append('location',  this.draftProfile.location  || '');
+    formData.append('bio',       this.draftProfile.bio       || '');
     if (this.selectedAvatarFile) {
       formData.append('photo', this.selectedAvatarFile);
     }
@@ -327,13 +339,13 @@ export class ProfileOverviewComponent implements OnInit {
     const saveUser$ = this.api.put(`/users/${this.profile.cin}`, formData);
 
     const freelancerPayload: Partial<FreelancerProfile> = {
-      headline: normalizedHeadline,
-      bio: this.freelancerDraft.bio?.trim() || '',
-      hourlyRate: this.freelancerDraft.hourlyRate ?? undefined,
-      region: this.freelancerDraft.region || '',
+      headline:           normalizedHeadline,
+      bio:                this.freelancerDraft.bio?.trim()  || '',
+      hourlyRate:         this.freelancerDraft.hourlyRate   ?? undefined,
+      region:             this.freelancerDraft.region       || '',
       availabilityStatus: this.freelancerDraft.availabilityStatus,
-      visibility: this.freelancerDraft.visibility,
-      projectType: this.freelancerDraft.projectType
+      visibility:         this.freelancerDraft.visibility,
+      projectType:        this.freelancerDraft.projectType
     };
 
     const saveFreelancer$ = this.freelancerService.updateProfile(this.userId, freelancerPayload);
@@ -342,14 +354,14 @@ export class ProfileOverviewComponent implements OnInit {
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => {
-          this.successMessage = 'Profil mis à jour avec succès.';
-          this.editMode = false;
+          this.successMessage     = 'Profil mis à jour avec succès.';
+          this.editMode           = false;
           this.selectedAvatarFile = null;
           this.loadProfile();
         },
         error: (err: HttpErrorResponse) => {
           this.error =
-            err?.error?.error ||
+            err?.error?.error   ||
             err?.error?.message ||
             'Erreur lors de la sauvegarde.';
         }
@@ -358,7 +370,6 @@ export class ProfileOverviewComponent implements OnInit {
 
   onAvatarSelected(event: Event): void {
     this.error = '';
-
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
@@ -367,18 +378,16 @@ export class ProfileOverviewComponent implements OnInit {
       this.error = 'Avatar : format invalide.';
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
       this.error = 'Avatar : fichier trop volumineux (max 5MB).';
       return;
     }
 
     this.selectedAvatarFile = file;
-
     const reader = new FileReader();
     reader.onload = () => {
       this.draftProfile.avatar = String(reader.result);
-      this.draftProfile.photo = String(reader.result);
+      this.draftProfile.photo  = String(reader.result);
     };
     reader.readAsDataURL(file);
   }

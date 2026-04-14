@@ -26,7 +26,6 @@ public class PortfolioItem {
     private String projectUrl;  // Lien GitHub ou démo
     private String imageUrl;    // Capture d'écran du projet
 
-    // Technologies utilisées (stockées en JSON string simple)
     @Column(columnDefinition = "TEXT")
     private String technologies; // Ex: "Spring Boot, Angular, MySQL"
 

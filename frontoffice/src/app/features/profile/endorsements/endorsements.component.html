@@ -8,7 +8,6 @@
         <span>{{ errorMessage }}</span>
         <button type="button" class="alert-close" (click)="errorMessage = ''">✕</button>
       </div>
-
       <div class="alert-banner alert-banner--success" *ngIf="successMessage">
         <span class="alert-icon">✅</span>
         <span>{{ successMessage }}</span>
@@ -24,7 +23,6 @@
       <div class="endorsements-header">
         <div class="header-left">
           <div class="section-icon">🤝</div>
-
           <div class="header-copy">
             <div class="header-topline">
               <h2>Endorsements</h2>
@@ -43,17 +41,14 @@
           <span class="stat-label">Skills</span>
           <strong>{{ skills.length }}</strong>
         </div>
-
         <div class="stat-card">
           <span class="stat-label">Compétences endorsées</span>
           <strong>{{ endorsedSkillsCount }}</strong>
         </div>
-
         <div class="stat-card">
           <span class="stat-label">Endorsements reçus</span>
           <strong>{{ totalEndorsements }}</strong>
         </div>
-
         <div class="stat-card">
           <span class="stat-label">Authenticité moyenne</span>
           <strong>{{ averageAuthenticity.toFixed(0) }}%</strong>
@@ -82,7 +77,7 @@
         <div class="empty-icon">🤝</div>
         <h3>Aucune compétence à valider</h3>
         <p>
-          Ajoutez d'abord des compétences dans l’onglet Skills pour commencer à recevoir
+          Ajoutez d'abord des compétences dans l'onglet Skills pour commencer à recevoir
           des endorsements de la communauté.
         </p>
       </div>
@@ -99,6 +94,7 @@
 
       <div class="skills-list">
         <article class="skill-card" *ngFor="let skill of skills; trackBy: trackBySkill">
+
           <div class="skill-header">
             <div class="skill-info">
               <div class="skill-topline">
@@ -107,7 +103,6 @@
                   {{ getLevelLabel(skill.level) }}
                 </span>
               </div>
-
               <div class="skill-meta">
                 <span>{{ getEndorsementCount(skill.id) }} endorsement(s)</span>
                 <span>{{ (skill.authenticityScore * 100).toFixed(0) }}% authenticité</span>
@@ -119,7 +114,6 @@
                 <span class="mini-stat__value">{{ getEndorsementCount(skill.id) }}</span>
                 <span class="mini-stat__label">Reçus</span>
               </div>
-
               <div class="mini-stat">
                 <span class="mini-stat__value">{{ (skill.authenticityScore * 100).toFixed(0) }}%</span>
                 <span class="mini-stat__label">Score</span>
@@ -132,7 +126,6 @@
               <span>Authenticité</span>
               <span>{{ (skill.authenticityScore * 100).toFixed(0) }}%</span>
             </div>
-
             <div class="progress-bar">
               <div
                 class="progress-fill"
@@ -148,16 +141,21 @@
               class="endorsement-item"
               *ngFor="let e of endorsementsBySkill[skill.id]; trackBy: trackByEndorsement">
 
-              <div class="endorser-avatar">{{ getEndorserInitial(e.endorserId) }}</div>
+              <!-- Utilise .endorser-avatar défini dans le CSS -->
+              <div class="endorser-avatar">{{ e.endorserInitials }}</div>
 
               <div class="endorsement-body">
                 <div class="endorsement-head">
-                  <span class="endorser-id">Freelancer #{{ e.endorserId }}</span>
+                  <!-- Nom complet résolu depuis /identity/users/{endorserId} -->
+                  <span class="endorser-id">{{ e.endorserName }}</span>
+                  <span class="skill-level level-confirmed" style="font-size: 0.72rem; padding: 0 8px; min-height: 24px;">
+                    {{ e.endorserRole }}
+                  </span>
                   <span class="endorsement-date">{{ e.endorsedAt | date:'dd MMM yyyy' }}</span>
                 </div>
 
-                <p class="endorsement-comment" *ngIf="e.comment">
-                  “{{ e.comment }}”
+                <p class="endorsement-comment" *ngIf="e.comment && e.comment.trim()">
+                  "{{ e.comment }}"
                 </p>
               </div>
             </article>
@@ -166,6 +164,7 @@
           <div class="no-endorsements" *ngIf="getEndorsementCount(skill.id) === 0">
             <span>Aucun endorsement reçu pour ce skill.</span>
           </div>
+
         </article>
       </div>
     </section>

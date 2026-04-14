@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService } from '../../../core/services/api.service';
 import {
   FreelancerProfile,
   Skill,
@@ -31,6 +33,11 @@ export class PublicProfileComponent implements OnInit {
   reviews: ProfileReview[] = [];
   averageRating = 0;
 
+  // Nom résolu depuis user-service via /identity/users/{targetUserId}
+  targetUserFullName = '';
+  targetUserInitials = '';
+  targetUserPhoto = '';
+
   isLoading = true;
   errorMessage = '';
   successMessage = '';
@@ -57,7 +64,8 @@ export class PublicProfileComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private profileService: FreelancerProfileService,
-    private authService: AuthService
+    private authService: AuthService,
+    private api: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -73,33 +81,21 @@ export class PublicProfileComponent implements OnInit {
     return this.authService.getCurrentAuthUser()!.userId;
   }
 
-  get profileInitial(): string {
-    return this.profile?.headline?.charAt(0)?.toUpperCase() || 'F';
-  }
-
   get availabilityLabel(): string {
     if (!this.profile) return 'Non défini';
-
     switch (this.profile.availabilityStatus) {
-      case 'AVAILABLE':
-        return 'Disponible';
-      case 'BUSY':
-        return 'Occupé';
-      default:
-        return 'En vacances';
+      case 'AVAILABLE': return 'Disponible';
+      case 'BUSY':      return 'Occupé';
+      default:          return 'En vacances';
     }
   }
 
   get availabilityClass(): string {
     if (!this.profile) return 'status-neutral';
-
     switch (this.profile.availabilityStatus) {
-      case 'AVAILABLE':
-        return 'status-available';
-      case 'BUSY':
-        return 'status-busy';
-      default:
-        return 'status-vacation';
+      case 'AVAILABLE': return 'status-available';
+      case 'BUSY':      return 'status-busy';
+      default:          return 'status-vacation';
     }
   }
 
@@ -117,10 +113,24 @@ export class PublicProfileComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.profileService.getProfileByUserId(this.targetUserId).subscribe({
-      next: (profile) => {
+    // Charger le profil ET le nom de l'utilisateur en parallèle
+    forkJoin({
+      profile: this.profileService.getProfileByUserId(this.targetUserId),
+      user: this.api.get<any>(`/identity/users/${this.targetUserId}`).pipe(
+        catchError(() => of({ firstName: '', lastName: '', photo: '' }))
+      )
+    }).subscribe({
+      next: ({ profile, user }) => {
         this.profile = profile;
         this.targetProfileId = profile.id;
+
+        // Résoudre le nom depuis user-service
+        const firstName = (user.firstName || '').trim();
+        const lastName  = (user.lastName  || '').trim();
+        this.targetUserFullName = `${firstName} ${lastName}`.trim() || profile.headline || 'Freelancer';
+        this.targetUserInitials = this.buildInitials(firstName, lastName);
+        this.targetUserPhoto    = user.photo || '';
+
         this.loadProfileDetails();
       },
       error: () => {
@@ -133,32 +143,46 @@ export class PublicProfileComponent implements OnInit {
 
   loadProfileDetails(): void {
     forkJoin({
-      skills: this.profileService.getMySkills(this.targetUserId),
-      portfolio: this.profileService.getMyPortfolio(this.targetUserId),
+      skills:         this.profileService.getMySkills(this.targetUserId),
+      portfolio:      this.profileService.getMyPortfolio(this.targetUserId),
       certifications: this.profileService.getMyCertifications(this.targetUserId),
-      experiences: this.profileService.getMyWorkExperiences(this.targetUserId),
-      reviews: this.profileService.getReviews(this.targetProfileId),
-      average: this.profileService.getAverageRating(this.targetProfileId)
+      experiences:    this.profileService.getMyWorkExperiences(this.targetUserId),
+      reviews:        this.profileService.getReviews(this.targetProfileId),
+      average:        this.profileService.getAverageRating(this.targetProfileId)
     }).subscribe({
       next: (data) => {
         this.skills = (data.skills || []).map((skill: Skill) => ({
           ...skill,
-          endorsementCount: skill.endorsementCount || 0,
+          endorsementCount:  skill.endorsementCount  || 0,
           authenticityScore: skill.authenticityScore || 0
         }));
-        this.portfolio = data.portfolio || [];
+        this.portfolio      = data.portfolio      || [];
         this.certifications = data.certifications || [];
-        this.experiences = data.experiences || [];
-        this.reviews = data.reviews || [];
-        this.averageRating = Number(data.average || 0);
-        this.isLoading = false;
+        this.experiences    = data.experiences    || [];
+        this.reviews        = data.reviews        || [];
+        this.averageRating  = Number(data.average || 0);
+        this.isLoading      = false;
       },
       error: () => {
         this.errorMessage = 'Erreur lors du chargement des informations du profil.';
-        this.showToast('error', 'Chargement échoué', 'Certaines informations du profil n’ont pas pu être récupérées.');
+        this.showToast('error', 'Chargement échoué', 'Certaines informations du profil n\'ont pas pu être récupérées.');
         this.isLoading = false;
       }
     });
+  }
+
+  buildInitials(firstName: string, lastName: string): string {
+    const f = (firstName || '').trim();
+    const l = (lastName  || '').trim();
+    if (f && l) return `${f.charAt(0)}${l.charAt(0)}`.toUpperCase();
+    if (f)      return f.charAt(0).toUpperCase();
+    return this.profile?.headline?.charAt(0)?.toUpperCase() || 'F';
+  }
+
+  hasRealPhoto(): boolean {
+    return !!this.targetUserPhoto &&
+           !this.targetUserPhoto.includes('data:image/svg') &&
+           this.targetUserPhoto.trim() !== '';
   }
 
   toggleEndorse(skillId: number): void {
@@ -172,28 +196,22 @@ export class PublicProfileComponent implements OnInit {
 
     const payload = {
       endorserId: this.currentUserId,
-      comment: this.endorseComment?.trim() || ''
+      comment:    this.endorseComment?.trim() || ''
     };
 
     this.submittingEndorsement = true;
-    this.errorMessage = '';
+    this.errorMessage  = '';
     this.successMessage = '';
 
     this.profileService.addEndorsement(skillId, payload).subscribe({
       next: () => {
         const skill = this.skills.find(s => s.id === skillId);
-        if (skill) {
-          skill.endorsementCount = (skill.endorsementCount || 0) + 1;
-        }
+        if (skill) skill.endorsementCount = (skill.endorsementCount || 0) + 1;
 
-        this.endorsingSkillId = null;
-        this.endorseComment = '';
-        this.successMessage = 'Compétence validée avec succès.';
-        this.showToast(
-          'success',
-          'Endorsement envoyé',
-          'Votre validation a bien été prise en compte.'
-        );
+        this.endorsingSkillId  = null;
+        this.endorseComment    = '';
+        this.successMessage    = 'Compétence validée avec succès.';
+        this.showToast('success', 'Endorsement envoyé', 'Votre validation a bien été prise en compte.');
         this.submittingEndorsement = false;
       },
       error: (err) => {
@@ -201,32 +219,14 @@ export class PublicProfileComponent implements OnInit {
 
         if (err?.status === 409) {
           this.errorMessage = 'Vous avez déjà validé cette compétence.';
-          this.showToast(
-            'info',
-            'Déjà validée',
-            'Vous avez déjà envoyé un endorsement pour cette compétence.'
-          );
+          this.showToast('info', 'Déjà validée', 'Vous avez déjà envoyé un endorsement pour cette compétence.');
           this.endorsingSkillId = null;
-          this.endorseComment = '';
+          this.endorseComment   = '';
           return;
         }
 
-        if (err?.status === 400) {
-          this.errorMessage = err.error?.message || 'Action invalide.';
-          this.showToast(
-            'error',
-            'Action refusée',
-            this.errorMessage
-          );
-          return;
-        }
-
-        this.errorMessage = err.error?.message || 'Erreur lors de l’endorsement.';
-        this.showToast(
-          'error',
-          'Échec de l’envoi',
-          this.errorMessage
-        );
+        this.errorMessage = err.error?.message || 'Erreur lors de l\'endorsement.';
+        this.showToast('error', 'Échec de l\'envoi', this.errorMessage);
       }
     });
   }
@@ -235,50 +235,39 @@ export class PublicProfileComponent implements OnInit {
     if (this.submittingReview) return;
 
     const comment = this.newReview.comment?.trim() || '';
-    const rating = Number(this.newReview.rating);
+    const rating  = Number(this.newReview.rating);
 
     if (!comment) {
       this.showToast('error', 'Commentaire requis', 'Veuillez saisir un commentaire avant de publier votre avis.');
       return;
     }
-
     if (rating < 1 || rating > 5) {
       this.showToast('error', 'Note invalide', 'La note doit être comprise entre 1 et 5.');
       return;
     }
 
-    const payload = {
+    this.submittingReview = true;
+    this.errorMessage  = '';
+    this.successMessage = '';
+
+    this.profileService.addReview(this.targetProfileId, {
       clientId: this.currentUserId,
       rating,
       comment
-    };
-
-    this.submittingReview = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    this.profileService.addReview(this.targetProfileId, payload).subscribe({
+    }).subscribe({
       next: (review) => {
         this.reviews.unshift(review);
         this.showReviewForm = false;
         this.newReview = { rating: 5, comment: '' };
         this.successMessage = 'Avis ajouté avec succès.';
-        this.showToast(
-          'success',
-          'Avis publié',
-          'Votre retour a bien été ajouté au profil.'
-        );
+        this.showToast('success', 'Avis publié', 'Votre retour a bien été ajouté au profil.');
         this.submittingReview = false;
         this.refreshAverageRating();
       },
       error: (err) => {
         this.submittingReview = false;
-        this.errorMessage = err.error?.message || 'Erreur lors de l’ajout de l’avis.';
-        this.showToast(
-          'error',
-          'Publication impossible',
-          this.errorMessage
-        );
+        this.errorMessage = err.error?.message || 'Erreur lors de l\'ajout de l\'avis.';
+        this.showToast('error', 'Publication impossible', this.errorMessage);
       }
     });
   }
@@ -293,7 +282,7 @@ export class PublicProfileComponent implements OnInit {
     }
 
     this.submittingReport = true;
-    this.errorMessage = '';
+    this.errorMessage  = '';
     this.successMessage = '';
 
     this.profileService.reportProfile(this.targetProfileId, {
@@ -301,46 +290,33 @@ export class PublicProfileComponent implements OnInit {
       reason
     }).subscribe({
       next: () => {
-        this.showReportForm = false;
-        this.reportReason = '';
-        this.successMessage = 'Signalement envoyé à l’administration.';
-        this.showToast(
-          'success',
-          'Signalement envoyé',
-          'Votre signalement a bien été transmis à l’équipe de modération.'
-        );
+        this.showReportForm  = false;
+        this.reportReason    = '';
+        this.successMessage  = 'Signalement envoyé à l\'administration.';
+        this.showToast('success', 'Signalement envoyé', 'Votre signalement a bien été transmis à l\'équipe de modération.');
         this.submittingReport = false;
       },
       error: (err) => {
         this.submittingReport = false;
         this.errorMessage = err.error?.message || 'Erreur lors du signalement.';
-        this.showToast(
-          'error',
-          'Envoi impossible',
-          this.errorMessage
-        );
+        this.showToast('error', 'Envoi impossible', this.errorMessage);
       }
     });
   }
 
   refreshAverageRating(): void {
     this.profileService.getAverageRating(this.targetProfileId).subscribe({
-      next: (avg) => {
-        this.averageRating = Number(avg || 0);
-      }
+      next: (avg) => { this.averageRating = Number(avg || 0); }
     });
   }
 
   showToast(type: ToastType, title: string, message: string): void {
     clearTimeout(this.toastTimeout);
-    this.toastType = type;
-    this.toastTitle = title;
+    this.toastType    = type;
+    this.toastTitle   = title;
     this.toastMessage = message;
     this.toastVisible = true;
-
-    this.toastTimeout = setTimeout(() => {
-      this.toastVisible = false;
-    }, 3500);
+    this.toastTimeout = setTimeout(() => { this.toastVisible = false; }, 3500);
   }
 
   closeToast(): void {
@@ -352,15 +328,7 @@ export class PublicProfileComponent implements OnInit {
     return Array(Math.round(rating)).fill(0);
   }
 
-  trackBySkill(index: number, skill: Skill): number {
-    return skill.id;
-  }
-
-  trackByPortfolio(index: number, item: PortfolioItem): number {
-    return item.id;
-  }
-
-  trackByReview(index: number, review: ProfileReview): number {
-    return review.id;
-  }
+  trackBySkill(index: number, skill: Skill): number         { return skill.id; }
+  trackByPortfolio(index: number, item: PortfolioItem): number { return item.id; }
+  trackByReview(index: number, review: ProfileReview): number  { return review.id; }
 }

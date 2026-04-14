@@ -24,7 +24,7 @@ public class Endorsement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ID de l'utilisateur qui valide (référence Module 01)
+    // ID de l'utilisateur qui valide
     @Column(name = "endorser_id", nullable = false)
     private Long endorserId;
 
