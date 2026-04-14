@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.freelancerprofileservice.dto.request.AddReportRequest;
 import tn.esprit.freelancerprofileservice.entities.ProfileReport;
@@ -13,7 +14,7 @@ import tn.esprit.freelancerprofileservice.services.IProfileReportService;
 import java.util.List;
 
 /**
- * Controller REST — gestion des signalements (admin)
+ * Controller REST — gestion des signalements de profils
  */
 @RestController
 @RequestMapping("/api/reports")
@@ -22,7 +23,7 @@ public class ReportController {
 
     private final IProfileReportService reportService;
 
-    // POST /api/reports/profile/{profileId}
+    // POST /api/reports/profile/{profileId} — tout utilisateur connecté peut signaler
     @PostMapping("/profile/{profileId}")
     public ResponseEntity<ProfileReport> reportProfile(
             @PathVariable Long profileId,
@@ -34,14 +35,16 @@ public class ReportController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
-    // GET /api/reports/pending — admin only
+    // GET /api/reports/pending — ADMIN uniquement
     @GetMapping("/pending")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ProfileReport>> getPendingReports() {
         return ResponseEntity.ok(reportService.getPendingReports());
     }
 
-    // PATCH /api/reports/{reportId}/resolve
+    // PATCH /api/reports/{reportId}/resolve — ADMIN uniquement
     @PatchMapping("/{reportId}/resolve")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProfileReport> resolveReport(
             @PathVariable Long reportId,
             @RequestParam ReportStatus status) {
