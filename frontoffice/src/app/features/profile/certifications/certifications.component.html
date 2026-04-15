@@ -33,7 +33,7 @@
 
             <p class="subtitle">
               Valorisez vos acquis académiques et professionnels avec des certifications
-              vérifiables et bien présentées.
+              vérifiables, bien présentées et maintenues à jour.
             </p>
           </div>
         </div>
@@ -72,7 +72,7 @@
       </div>
     </section>
 
-    <!-- Form -->
+    <!-- Add form -->
     <section class="form-card" *ngIf="showForm">
       <div class="form-card__header">
         <div>
@@ -126,13 +126,27 @@
 
         <div class="form-group">
           <label>Date d'obtention</label>
-          <input type="date" [(ngModel)]="newCert.issueDate" class="form-control" />
+          <input
+            type="date"
+            [(ngModel)]="newCert.issueDate"
+            class="form-control"
+          />
         </div>
 
         <div class="form-group">
           <label>Date d'expiration</label>
-          <input type="date" [(ngModel)]="newCert.expiryDate" class="form-control" />
-          <small>Laisser vide si la certification n’expire pas.</small>
+          <input
+            type="date"
+            [(ngModel)]="newCert.expiryDate"
+            class="form-control"
+          />
+          <small>Laisser vide si la certification n'expire pas.</small>
+          <small
+            class="field-error"
+            *ngIf="newCert.issueDate && newCert.expiryDate && !validateDates(newCert.issueDate, newCert.expiryDate)"
+          >
+            La date d'expiration doit être postérieure ou égale à la date d'obtention.
+          </small>
         </div>
       </div>
 
@@ -153,7 +167,7 @@
       <p>Chargement des certifications...</p>
     </div>
 
-    <!-- Empty state -->
+    <!-- Empty -->
     <section class="empty-state-card" *ngIf="!isLoading && certifications.length === 0">
       <div class="empty-state">
         <div class="empty-icon">🎓</div>
@@ -181,50 +195,167 @@
           *ngFor="let cert of certifications; trackBy: trackByCertification"
           [class.expired]="cert.isExpired"
         >
-          <div class="certif-header">
-            <div class="certif-title-block">
-              <span class="certif-title">{{ cert.title }}</span>
-              <span class="certif-issuer">{{ cert.issuer }}</span>
+          <!-- VIEW MODE -->
+          <ng-container *ngIf="editingCertId !== cert.id; else editMode">
+            <div class="certif-header">
+              <div class="certif-title-block">
+                <span class="certif-title">{{ cert.title }}</span>
+                <span class="certif-issuer">{{ cert.issuer }}</span>
+              </div>
+
+              <div class="certif-badges">
+                <span class="type-badge" [ngClass]="getTypeClass(cert.type)">
+                  {{ getTypeLabel(cert.type) }}
+                </span>
+
+                <span class="expired-label" *ngIf="cert.isExpired">
+                  Expirée
+                </span>
+
+                <span
+                  class="soon-label"
+                  *ngIf="!cert.isExpired && cert.expiryDate && isExpiringSoon(cert.expiryDate)"
+                >
+                  Expire bientôt
+                </span>
+
+                <span
+                  class="valid-label"
+                  *ngIf="!cert.isExpired && (!cert.expiryDate || !isExpiringSoon(cert.expiryDate))"
+                >
+                  Valide
+                </span>
+              </div>
             </div>
 
-            <div class="certif-badges">
-              <span class="type-badge" [ngClass]="getTypeClass(cert.type)">
-                {{ getTypeLabel(cert.type) }}
+            <div class="certif-dates">
+              <span *ngIf="cert.issueDate">
+                Obtenue le : {{ cert.issueDate | date:'dd/MM/yyyy' }}
               </span>
-              <span class="expired-label" *ngIf="cert.isExpired">Expirée</span>
-              <span class="valid-label" *ngIf="!cert.isExpired">Valide</span>
+
+              <span *ngIf="cert.expiryDate">
+                · Expire le : {{ cert.expiryDate | date:'dd/MM/yyyy' }}
+              </span>
+
+              <span *ngIf="!cert.expiryDate">
+                · Sans expiration
+              </span>
             </div>
-          </div>
 
-          <div class="certif-dates">
-            <span *ngIf="cert.issueDate">
-              Obtenue le : {{ cert.issueDate | date:'dd/MM/yyyy' }}
-            </span>
-            <span *ngIf="cert.expiryDate">
-              · Expire le : {{ cert.expiryDate | date:'dd/MM/yyyy' }}
-            </span>
-            <span *ngIf="!cert.expiryDate"> · Sans expiration</span>
-          </div>
+            <div class="certif-footer">
+              <a
+                *ngIf="cert.certificateUrl"
+                [href]="cert.certificateUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn-link"
+              >
+                Vérifier
+              </a>
 
-          <div class="certif-footer">
-            <a
-              *ngIf="cert.certificateUrl"
-              [href]="cert.certificateUrl"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn-link"
-            >
-              Vérifier
-            </a>
+              <button class="btn-secondary" (click)="startEdit(cert)">
+                Modifier
+              </button>
 
-            <button
-              class="btn-danger"
-              (click)="deleteCertification(cert.id)"
-              [disabled]="deletingCertId === cert.id"
-            >
-              {{ deletingCertId === cert.id ? 'Suppression...' : 'Supprimer' }}
-            </button>
-          </div>
+              <button
+                class="btn-danger"
+                (click)="deleteCertification(cert.id)"
+                [disabled]="deletingCertId === cert.id"
+              >
+                {{ deletingCertId === cert.id ? 'Suppression...' : 'Supprimer' }}
+              </button>
+            </div>
+          </ng-container>
+
+          <!-- EDIT MODE -->
+          <ng-template #editMode>
+            <div class="form-card__header edit-mode-header">
+              <div>
+                <span class="section-chip">Modification</span>
+                <h3>Modifier la certification</h3>
+                <p>Corrigez les informations puis enregistrez les changements.</p>
+              </div>
+            </div>
+
+            <div class="form-grid edit-grid">
+              <div class="form-group">
+                <label>Titre *</label>
+                <input
+                  type="text"
+                  [(ngModel)]="editCert.title"
+                  class="form-control"
+                  placeholder="Ex: AWS Solutions Architect"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Organisme émetteur *</label>
+                <input
+                  type="text"
+                  [(ngModel)]="editCert.issuer"
+                  class="form-control"
+                  placeholder="Ex: Amazon Web Services"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Type</label>
+                <select [(ngModel)]="editCert.type" class="form-control">
+                  <option value="EXTERNAL">Externe</option>
+                  <option value="ACADEMIC">Académique</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>URL de vérification</label>
+                <input
+                  type="url"
+                  [(ngModel)]="editCert.certificateUrl"
+                  class="form-control"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Date d'obtention</label>
+                <input
+                  type="date"
+                  [(ngModel)]="editCert.issueDate"
+                  class="form-control"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Date d'expiration</label>
+                <input
+                  type="date"
+                  [(ngModel)]="editCert.expiryDate"
+                  class="form-control"
+                />
+                <small>Laisser vide si la certification n'expire pas.</small>
+                <small
+                  class="field-error"
+                  *ngIf="editCert.issueDate && editCert.expiryDate && !validateDates(editCert.issueDate, editCert.expiryDate)"
+                >
+                  La date d'expiration doit être postérieure ou égale à la date d'obtention.
+                </small>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button
+                class="btn-primary"
+                (click)="saveEdit(cert.id)"
+                [disabled]="!editCert.title || !editCert.issuer || !validateDates(editCert.issueDate, editCert.expiryDate)"
+              >
+                Enregistrer les modifications
+              </button>
+
+              <button class="btn-ghost" (click)="cancelEdit()">
+                Annuler
+              </button>
+            </div>
+          </ng-template>
         </article>
       </div>
     </section>

@@ -95,18 +95,21 @@ export class FreelancerProfileService {
 
   // ===== CERTIFICATIONS =====
 
-  getMyCertifications(userId: number): Observable<Certification[]> {
-    return this.http.get<Certification[]>(`${this.BASE_URL}/certifications/user/${userId}`);
-  }
+getMyCertifications(userId: number): Observable<Certification[]> {
+  return this.http.get<Certification[]>(`${this.BASE_URL}/certifications/user/${userId}`);
+}
 
-  addCertification(userId: number, data: Partial<Certification>): Observable<Certification> {
-    return this.http.post<Certification>(`${this.BASE_URL}/certifications/user/${userId}`, data);
-  }
+addCertification(userId: number, data: Partial<Certification>): Observable<Certification> {
+  return this.http.post<Certification>(`${this.BASE_URL}/certifications/user/${userId}`, data);
+}
 
-  deleteCertification(certId: number, userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.BASE_URL}/certifications/${certId}/user/${userId}`);
-  }
+updateCertification(certId: number, userId: number, data: Partial<Certification>): Observable<Certification> {
+  return this.http.put<Certification>(`${this.BASE_URL}/certifications/${certId}/user/${userId}`, data);
+}
 
+deleteCertification(certId: number, userId: number): Observable<void> {
+  return this.http.delete<void>(`${this.BASE_URL}/certifications/${certId}/user/${userId}`);
+}
   // ===== ENDORSEMENTS =====
 
   getEndorsementsBySkill(skillId: number): Observable<Endorsement[]> {

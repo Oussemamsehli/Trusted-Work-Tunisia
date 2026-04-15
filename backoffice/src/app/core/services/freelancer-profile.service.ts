@@ -75,6 +75,15 @@ export class FreelancerProfileService {
 
   getCertifications(userId: number): Observable<Certification[]> {
     return this.http.get<Certification[]>(`${this.baseUrl}/certifications/user/${userId}`);
+    
+  }
+
+  addCertification(userId: number, data: Partial<Certification>): Observable<Certification> {
+    return this.http.post<Certification>(`${this.baseUrl}/certifications/user/${userId}`, data);
+  }
+  
+  updateCertification(certId: number, userId: number, data: Partial<Certification>): Observable<Certification> {
+    return this.http.put<Certification>(`${this.baseUrl}/certifications/${certId}/user/${userId}`, data);
   }
 
   // ────────────────── ENDORSEMENTS ──────────────────

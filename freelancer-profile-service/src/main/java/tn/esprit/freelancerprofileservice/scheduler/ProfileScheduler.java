@@ -8,12 +8,14 @@ import tn.esprit.freelancerprofileservice.entities.Certification;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
 import tn.esprit.freelancerprofileservice.repositories.CertificationRepository;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
+import tn.esprit.freelancerprofileservice.repositories.SkillRepository;
 import tn.esprit.freelancerprofileservice.services.ICompletenessService;
 import tn.esprit.freelancerprofileservice.services.ISkillAuthenticityService;
-import tn.esprit.freelancerprofileservice.repositories.SkillRepository;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Scheduler automatique du Module 02 — 4 tâches planifiées
@@ -67,7 +69,6 @@ public class ProfileScheduler {
     public void updateRegionalRankings() {
         log.info(">>> [SCHEDULER] Début mise à jour classements régionaux...");
 
-        // Récupérer toutes les régions distinctes
         List<FreelancerProfile> allProfiles = profileRepository.findAll();
         List<String> regions = allProfiles.stream()
                 .map(FreelancerProfile::getRegion)
@@ -76,14 +77,13 @@ public class ProfileScheduler {
                 .toList();
 
         for (String region : regions) {
-            // Récupérer les profils de cette région triés par score décroissant
             List<FreelancerProfile> ranked =
                     profileRepository.findByRegionOrderByCompletenessScoreDesc(region);
 
-            // Attribuer le rang
             for (int i = 0; i < ranked.size(); i++) {
                 ranked.get(i).setRegionalRank(i + 1);
             }
+
             profileRepository.saveAll(ranked);
             log.info(">>> [SCHEDULER] Région '{}' : {} freelancers classés.", region, ranked.size());
         }
@@ -101,13 +101,11 @@ public class ProfileScheduler {
     public void sendProfileCompletionReminders() {
         log.info(">>> [SCHEDULER] Début vérification profils incomplets...");
 
-        // Profils avec score inférieur à 60%
         List<FreelancerProfile> incompleteProfiles =
                 profileRepository.findProfilesBelowScore(60);
 
         for (FreelancerProfile profile : incompleteProfiles) {
             try {
-                // Recalcul du score pour avoir des suggestions à jour
                 completenessService.calculateCompleteness(profile.getUserId());
                 log.info(">>> [SCHEDULER] Rappel profil userId={} score={}",
                         profile.getUserId(), profile.getCompletenessScore());
@@ -130,28 +128,49 @@ public class ProfileScheduler {
     public void checkCertificationExpiry() {
         log.info(">>> [SCHEDULER] Début vérification expiration certifications...");
 
-        // Certifications qui expirent dans les 30 prochains jours
-        LocalDate deadline = LocalDate.now().plusDays(30);
+        LocalDate today = LocalDate.now();
+        LocalDate deadline = today.plusDays(30);
+
         List<Certification> expiring =
                 certificationRepository.findExpiringCertifications(deadline);
 
         int expiredCount = 0;
+        Set<Long> impactedUserIds = new HashSet<>();
+
         for (Certification cert : expiring) {
-            if (cert.getExpiryDate().isBefore(LocalDate.now())) {
-                // Déjà expirée — marquer comme expirée
-                cert.setIsExpired(true);
-                certificationRepository.save(cert);
-                expiredCount++;
-                log.info(">>> [SCHEDULER] Certification expirée : '{}' (profil userId={})",
-                        cert.getTitle(), cert.getProfile().getUserId());
-            } else {
-                // Expire bientôt — logger l'alerte
-                log.warn(">>> [SCHEDULER] Certification '{}' expire le {} (profil userId={})",
-                        cert.getTitle(), cert.getExpiryDate(), cert.getProfile().getUserId());
-                // TODO : appel notification-service pour alerter le freelancer
+            try {
+                if (cert.getExpiryDate() != null && cert.getExpiryDate().isBefore(today)) {
+                    cert.setIsExpired(true);
+                    certificationRepository.save(cert);
+                    expiredCount++;
+
+                    Long userId = cert.getProfile().getUserId();
+                    impactedUserIds.add(userId);
+
+                    log.info(">>> [SCHEDULER] Certification expirée : '{}' (profil userId={})",
+                            cert.getTitle(), userId);
+                } else {
+                    log.warn(">>> [SCHEDULER] Certification '{}' expire le {} (profil userId={})",
+                            cert.getTitle(), cert.getExpiryDate(), cert.getProfile().getUserId());
+                    // TODO : appel notification-service pour alerter le freelancer
+                }
+            } catch (Exception e) {
+                log.error("Erreur traitement certification {} : {}", cert.getId(), e.getMessage());
+            }
+        }
+
+        int recalculatedCount = 0;
+        for (Long userId : impactedUserIds) {
+            try {
+                completenessService.calculateCompleteness(userId);
+                recalculatedCount++;
+                log.info(">>> [SCHEDULER] Completeness recalculé pour userId={}", userId);
+            } catch (Exception e) {
+                log.error("Erreur recalcul completeness userId={} : {}", userId, e.getMessage());
             }
         }
 
         log.info(">>> [SCHEDULER] {} certifications expirées marquées.", expiredCount);
+        log.info(">>> [SCHEDULER] Completeness recalculé pour {} profil(s).", recalculatedCount);
     }
 }

@@ -29,7 +29,7 @@ interface EndorsementViewModel extends Endorsement {
 export class ProfileDetailComponent implements OnInit {
 
   profile: FreelancerProfile | null = null;
-  profileOwnerName = '';          // ← nom du propriétaire du profil
+  profileOwnerName = '';
 
   skills: Skill[] = [];
   portfolio: PortfolioItem[] = [];
@@ -42,8 +42,18 @@ export class ProfileDetailComponent implements OnInit {
   newEdu = { degree: '', institution: '', fieldOfStudy: '', graduationYear: null as number | null };
   editingEduId: number | null = null;
   editEduForm = { degree: '', institution: '', fieldOfStudy: '', graduationYear: null as number | null };
-  eduYears: number[] = Array.from({ length: new Date().getFullYear() - 1949 }, (_, i) => new Date().getFullYear() - i);
-  reviews: ReviewViewModel[] = [];  // ← enrichi
+  eduYears: number[] = Array.from(
+    { length: new Date().getFullYear() - 1949 },
+    (_, i) => new Date().getFullYear() - i
+  );
+
+  // ── État formulaire certification (backoffice admin) ──
+  showAddCertForm = false;
+  editingCertId: number | null = null;
+  newCert = this.getEmptyCert();
+  editCert = this.getEmptyCert();
+
+  reviews: ReviewViewModel[] = [];
   averageRating = 0;
 
   completeness: CompletenessResponse | null = null;
@@ -57,7 +67,7 @@ export class ProfileDetailComponent implements OnInit {
   showDeleteConfirm = false;
 
   selectedSkill: Skill | null = null;
-  endorsements: EndorsementViewModel[] = []; // ← enrichi
+  endorsements: EndorsementViewModel[] = [];
   endorsementsLoading = false;
   endorsementsError = '';
 
@@ -89,7 +99,6 @@ export class ProfileDetailComponent implements OnInit {
         this.loading = false;
         const userId = data.userId;
 
-        // Résoudre le nom du propriétaire du profil
         this.userResolution.getFullName(userId).subscribe(
           name => this.profileOwnerName = name
         );
@@ -105,7 +114,11 @@ export class ProfileDetailComponent implements OnInit {
         });
 
         this.profileService.getCertifications(userId).subscribe({
-          next: (c) => this.certifications = c,
+          next: (c) => {
+            this.certifications = (c || []).sort((a, b) =>
+              this.getSortableDateValue(b.issueDate) - this.getSortableDateValue(a.issueDate)
+            );
+          },
           error: () => this.certifications = []
         });
 
@@ -119,7 +132,6 @@ export class ProfileDetailComponent implements OnInit {
           error: () => this.educations = []
         });
 
-        // Reviews — résoudre le clientId de chaque avis
         this.profileService.getReviewsByProfile(profileId).subscribe({
           next: (rawReviews) => {
             if (!rawReviews || rawReviews.length === 0) {
@@ -188,48 +200,185 @@ export class ProfileDetailComponent implements OnInit {
     if (!this.profile) return;
     this.profileService.deleteProfile(this.profile.userId).subscribe({
       next: () => this.router.navigate(['/admin/freelancers']),
-      error: (err) => { this.errorMsg = 'Erreur lors de la suppression du profil'; console.error(err); }
+      error: (err) => {
+        this.errorMsg = 'Erreur lors de la suppression du profil';
+        console.error(err);
+      }
     });
   }
 
   changeAvailability(status: 'AVAILABLE' | 'BUSY' | 'ON_VACATION'): void {
     if (!this.profile) return;
     this.profileService.updateAvailability(this.profile.userId, status).subscribe({
-      next: (updated) => { this.profile = updated; this.showSuccess('Disponibilité changée → ' + this.getAvailabilityLabel(status)); },
-      error: (err) => { this.errorMsg = 'Erreur lors du changement de disponibilité'; console.error(err); }
+      next: (updated) => {
+        this.profile = updated;
+        this.showSuccess('Disponibilité changée → ' + this.getAvailabilityLabel(status));
+      },
+      error: (err) => {
+        this.errorMsg = 'Erreur lors du changement de disponibilité';
+        console.error(err);
+      }
     });
   }
 
   deleteSkill(skillId: number): void {
     if (!this.profile) return;
     this.profileService.deleteSkill(skillId, this.profile.userId).subscribe({
-      next: () => { this.skills = this.skills.filter(s => s.id !== skillId); this.showSuccess('Compétence supprimée'); },
-      error: (err) => { this.errorMsg = 'Erreur lors de la suppression de la compétence'; console.error(err); }
+      next: () => {
+        this.skills = this.skills.filter(s => s.id !== skillId);
+        this.showSuccess('Compétence supprimée');
+      },
+      error: (err) => {
+        this.errorMsg = 'Erreur lors de la suppression de la compétence';
+        console.error(err);
+      }
+    });
+  }
+
+  // ── Certifications CRUD ──────────────────────────────────────────────
+  private getEmptyCert() {
+    return {
+      title: '',
+      issuer: '',
+      type: 'EXTERNAL',
+      issueDate: '',
+      expiryDate: '',
+      certificateUrl: ''
+    };
+  }
+
+  addCertification(): void {
+    if (!this.profile || !this.newCert.title.trim() || !this.newCert.issuer.trim()) {
+      this.errorMsg = 'Le titre et l’organisme émetteur sont obligatoires.';
+      return;
+    }
+
+    if (!this.validateCertDates(this.newCert.issueDate, this.newCert.expiryDate)) {
+      this.errorMsg = 'La date d’expiration doit être postérieure ou égale à la date d’obtention.';
+      return;
+    }
+
+    const payload = {
+      title: this.newCert.title.trim(),
+      issuer: this.newCert.issuer.trim(),
+      type: this.newCert.type,
+      issueDate: this.newCert.issueDate || undefined,
+      expiryDate: this.newCert.expiryDate || undefined,
+      certificateUrl: this.newCert.certificateUrl.trim() || undefined
+    };
+
+    this.profileService.addCertification(this.profile.userId, payload).subscribe({
+      next: (cert) => {
+        this.certifications = [cert, ...this.certifications].sort((a, b) =>
+          this.getSortableDateValue(b.issueDate) - this.getSortableDateValue(a.issueDate)
+        );
+        this.newCert = this.getEmptyCert();
+        this.showAddCertForm = false;
+        this.showSuccess('Certification ajoutée');
+      },
+      error: (err) => {
+        this.errorMsg = err?.error?.message || err?.error || "Erreur lors de l'ajout de la certification";
+      }
+    });
+  }
+
+  startEditCert(c: Certification): void {
+    this.editingCertId = c.id;
+    this.editCert = {
+      title: c.title || '',
+      issuer: c.issuer || '',
+      type: c.type || 'EXTERNAL',
+      issueDate: this.toDateInputValue(c.issueDate),
+      expiryDate: this.toDateInputValue(c.expiryDate),
+      certificateUrl: c.certificateUrl || ''
+    };
+  }
+
+  cancelEditCert(): void {
+    this.editingCertId = null;
+    this.editCert = this.getEmptyCert();
+  }
+
+  saveEditCert(certId: number): void {
+    if (!this.profile) return;
+
+    if (!this.editCert.title.trim() || !this.editCert.issuer.trim()) {
+      this.errorMsg = 'Le titre et l’organisme émetteur sont obligatoires.';
+      return;
+    }
+
+    if (!this.validateCertDates(this.editCert.issueDate, this.editCert.expiryDate)) {
+      this.errorMsg = 'La date d’expiration doit être postérieure ou égale à la date d’obtention.';
+      return;
+    }
+
+    const payload = {
+      title: this.editCert.title.trim(),
+      issuer: this.editCert.issuer.trim(),
+      type: this.editCert.type,
+      issueDate: this.editCert.issueDate || undefined,
+      expiryDate: this.editCert.expiryDate || undefined,
+      certificateUrl: this.editCert.certificateUrl.trim() || undefined
+    };
+
+    this.profileService.updateCertification(certId, this.profile.userId, payload).subscribe({
+      next: (updated) => {
+        this.certifications = this.certifications
+          .map(c => c.id === certId ? updated : c)
+          .sort((a, b) => this.getSortableDateValue(b.issueDate) - this.getSortableDateValue(a.issueDate));
+        this.editingCertId = null;
+        this.editCert = this.getEmptyCert();
+        this.showSuccess('Certification modifiée');
+      },
+      error: (err) => {
+        this.errorMsg = err?.error?.message || err?.error || 'Erreur lors de la modification';
+      }
     });
   }
 
   deleteCertification(certId: number): void {
     if (!this.profile) return;
     this.profileService.deleteCertification(certId, this.profile.userId).subscribe({
-      next: () => { this.certifications = this.certifications.filter(c => c.id !== certId); this.showSuccess('Certification supprimée'); },
-      error: (err) => { this.errorMsg = 'Erreur lors de la suppression de la certification'; console.error(err); }
+      next: () => {
+        this.certifications = this.certifications.filter(c => c.id !== certId);
+        this.showSuccess('Certification supprimée');
+      },
+      error: (err) => {
+        this.errorMsg = 'Erreur lors de la suppression de la certification';
+        console.error(err);
+      }
     });
   }
 
-  deletePortfolioItem(itemId: number): void {
-    if (!this.profile) return;
-    this.profileService.deletePortfolioItem(itemId, this.profile.userId).subscribe({
-      next: () => { this.portfolio = this.portfolio.filter(p => p.id !== itemId); this.showSuccess('Projet portfolio supprimé'); },
-      error: (err) => { this.errorMsg = 'Erreur lors de la suppression du projet portfolio'; console.error(err); }
-    });
+  validateCertDates(issueDate?: string, expiryDate?: string): boolean {
+    if (!issueDate || !expiryDate) return true;
+    return new Date(expiryDate) >= new Date(issueDate);
   }
 
-  deleteWorkExperience(expId: number): void {
-    if (!this.profile) return;
-    this.profileService.deleteWorkExperience(expId, this.profile.userId).subscribe({
-      next: () => { this.workExperiences = this.workExperiences.filter(w => w.id !== expId); this.showSuccess('Expérience supprimée'); },
-      error: (err) => { this.errorMsg = "Erreur lors de la suppression de l'expérience"; console.error(err); }
-    });
+  isCertExpiringSoon(expiryDate: string | Date | undefined, isExpired?: boolean): boolean {
+    if (!expiryDate || isExpired) return false;
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+
+    today.setHours(0, 0, 0, 0);
+    expiry.setHours(0, 0, 0, 0);
+
+    const diffMs = expiry.getTime() - today.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+    return diffDays > 0 && diffDays <= 30;
+  }
+
+  getCertStatusClass(cert: Certification): string {
+    if (cert.isExpired) return 'badge-danger';
+    if (this.isCertExpiringSoon(cert.expiryDate, cert.isExpired)) return 'badge-warning';
+    return 'badge-success';
+  }
+
+  getCertStatusLabel(cert: Certification): string {
+    if (cert.isExpired) return 'Expirée';
+    if (this.isCertExpiringSoon(cert.expiryDate, cert.isExpired)) return 'Expire bientôt';
+    return 'Valide';
   }
 
   // ── Ajouter une formation (admin) ──────────────────────────────────
@@ -263,7 +412,9 @@ export class ProfileDetailComponent implements OnInit {
     };
   }
 
-  cancelEditEdu(): void { this.editingEduId = null; }
+  cancelEditEdu(): void {
+    this.editingEduId = null;
+  }
 
   saveEditEdu(eduId: number): void {
     if (!this.profile) return;
@@ -287,14 +438,51 @@ export class ProfileDetailComponent implements OnInit {
   deleteEducation(eduId: number): void {
     if (!this.profile) return;
     this.profileService.deleteEducation(eduId, this.profile.userId).subscribe({
-      next: () => { this.educations = this.educations.filter(e => e.id !== eduId); this.showSuccess('Formation supprimée'); },
-      error: (err) => { this.errorMsg = 'Erreur lors de la suppression de la formation'; console.error(err); }
+      next: () => {
+        this.educations = this.educations.filter(e => e.id !== eduId);
+        this.showSuccess('Formation supprimée');
+      },
+      error: (err) => {
+        this.errorMsg = 'Erreur lors de la suppression de la formation';
+        console.error(err);
+      }
     });
   }
 
-  // Endorsements — résolution du endorserId à l'ouverture
+  deletePortfolioItem(itemId: number): void {
+    if (!this.profile) return;
+    this.profileService.deletePortfolioItem(itemId, this.profile.userId).subscribe({
+      next: () => {
+        this.portfolio = this.portfolio.filter(p => p.id !== itemId);
+        this.showSuccess('Projet portfolio supprimé');
+      },
+      error: (err) => {
+        this.errorMsg = 'Erreur lors de la suppression du projet portfolio';
+        console.error(err);
+      }
+    });
+  }
+
+  deleteWorkExperience(expId: number): void {
+    if (!this.profile) return;
+    this.profileService.deleteWorkExperience(expId, this.profile.userId).subscribe({
+      next: () => {
+        this.workExperiences = this.workExperiences.filter(w => w.id !== expId);
+        this.showSuccess('Expérience supprimée');
+      },
+      error: (err) => {
+        this.errorMsg = "Erreur lors de la suppression de l'expérience";
+        console.error(err);
+      }
+    });
+  }
+
+  // Endorsements
   openEndorsements(skill: Skill): void {
-    if (this.selectedSkill?.id === skill.id) { this.closeEndorsements(); return; }
+    if (this.selectedSkill?.id === skill.id) {
+      this.closeEndorsements();
+      return;
+    }
     this.selectedSkill = skill;
     this.endorsements = [];
     this.endorsementsLoading = true;
@@ -326,7 +514,10 @@ export class ProfileDetailComponent implements OnInit {
           }
         });
       },
-      error: () => { this.endorsementsError = 'Impossible de charger les endorsements.'; this.endorsementsLoading = false; }
+      error: () => {
+        this.endorsementsError = 'Impossible de charger les endorsements.';
+        this.endorsementsLoading = false;
+      }
     });
   }
 
@@ -390,5 +581,21 @@ export class ProfileDetailComponent implements OnInit {
 
   getCompletenessValue(value: number | null | undefined): number {
     return value ?? 0;
+  }
+
+  private toDateInputValue(date: string | Date | undefined | null): string {
+    if (!date) return '';
+    const d = new Date(date);
+    if (Number.isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = `${d.getMonth() + 1}`.padStart(2, '0');
+    const day = `${d.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private getSortableDateValue(date: string | Date | undefined | null): number {
+    if (!date) return 0;
+    const d = new Date(date);
+    return Number.isNaN(d.getTime()) ? 0 : d.getTime();
   }
 }

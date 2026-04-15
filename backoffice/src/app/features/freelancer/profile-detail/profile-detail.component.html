@@ -233,50 +233,122 @@
   </div>
 
   <!-- ════ CERTIFICATIONS ════ -->
-  <div class="card section-card" *ngIf="certifications.length > 0">
+  <div class="card section-card">
     <div class="card-header">
-      <span class="card-title"><i class="fas fa-certificate"></i> Certifications ({{ certifications.length }})</span>
+      <span class="card-title">
+        <i class="fas fa-certificate"></i> Certifications ({{ certifications.length }})
+      </span>
+
+      <button class="btn btn-sm btn-primary-outline" (click)="showAddCertForm = !showAddCertForm">
+        {{ showAddCertForm ? 'Annuler' : '+ Ajouter' }}
+      </button>
     </div>
 
-    <table class="tw-table">
-      <thead>
-        <tr>
-          <th>Titre</th>
-          <th>Organisme</th>
-          <th>Type</th>
-          <th>Date</th>
-          <th>Statut</th>
-          <th>Lien</th>
-          <th>Admin</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let c of certifications">
-          <td>{{ c.title }}</td>
-          <td>{{ c.issuer }}</td>
-          <td><span class="badge badge-muted">{{ c.type }}</span></td>
-          <td>{{ c.issueDate | date:'dd/MM/yyyy' }}</td>
-          <td>
-            <span class="badge" [ngClass]="c.isExpired ? 'badge-danger' : 'badge-success'">
-              {{ c.isExpired ? 'Expirée' : 'Valide' }}
-            </span>
-          </td>
-          <td>
-            <a *ngIf="c.certificateUrl" [href]="c.certificateUrl" target="_blank" class="btn btn-ghost btn-sm">
-              <i class="fas fa-external-link-alt"></i>
-            </a>
-          </td>
-          <td>
-            <button
-              class="btn btn-danger btn-sm btn-icon"
-              title="Supprimer cette certification"
-              (click)="deleteCertification(c.id)">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- Formulaire ajout certification -->
+    <div class="inline-form" *ngIf="showAddCertForm">
+      <div class="form-row-bo">
+        <input type="text" [(ngModel)]="newCert.title" placeholder="Titre *" class="form-ctrl" maxlength="120" />
+        <input type="text" [(ngModel)]="newCert.issuer" placeholder="Organisme émetteur *" class="form-ctrl" maxlength="120" />
+      </div>
+
+      <div class="form-row-bo">
+        <select [(ngModel)]="newCert.type" class="form-ctrl">
+          <option value="EXTERNAL">Externe</option>
+          <option value="ACADEMIC">Académique</option>
+        </select>
+        <input type="url" [(ngModel)]="newCert.certificateUrl" placeholder="URL certificat" class="form-ctrl" />
+      </div>
+
+      <div class="form-row-bo">
+        <input type="date" [(ngModel)]="newCert.issueDate" class="form-ctrl" />
+        <input type="date" [(ngModel)]="newCert.expiryDate" class="form-ctrl" />
+      </div>
+
+      <div class="form-error-inline" *ngIf="newCert.issueDate && newCert.expiryDate && !validateCertDates(newCert.issueDate, newCert.expiryDate)">
+        La date d’expiration doit être postérieure ou égale à la date d’obtention.
+      </div>
+
+      <button class="btn btn-sm btn-success" (click)="addCertification()">Enregistrer</button>
+    </div>
+
+    <p class="text-muted" style="padding:12px 0; margin:0;" *ngIf="certifications.length === 0 && !showAddCertForm">
+      Aucune certification déclarée.
+    </p>
+
+    <div class="timeline-list" *ngIf="certifications.length > 0">
+      <div class="timeline-item" *ngFor="let c of certifications">
+
+        <!-- Mode lecture -->
+        <ng-container *ngIf="editingCertId !== c.id">
+          <div class="timeline-header">
+            <div>
+              <strong>{{ c.title }}</strong>
+              <span class="text-muted"> — {{ c.issuer }}</span>
+
+              <span class="badge" [ngClass]="getCertStatusClass(c)">
+                {{ getCertStatusLabel(c) }}
+              </span>
+
+              <span class="badge badge-muted" *ngIf="c.type">{{ c.type }}</span>
+            </div>
+
+            <div class="action-btns">
+              <button class="btn btn-sm btn-edit-icon" title="Modifier" (click)="startEditCert(c)">
+                <i class="fas fa-pencil"></i>
+              </button>
+              <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" (click)="deleteCertification(c.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="text-muted" style="font-size:12px;">
+            <span *ngIf="c.issueDate">Obtenue le {{ c.issueDate | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="c.expiryDate"> · Expire le {{ c.expiryDate | date:'dd/MM/yyyy' }}</span>
+            <span *ngIf="!c.expiryDate"> · Sans expiration</span>
+          </div>
+
+          <a *ngIf="c.certificateUrl"
+             [href]="c.certificateUrl"
+             target="_blank"
+             class="btn btn-ghost btn-sm"
+             style="margin-top:8px;">
+            <i class="fas fa-external-link-alt"></i> Voir certificat
+          </a>
+        </ng-container>
+
+        <!-- Mode édition -->
+        <ng-container *ngIf="editingCertId === c.id">
+          <div class="form-row-bo">
+            <input type="text" [(ngModel)]="editCert.title" placeholder="Titre *" class="form-ctrl" maxlength="120" />
+            <input type="text" [(ngModel)]="editCert.issuer" placeholder="Organisme émetteur *" class="form-ctrl" maxlength="120" />
+          </div>
+
+          <div class="form-row-bo">
+            <select [(ngModel)]="editCert.type" class="form-ctrl">
+              <option value="EXTERNAL">Externe</option>
+              <option value="ACADEMIC">Académique</option>
+            </select>
+            <input type="url" [(ngModel)]="editCert.certificateUrl" placeholder="URL certificat" class="form-ctrl" />
+          </div>
+
+          <div class="form-row-bo">
+            <input type="date" [(ngModel)]="editCert.issueDate" class="form-ctrl" />
+            <input type="date" [(ngModel)]="editCert.expiryDate" class="form-ctrl" />
+          </div>
+
+          <div class="form-error-inline" *ngIf="editCert.issueDate && editCert.expiryDate && !validateCertDates(editCert.issueDate, editCert.expiryDate)">
+            La date d’expiration doit être postérieure ou égale à la date d’obtention.
+          </div>
+
+          <div class="inline-form-actions">
+            <button class="btn btn-sm btn-success" (click)="saveEditCert(c.id)">Sauvegarder</button>
+            <button class="btn btn-sm btn-secondary" (click)="cancelEditCert()">Annuler</button>
+          </div>
+        </ng-container>
+
+      </div>
+    </div>
   </div>
 
   <!-- ════ EXPÉRIENCES ════ -->
@@ -315,7 +387,7 @@
       </button>
     </div>
 
-    <!-- Formulaire d'ajout (admin) -->
+    <!-- Formulaire d'ajout -->
     <div class="inline-form" *ngIf="showAddEduForm">
       <div class="form-row-bo">
         <input type="text" [(ngModel)]="newEdu.degree" placeholder="Diplôme *" class="form-ctrl" maxlength="100" />
@@ -331,12 +403,10 @@
       <button class="btn btn-sm btn-success" (click)="addEducation()">Enregistrer</button>
     </div>
 
-    <!-- Liste vide -->
     <p class="text-muted" style="padding:12px 0; margin:0;" *ngIf="educations.length === 0 && !showAddEduForm">
       Aucune formation déclarée.
     </p>
 
-    <!-- Liste formations -->
     <div class="timeline-list" *ngIf="educations.length > 0">
       <div class="timeline-item" *ngFor="let e of educations">
 
@@ -361,7 +431,7 @@
           <div class="text-muted" style="font-size:12px;" *ngIf="e.fieldOfStudy">{{ e.fieldOfStudy }}</div>
         </ng-container>
 
-        <!-- Mode édition inline -->
+        <!-- Mode édition -->
         <ng-container *ngIf="editingEduId === e.id">
           <div class="form-row-bo">
             <input type="text" [(ngModel)]="editEduForm.degree" placeholder="Diplôme *" class="form-ctrl" maxlength="100" />
@@ -442,7 +512,6 @@
 
     <div class="skillgap-layout">
 
-      <!-- Colonne gauche : Diagnostic (SkillGapServiceImpl) -->
       <div class="skillgap-col" *ngIf="skillGapDiagnostic">
         <div class="skillgap-col-header">
           <i class="fas fa-chart-bar text-warning"></i>
@@ -485,7 +554,6 @@
         </div>
       </div>
 
-      <!-- Colonne droite : Recommandations (RecommendationService) -->
       <div class="skillgap-col" *ngIf="skillGapRecommendations">
         <div class="skillgap-col-header">
           <i class="fas fa-lightbulb text-accent"></i>
@@ -569,14 +637,15 @@
     </div>
   </div>
 
-  <!-- Suggestions de complétude -->
+  <!-- Suggestions -->
   <div class="card section-card" *ngIf="completeness && completeness.suggestions.length > 0">
     <div class="card-header">
       <span class="card-title"><i class="fas fa-lightbulb text-warning"></i> Suggestions d'amélioration</span>
     </div>
     <ul class="suggestions-list">
       <li *ngFor="let s of completeness.suggestions">
-        <i class="fas fa-arrow-right text-accent"></i> {{ s }}</li>
+        <i class="fas fa-arrow-right text-accent"></i> {{ s }}
+      </li>
     </ul>
   </div>
 
