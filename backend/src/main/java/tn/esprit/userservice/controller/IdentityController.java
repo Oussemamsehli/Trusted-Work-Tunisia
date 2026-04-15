@@ -9,6 +9,8 @@ import tn.esprit.userservice.dto.PublicUserDTO;
 import tn.esprit.userservice.dto.TokenValidationDTO;
 import tn.esprit.userservice.service.IIdentityService;
 
+//    pour tous les endpoints de ce controller
+@CrossOrigin(origins = {"http://localhost:4200", "http://localhost:4201"})
 @RestController
 @RequestMapping("/identity")
 @RequiredArgsConstructor

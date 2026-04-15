@@ -51,7 +51,6 @@
   <table class="tw-table">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Profil</th>
         <th>Signalé par</th>
         <th>Raison</th>
@@ -62,20 +61,30 @@
 
     <tbody>
       <tr *ngFor="let r of reports">
-        <td>#{{ r.id }}</td>
-
         <td>
           <ng-container *ngIf="r.profile?.id; else noProfile">
-            <a [routerLink]="['/admin/freelancers', r.profile?.id]" class="text-accent">
-              Profil #{{ r.profile?.id }}
+            <a [routerLink]="['/admin/freelancers', r.profile?.id]" class="reporter-cell profile-link-clean">
+              <div class="reporter-avatar" style="background: var(--accent-soft); color: var(--accent);">
+                {{ r.freelancerInitials }}
+              </div>
+              <div>
+                <span>{{ r.freelancerFullName }}</span>
+              </div>
             </a>
           </ng-container>
+
           <ng-template #noProfile>
-            <span class="text-muted">Profil indisponible</span>
+            <div class="reporter-cell">
+              <div class="reporter-avatar" style="background: var(--accent-soft); color: var(--accent);">
+                {{ r.freelancerInitials }}
+              </div>
+              <div>
+                <span>{{ r.freelancerFullName }}</span>
+              </div>
+            </div>
           </ng-template>
         </td>
 
-        <!-- ✅ Nom + prénom du reporter -->
         <td>
           <div class="reporter-cell">
             <div class="reporter-avatar">{{ r.reporterInitials }}</div>

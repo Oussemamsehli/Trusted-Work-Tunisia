@@ -84,7 +84,7 @@
       <div class="profile-header-info">
         <h1 class="page-title">{{ profile.headline || 'Sans titre' }}</h1>
         <p class="page-subtitle">
-          User #{{ profile.userId }} · {{ profile.region || 'Région non définie' }}
+          {{ profileOwnerName }} · {{ profile.region || 'Région non définie' }}
           · Rang régional #{{ profile.regionalRank || '—' }}
           · {{ profile.totalViews || 0 }} vues
         </p>
@@ -217,10 +217,10 @@
         <div class="endorsement-item" *ngFor="let e of endorsements">
           <div class="endorsement-meta">
             <div class="avatar avatar-sm avatar-accent" style="font-size: 11px;">
-              #{{ e.endorserId }}
+              {{ e.endorserInitials }}
             </div>
             <div>
-              <div class="endorsement-endorser">Endorser #{{ e.endorserId }}</div>
+              <div class="endorsement-endorser">{{ e.endorserFullName }}</div>
               <div class="endorsement-date text-muted">{{ e.endorsedAt | date:'dd MMM yyyy' }}</div>
             </div>
           </div>
@@ -360,6 +360,7 @@
       <div class="review-item" *ngFor="let r of reviews">
         <div class="review-header">
           <span>
+            <span class="reviewer-name" style="font-weight: 600; margin-right: 8px;">{{ r.clientFullName }}</span>
             <span *ngFor="let star of getStars(r.rating)">
               <i [class]="star" style="color: var(--warning); font-size: 12px;"></i>
             </span>
@@ -516,8 +517,7 @@
     </div>
     <ul class="suggestions-list">
       <li *ngFor="let s of completeness.suggestions">
-        <i class="fas fa-arrow-right text-accent"></i> {{ s }}
-      </li>
+        <i class="fas fa-arrow-right text-accent"></i> {{ s }}</li>
     </ul>
   </div>
 

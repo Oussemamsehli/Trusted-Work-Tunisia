@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { HttpClient } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import { ProfileReport } from '../../../core/models/freelancer.model';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
+import { UserResolutionService } from '../../../core/services/user-resolution.service';
 
 interface ReportViewModel extends ProfileReport {
   reporterFullName: string;
   reporterInitials: string;
+  freelancerFullName: string;
+  freelancerInitials: string;
 }
 
 @Component({
@@ -22,11 +23,9 @@ export class ReportsManagementComponent implements OnInit {
   errorMsg = '';
   successMsg = '';
 
-  private userServiceUrl = 'http://localhost:8081/api';
-
   constructor(
     private profileService: FreelancerProfileService,
-    private http: HttpClient
+    private userResolution: UserResolutionService
   ) {}
 
   ngOnInit(): void {
@@ -46,39 +45,45 @@ export class ReportsManagementComponent implements OnInit {
           return;
         }
 
-        // Appel user-service pour chaque reporter
-        const userRequests = data.map(report =>
-          this.http.get<any>(`${this.userServiceUrl}/users/${report.reporterId}`).pipe(
-            catchError(() => of({ firstName: '', lastName: '' }))
-          )
+        const reporterRequests = data.map(report =>
+          this.userResolution.getFullName(report.reporterId)
         );
 
-        forkJoin(userRequests).subscribe({
-          next: (users) => {
+        const freelancerRequests = data.map(report =>
+          report.profile?.userId
+            ? this.userResolution.getFullName(report.profile.userId)
+            : this.userResolution.getFullName(-1)
+        );
+
+        forkJoin([
+          forkJoin(reporterRequests),
+          forkJoin(freelancerRequests)
+        ]).subscribe({
+          next: ([reporterNames, freelancerNames]) => {
             this.reports = data.map((report, index) => {
-              const user = users[index] || {};
-              const firstName = (user.firstName || user.firstname || user.prenom || '').trim();
-              const lastName  = (user.lastName  || user.lastname  || user.nom   || '').trim();
-              const fullName  = `${firstName} ${lastName}`.trim() || `User #${report.reporterId}`;
-              const initials  = firstName && lastName
-                ? `${firstName[0]}${lastName[0]}`.toUpperCase()
-                : fullName[0]?.toUpperCase() || 'U';
+              const reporterFullName = reporterNames[index];
+              const freelancerFullName = freelancerNames[index];
 
               return {
                 ...report,
-                reporterFullName: fullName,
-                reporterInitials: initials
+                reporterFullName,
+                reporterInitials: this.userResolution.getInitials(reporterFullName),
+                freelancerFullName,
+                freelancerInitials: this.userResolution.getInitials(freelancerFullName)
               };
             });
+
             this.loading = false;
           },
           error: () => {
-            // Fallback si user-service indisponible
             this.reports = data.map(report => ({
               ...report,
               reporterFullName: `User #${report.reporterId}`,
-              reporterInitials: 'U'
+              reporterInitials: 'U',
+              freelancerFullName: report.profile?.userId ? `User #${report.profile.userId}` : '—',
+              freelancerInitials: 'F'
             }));
+
             this.loading = false;
           }
         });

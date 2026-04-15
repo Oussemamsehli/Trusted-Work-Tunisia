@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { UserService, DashboardStats } from '../../../core/services/user.service';
 
 interface StatCard {
@@ -23,56 +23,19 @@ interface RecentActivity {
   templateUrl: './overview.component.html',
   styleUrls: ['./overview.component.css']
 })
-export class OverviewComponent implements OnInit {
+export class OverviewComponent implements OnInit, AfterViewInit, OnDestroy {
+
+  currentTime = '';
+  kycCount = 0;
+  private clockInterval: any;
+
   stats: StatCard[] = [
-    {
-      label: 'Total Users',
-      value: '0',
-      change: '',
-      changeType: 'flat',
-      icon: 'fa-users',
-      iconClass: 'accent'
-    },
-    {
-      label: 'Active Users',
-      value: '0',
-      change: '',
-      changeType: 'flat',
-      icon: 'fa-user-check',
-      iconClass: 'success'
-    },
-    {
-      label: 'KYC Pending',
-      value: '0',
-      change: '',
-      changeType: 'flat',
-      icon: 'fa-id-card',
-      iconClass: 'warning'
-    },
-    {
-      label: 'Suspended Users',
-      value: '0',
-      change: '',
-      changeType: 'flat',
-      icon: 'fa-ban',
-      iconClass: 'danger'
-    },
-    {
-      label: 'Freelancers',
-      value: '0',
-      change: '',
-      changeType: 'flat',
-      icon: 'fa-briefcase',
-      iconClass: 'info'
-    },
-    {
-      label: 'Clients',
-      value: '0',
-      change: '',
-      changeType: 'flat',
-      icon: 'fa-building',
-      iconClass: 'gold'
-    }
+    { label: 'Total Users', value: '0', change: '', changeType: 'flat', icon: 'fa-users', iconClass: 'accent' },
+    { label: 'Active Users', value: '0', change: '', changeType: 'flat', icon: 'fa-user-check', iconClass: 'success' },
+    { label: 'KYC Pending', value: '0', change: '', changeType: 'flat', icon: 'fa-id-card', iconClass: 'warning' },
+    { label: 'Suspended Users', value: '0', change: '', changeType: 'flat', icon: 'fa-ban', iconClass: 'danger' },
+    { label: 'Freelancers', value: '0', change: '', changeType: 'flat', icon: 'fa-briefcase', iconClass: 'info' },
+    { label: 'Clients', value: '0', change: '', changeType: 'flat', icon: 'fa-building', iconClass: 'gold' }
   ];
 
   recentActivities: RecentActivity[] = [
@@ -95,61 +58,52 @@ export class OverviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadStats();
+    this.updateClock();
+    this.clockInterval = setInterval(() => this.updateClock(), 1000);
   }
 
+  ngAfterViewInit(): void {
+    setTimeout(() => this.drawAllSparklines(), 300);
+  }
+
+  ngOnDestroy(): void {
+    if (this.clockInterval) clearInterval(this.clockInterval);
+  }
+
+  /* ─── NEW: Live clock ─── */
+  updateClock(): void {
+    this.currentTime = new Date().toLocaleTimeString('en-GB', {
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    });
+  }
+
+  /* ─── YOUR EXACT loadStats — unchanged except animate call ─── */
   loadStats(): void {
     this.userService.getDashboardStats().subscribe({
       next: (data: DashboardStats) => {
-        this.stats = [
-          {
-            label: 'Total Users',
-            value: String(data.totalUsers),
-            change: '',
-            changeType: 'flat',
-            icon: 'fa-users',
-            iconClass: 'accent'
-          },
-          {
-            label: 'Active Users',
-            value: String(data.activeUsers),
-            change: '',
-            changeType: 'flat',
-            icon: 'fa-user-check',
-            iconClass: 'success'
-          },
-          {
-            label: 'KYC Pending',
-            value: String(data.kycPending),
-            change: '',
-            changeType: 'flat',
-            icon: 'fa-id-card',
-            iconClass: 'warning'
-          },
-          {
-            label: 'Suspended Users',
-            value: String(data.suspendedUsers),
-            change: '',
-            changeType: 'flat',
-            icon: 'fa-ban',
-            iconClass: 'danger'
-          },
-          {
-            label: 'Freelancers',
-            value: String(data.totalFreelancers),
-            change: '',
-            changeType: 'flat',
-            icon: 'fa-briefcase',
-            iconClass: 'info'
-          },
-          {
-            label: 'Clients',
-            value: String(data.totalClients),
-            change: '',
-            changeType: 'flat',
-            icon: 'fa-building',
-            iconClass: 'gold'
-          }
+        const targets = [
+          data.totalUsers,
+          data.activeUsers,
+          data.kycPending,
+          data.suspendedUsers,
+          data.totalFreelancers,
+          data.totalClients
         ];
+
+        this.kycCount = data.kycPending;
+
+        this.stats = [
+          { label: 'Total Users', value: '0', change: '', changeType: 'flat', icon: 'fa-users', iconClass: 'accent' },
+          { label: 'Active Users', value: '0', change: '', changeType: 'flat', icon: 'fa-user-check', iconClass: 'success' },
+          { label: 'KYC Pending', value: '0', change: '', changeType: 'flat', icon: 'fa-id-card', iconClass: 'warning' },
+          { label: 'Suspended Users', value: '0', change: '', changeType: 'flat', icon: 'fa-ban', iconClass: 'danger' },
+          { label: 'Freelancers', value: '0', change: '', changeType: 'flat', icon: 'fa-briefcase', iconClass: 'info' },
+          { label: 'Clients', value: '0', change: '', changeType: 'flat', icon: 'fa-building', iconClass: 'gold' }
+        ];
+
+        /* Animate from 0 → real value */
+        setTimeout(() => this.animateCounters(targets), 80);
+        setTimeout(() => this.drawAllSparklines(), 80);
       },
       error: (error) => {
         console.error('Erreur chargement dashboard stats:', error);
@@ -157,22 +111,120 @@ export class OverviewComponent implements OnInit {
     });
   }
 
+  /* ─── NEW: Counter animation using setTimeout (zone.js safe) ─── */
+  private animateCounters(targets: number[]): void {
+    const steps = 30;
+    const interval = 40; /* ~1200ms total */
+
+    this.stats.forEach((stat, i) => {
+      const target = targets[i];
+      if (target === 0) return;
+      const increment = target / steps;
+      let step = 0;
+
+      const timer = setInterval(() => {
+        step++;
+        stat.value = String(Math.min(Math.round(increment * step), target));
+        if (step >= steps) {
+          stat.value = String(target);
+          clearInterval(timer);
+        }
+      }, interval);
+    });
+  }
+
+  /* ─── NEW: Sparklines ─── */
+  private drawAllSparklines(): void {
+    const configs: Record<string, { base: number; color: string }> = {
+      accent:  { base: 12000, color: 'rgba(16,185,129,1)' },
+      success: { base: 8800,  color: 'rgba(52,211,153,1)' },
+      warning: { base: 180,   color: 'rgba(251,191,36,1)' },
+      danger:  { base: 40,    color: 'rgba(248,113,113,1)' },
+      info:    { base: 7200,  color: 'rgba(56,189,248,1)' },
+      gold:    { base: 5000,  color: 'rgba(245,158,11,1)' },
+    };
+
+    Object.entries(configs).forEach(([key, cfg]) => {
+      const data = this.generateSparkData(cfg.base, cfg.base * 0.03, 20);
+      this.drawSparkline('spark-' + key, data, cfg.color);
+    });
+  }
+
+  private generateSparkData(base: number, variance: number, count: number): number[] {
+    const data: number[] = [];
+    let val = base;
+    for (let i = 0; i < count; i++) {
+      val += (Math.random() - 0.45) * variance;
+      val = Math.max(base * 0.6, val);
+      data.push(val);
+    }
+    return data;
+  }
+
+  private drawSparkline(canvasId: string, data: number[], color: string): void {
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+
+    const w = rect.width;
+    const h = rect.height;
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const pad = 2;
+
+    const points = data.map((v, i) => ({
+      x: pad + (i / (data.length - 1)) * (w - pad * 2),
+      y: pad + (1 - (v - min) / range) * (h - pad * 2)
+    }));
+
+    /* Fill */
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, color.replace(',1)', ',0.2)'));
+    grad.addColorStop(1, color.replace(',1)', ',0)'));
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, h);
+    points.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(points[points.length - 1].x, h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    /* Line */
+    ctx.beginPath();
+    points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    /* End dot */
+    const last = points[points.length - 1];
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  /* ─── YOUR EXACT helpers — unchanged ─── */
   getActivityIcon(type: string): string {
     const icons: Record<string, string> = {
-      kyc: 'fa-id-card',
-      review: 'fa-star',
-      contract: 'fa-file-contract',
-      badge: 'fa-trophy'
+      kyc: 'fa-id-card', review: 'fa-star', contract: 'fa-file-contract', badge: 'fa-trophy'
     };
     return icons[type] || 'fa-circle';
   }
 
   getActivityClass(type: string): string {
     const classes: Record<string, string> = {
-      kyc: 'warning',
-      review: 'accent',
-      contract: 'success',
-      badge: 'gold'
+      kyc: 'warning', review: 'accent', contract: 'success', badge: 'gold'
     };
     return classes[type] || 'accent';
   }
