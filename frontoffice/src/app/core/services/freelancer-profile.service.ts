@@ -134,18 +134,30 @@ deleteCertification(certId: number, userId: number): Observable<void> {
     return this.http.post<ProfileReview>(`${this.BASE_URL}/reviews/profile/${profileId}`, data);
   }
 
-  // ===== WORK EXPERIENCE =====
+    // ===== WORK EXPERIENCE =====
 
   getMyWorkExperiences(userId: number): Observable<WorkExperience[]> {
     return this.http.get<WorkExperience[]>(`${this.BASE_URL}/work-experiences/user/${userId}`);
+  }
+
+  getWorkExperienceById(expId: number, userId: number): Observable<WorkExperience> {
+    return this.http.get<WorkExperience>(`${this.BASE_URL}/work-experiences/${expId}/user/${userId}`);
   }
 
   addWorkExperience(userId: number, data: Partial<WorkExperience>): Observable<WorkExperience> {
     return this.http.post<WorkExperience>(`${this.BASE_URL}/work-experiences/user/${userId}`, data);
   }
 
+  updateWorkExperience(expId: number, userId: number, data: Partial<WorkExperience>): Observable<WorkExperience> {
+    return this.http.put<WorkExperience>(`${this.BASE_URL}/work-experiences/${expId}/user/${userId}`, data);
+  }
+
   deleteWorkExperience(expId: number, userId: number): Observable<void> {
     return this.http.delete<void>(`${this.BASE_URL}/work-experiences/${expId}/user/${userId}`);
+  }
+
+  getTotalWorkExperienceDuration(userId: number): Observable<number> {
+    return this.http.get<number>(`${this.BASE_URL}/work-experiences/user/${userId}/total-duration`);
   }
 
   // ===== RECOMMENDATIONS =====

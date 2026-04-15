@@ -3,6 +3,16 @@ import { FreelancerProfileService } from '../../../core/services/freelancer-prof
 import { AuthService } from '../../../core/services/auth.service';
 import { WorkExperience } from '../../../core/models/freelancer.model';
 
+interface WorkExperienceForm {
+  jobTitle: string;
+  company: string;
+  location: string;
+  description: string;
+  startDate: string;
+  endDate: string | null;
+  isCurrent: boolean;
+}
+
 @Component({
   selector: 'app-work-experience',
   templateUrl: './work-experience.component.html',
@@ -16,23 +26,14 @@ export class WorkExperienceComponent implements OnInit {
 
   errorMessage = '';
   successMessage = '';
-  showForm = false;
 
-  newExp: {
-    jobTitle: string;
-    company: string;
-    description: string;
-    startDate: string;
-    endDate: string | undefined;
-    isCurrent: boolean;
-  } = {
-    jobTitle: '',
-    company: '',
-    description: '',
-    startDate: '',
-    endDate: undefined,
-    isCurrent: false
-  };
+  showForm = false;
+  isEditMode = false;
+  editingId: number | null = null;
+
+  totalExperienceMonths = 0;
+
+  newExp: WorkExperienceForm = this.createEmptyForm();
 
   constructor(
     private profileService: FreelancerProfileService,
@@ -41,6 +42,7 @@ export class WorkExperienceComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadExperiences();
+    this.loadTotalDuration();
   }
 
   get currentUserId(): number {
@@ -52,10 +54,24 @@ export class WorkExperienceComponent implements OnInit {
   }
 
   get canSave(): boolean {
-    return !!this.newExp.jobTitle.trim() &&
-           !!this.newExp.company.trim() &&
-           !!this.newExp.startDate &&
-           !this.isSaving;
+    if (this.isSaving) return false;
+    if (!this.newExp.jobTitle.trim()) return false;
+    if (!this.newExp.company.trim()) return false;
+    if (!this.newExp.startDate) return false;
+    if (!this.newExp.isCurrent && !this.newExp.endDate) return false;
+    return !this.hasDateError;
+  }
+
+  get hasDateError(): boolean {
+    if (!this.newExp.startDate) return false;
+    if (this.newExp.isCurrent) return false;
+    if (!this.newExp.endDate) return false;
+
+    return new Date(this.newExp.startDate) > new Date(this.newExp.endDate);
+  }
+
+  get totalExperienceLabel(): string {
+    return this.formatMonths(this.totalExperienceMonths);
   }
 
   loadExperiences(): void {
@@ -74,38 +90,100 @@ export class WorkExperienceComponent implements OnInit {
     });
   }
 
+  loadTotalDuration(): void {
+    this.profileService.getTotalWorkExperienceDuration(this.currentUserId).subscribe({
+      next: (months) => {
+        this.totalExperienceMonths = months || 0;
+      },
+      error: () => {
+        this.totalExperienceMonths = 0;
+      }
+    });
+  }
+
   openForm(): void {
     this.clearMessages();
     this.showForm = true;
+    this.isEditMode = false;
+    this.editingId = null;
+    this.newExp = this.createEmptyForm();
+  }
+
+  openEditForm(exp: WorkExperience): void {
+    this.clearMessages();
+    this.showForm = true;
+    this.isEditMode = true;
+    this.editingId = exp.id;
+
+    this.newExp = {
+      jobTitle: exp.jobTitle || '',
+      company: exp.company || '',
+      location: exp.location || '',
+      description: exp.description || '',
+      startDate: exp.startDate || '',
+      endDate: exp.endDate ?? null,
+      isCurrent: !!exp.isCurrent
+    };
   }
 
   closeForm(): void {
     this.showForm = false;
-    this.resetForm();
+    this.isEditMode = false;
+    this.editingId = null;
+    this.newExp = this.createEmptyForm();
   }
 
-  addExperience(): void {
+  onCurrentChange(): void {
+    if (this.newExp.isCurrent) {
+      this.newExp.endDate = null;
+    }
+  }
+
+  saveExperience(): void {
     if (!this.canSave) return;
 
     this.clearMessages();
     this.isSaving = true;
 
     const payload = {
-      ...this.newExp,
-      endDate: this.newExp.isCurrent ? undefined : this.newExp.endDate
+      jobTitle: this.newExp.jobTitle.trim(),
+      company: this.newExp.company.trim(),
+      location: this.newExp.location.trim() || undefined,
+      description: this.newExp.description.trim() || undefined,
+      startDate: this.newExp.startDate,
+      endDate: this.newExp.isCurrent ? null : this.newExp.endDate,
+      isCurrent: this.newExp.isCurrent
     };
 
+    if (this.isEditMode && this.editingId !== null) {
+      this.profileService.updateWorkExperience(this.editingId, this.currentUserId, payload).subscribe({
+        next: () => {
+          this.isSaving = false;
+          this.successMessage = 'Expérience mise à jour avec succès.';
+          this.closeForm();
+          this.reloadData();
+          this.autoClearMessages();
+        },
+        error: (error) => {
+          this.isSaving = false;
+          this.errorMessage = error?.error?.message || 'Erreur lors de la mise à jour.';
+          this.autoClearMessages();
+        }
+      });
+      return;
+    }
+
     this.profileService.addWorkExperience(this.currentUserId, payload).subscribe({
-      next: (exp) => {
-        this.experiences.unshift(exp);
+      next: () => {
         this.isSaving = false;
         this.successMessage = 'Expérience ajoutée avec succès.';
         this.closeForm();
+        this.reloadData();
         this.autoClearMessages();
       },
-      error: () => {
+      error: (error) => {
         this.isSaving = false;
-        this.errorMessage = 'Erreur lors de l’ajout de l’expérience.';
+        this.errorMessage = error?.error?.message || 'Erreur lors de l’ajout de l’expérience.';
         this.autoClearMessages();
       }
     });
@@ -119,28 +197,22 @@ export class WorkExperienceComponent implements OnInit {
 
     this.profileService.deleteWorkExperience(expId, this.currentUserId).subscribe({
       next: () => {
-        this.experiences = this.experiences.filter(e => e.id !== expId);
         this.deletingId = null;
         this.successMessage = 'Expérience supprimée avec succès.';
+        this.reloadData();
         this.autoClearMessages();
       },
-      error: () => {
+      error: (error) => {
         this.deletingId = null;
-        this.errorMessage = 'Erreur lors de la suppression.';
+        this.errorMessage = error?.error?.message || 'Erreur lors de la suppression.';
         this.autoClearMessages();
       }
     });
   }
 
-  resetForm(): void {
-    this.newExp = {
-      jobTitle: '',
-      company: '',
-      description: '',
-      startDate: '',
-      endDate: undefined,
-      isCurrent: false
-    };
+  reloadData(): void {
+    this.loadExperiences();
+    this.loadTotalDuration();
   }
 
   clearMessages(): void {
@@ -155,7 +227,23 @@ export class WorkExperienceComponent implements OnInit {
     }, 3500);
   }
 
+  createEmptyForm(): WorkExperienceForm {
+    return {
+      jobTitle: '',
+      company: '',
+      location: '',
+      description: '',
+      startDate: '',
+      endDate: null,
+      isCurrent: false
+    };
+  }
+
   getDuration(exp: WorkExperience): string {
+    if (exp.durationLabel?.trim()) {
+      return exp.durationLabel;
+    }
+
     if (!exp.startDate) return '';
 
     const start = new Date(exp.startDate);
@@ -165,17 +253,41 @@ export class WorkExperienceComponent implements OnInit {
       (end.getFullYear() - start.getFullYear()) * 12 +
       (end.getMonth() - start.getMonth());
 
-    if (totalMonths <= 0) return 'Moins d’un mois';
+    return this.formatMonths(totalMonths);
+  }
+
+  getPeriod(exp: WorkExperience): string {
+    if (exp.periodLabel?.trim()) {
+      return exp.periodLabel;
+    }
+
+    const start = this.formatMonthYear(exp.startDate);
+    const end = exp.isCurrent ? 'Présent' : this.formatMonthYear(exp.endDate || '');
+
+    return `${start} - ${end}`;
+  }
+
+  formatMonths(totalMonths: number): string {
+    if (!totalMonths || totalMonths <= 0) return 'Moins d’un mois';
     if (totalMonths < 12) return `${totalMonths} mois`;
 
     const years = Math.floor(totalMonths / 12);
-    const remainingMonths = totalMonths % 12;
+    const months = totalMonths % 12;
 
-    if (remainingMonths > 0) {
-      return `${years} an(s) ${remainingMonths} mois`;
+    if (years > 0 && months > 0) {
+      return `${years} ${years === 1 ? 'an' : 'ans'} ${months} mois`;
     }
 
-    return `${years} an(s)`;
+    return `${years} ${years === 1 ? 'an' : 'ans'}`;
+  }
+
+  formatMonthYear(value: string): string {
+    if (!value) return '';
+    const date = new Date(value);
+    return date.toLocaleDateString('fr-FR', {
+      month: 'short',
+      year: 'numeric'
+    });
   }
 
   trackByExperience(index: number, exp: WorkExperience): number {

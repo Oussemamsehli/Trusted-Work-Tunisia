@@ -9,13 +9,11 @@ import {
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 import { UserResolutionService } from '../../../core/services/user-resolution.service';
 
-// Vue enrichie pour les reviews
 interface ReviewViewModel extends ProfileReview {
   clientFullName: string;
   clientInitials: string;
 }
 
-// Vue enrichie pour les endorsements
 interface EndorsementViewModel extends Endorsement {
   endorserFullName: string;
   endorserInitials: string;
@@ -37,7 +35,6 @@ export class ProfileDetailComponent implements OnInit {
   workExperiences: WorkExperience[] = [];
   educations: Education[] = [];
 
-  // ── État formulaire éducation (backoffice admin) ──
   showAddEduForm = false;
   newEdu = { degree: '', institution: '', fieldOfStudy: '', graduationYear: null as number | null };
   editingEduId: number | null = null;
@@ -47,11 +44,15 @@ export class ProfileDetailComponent implements OnInit {
     (_, i) => new Date().getFullYear() - i
   );
 
-  // ── État formulaire certification (backoffice admin) ──
   showAddCertForm = false;
   editingCertId: number | null = null;
   newCert = this.getEmptyCert();
   editCert = this.getEmptyCert();
+
+  showAddWorkForm = false;
+  editingWorkId: number | null = null;
+  newWork = this.getEmptyWork();
+  editWork = this.getEmptyWork();
 
   reviews: ReviewViewModel[] = [];
   averageRating = 0;
@@ -123,7 +124,14 @@ export class ProfileDetailComponent implements OnInit {
         });
 
         this.profileService.getWorkExperiences(userId).subscribe({
-          next: (w) => this.workExperiences = w,
+          next: (w) => {
+            this.workExperiences = (w || []).sort((a, b) => {
+              if (!!b.isCurrent !== !!a.isCurrent) {
+                return Number(!!b.isCurrent) - Number(!!a.isCurrent);
+              }
+              return this.getSortableDateValue(b.startDate) - this.getSortableDateValue(a.startDate);
+            });
+          },
           error: () => this.workExperiences = []
         });
 
@@ -235,7 +243,6 @@ export class ProfileDetailComponent implements OnInit {
     });
   }
 
-  // ── Certifications CRUD ──────────────────────────────────────────────
   private getEmptyCert() {
     return {
       title: '',
@@ -244,6 +251,18 @@ export class ProfileDetailComponent implements OnInit {
       issueDate: '',
       expiryDate: '',
       certificateUrl: ''
+    };
+  }
+
+  private getEmptyWork() {
+    return {
+      jobTitle: '',
+      company: '',
+      location: '',
+      description: '',
+      startDate: '',
+      endDate: '',
+      isCurrent: false
     };
   }
 
@@ -381,7 +400,124 @@ export class ProfileDetailComponent implements OnInit {
     return 'Valide';
   }
 
-  // ── Ajouter une formation (admin) ──────────────────────────────────
+  addWorkExperience(): void {
+    if (!this.profile) return;
+
+    if (!this.newWork.jobTitle.trim() || !this.newWork.company.trim() || !this.newWork.startDate) {
+      this.errorMsg = 'Le titre, l’entreprise et la date de début sont obligatoires.';
+      return;
+    }
+
+    if (!this.validateWorkDates(this.newWork.startDate, this.newWork.endDate, this.newWork.isCurrent)) {
+      this.errorMsg = 'La date de fin doit être postérieure ou égale à la date de début.';
+      return;
+    }
+
+    const payload = {
+      jobTitle: this.newWork.jobTitle.trim(),
+      company: this.newWork.company.trim(),
+      location: this.newWork.location.trim() || undefined,
+      description: this.newWork.description.trim() || undefined,
+      startDate: this.newWork.startDate,
+      endDate: this.newWork.isCurrent ? undefined : (this.newWork.endDate || undefined),
+      isCurrent: this.newWork.isCurrent
+    };
+
+    this.profileService.addWorkExperience(this.profile.userId, payload).subscribe({
+      next: (exp) => {
+        this.workExperiences = [exp, ...this.workExperiences].sort((a, b) => {
+          if (!!b.isCurrent !== !!a.isCurrent) {
+            return Number(!!b.isCurrent) - Number(!!a.isCurrent);
+          }
+          return this.getSortableDateValue(b.startDate) - this.getSortableDateValue(a.startDate);
+        });
+        this.newWork = this.getEmptyWork();
+        this.showAddWorkForm = false;
+        this.showSuccess('Expérience ajoutée');
+      },
+      error: (err) => {
+        this.errorMsg = err?.error?.message || err?.error || "Erreur lors de l'ajout de l'expérience";
+      }
+    });
+  }
+
+  startEditWork(w: WorkExperience): void {
+    this.editingWorkId = w.id;
+    this.editWork = {
+      jobTitle: w.jobTitle || '',
+      company: w.company || '',
+      location: w.location || '',
+      description: w.description || '',
+      startDate: this.toDateInputValue(w.startDate),
+      endDate: this.toDateInputValue(w.endDate),
+      isCurrent: !!w.isCurrent
+    };
+  }
+
+  cancelEditWork(): void {
+    this.editingWorkId = null;
+    this.editWork = this.getEmptyWork();
+  }
+
+  saveEditWork(expId: number): void {
+    if (!this.profile) return;
+
+    if (!this.editWork.jobTitle.trim() || !this.editWork.company.trim() || !this.editWork.startDate) {
+      this.errorMsg = 'Le titre, l’entreprise et la date de début sont obligatoires.';
+      return;
+    }
+
+    if (!this.validateWorkDates(this.editWork.startDate, this.editWork.endDate, this.editWork.isCurrent)) {
+      this.errorMsg = 'La date de fin doit être postérieure ou égale à la date de début.';
+      return;
+    }
+
+    const payload = {
+      jobTitle: this.editWork.jobTitle.trim(),
+      company: this.editWork.company.trim(),
+      location: this.editWork.location.trim() || undefined,
+      description: this.editWork.description.trim() || undefined,
+      startDate: this.editWork.startDate,
+      endDate: this.editWork.isCurrent ? undefined : (this.editWork.endDate || undefined),
+      isCurrent: this.editWork.isCurrent
+    };
+
+    this.profileService.updateWorkExperience(expId, this.profile.userId, payload).subscribe({
+      next: (updated) => {
+        this.workExperiences = this.workExperiences
+          .map(w => w.id === expId ? updated : w)
+          .sort((a, b) => {
+            if (!!b.isCurrent !== !!a.isCurrent) {
+              return Number(!!b.isCurrent) - Number(!!a.isCurrent);
+            }
+            return this.getSortableDateValue(b.startDate) - this.getSortableDateValue(a.startDate);
+          });
+        this.editingWorkId = null;
+        this.editWork = this.getEmptyWork();
+        this.showSuccess('Expérience modifiée');
+      },
+      error: (err) => {
+        this.errorMsg = err?.error?.message || err?.error || 'Erreur lors de la modification';
+      }
+    });
+  }
+
+  validateWorkDates(start?: string, end?: string, isCurrent?: boolean): boolean {
+    if (isCurrent) return true;
+    if (!start || !end) return true;
+    return new Date(end) >= new Date(start);
+  }
+
+  onCurrentWorkChange(formType: 'add' | 'edit'): void {
+    if (formType === 'add' && this.newWork.isCurrent) {
+      this.newWork.endDate = '';
+    }
+
+    if (formType === 'edit' && this.editWork.isCurrent) {
+      this.editWork.endDate = '';
+    }
+  }
+
   addEducation(): void {
     if (!this.profile || !this.newEdu.degree.trim() || !this.newEdu.institution.trim()) return;
     const payload = {
@@ -401,7 +537,6 @@ export class ProfileDetailComponent implements OnInit {
     });
   }
 
-  // ── Éditer une formation (admin) ────────────────────────────────────
   startEditEdu(edu: Education): void {
     this.editingEduId = edu.id;
     this.editEduForm = {
@@ -477,7 +612,6 @@ export class ProfileDetailComponent implements OnInit {
     });
   }
 
-  // Endorsements
   openEndorsements(skill: Skill): void {
     if (this.selectedSkill?.id === skill.id) {
       this.closeEndorsements();
@@ -581,6 +715,33 @@ export class ProfileDetailComponent implements OnInit {
 
   getCompletenessValue(value: number | null | undefined): number {
     return value ?? 0;
+  }
+
+  getWorkDurationLabel(work: WorkExperience): string {
+    if (work.durationLabel) return work.durationLabel;
+
+    const start = work.startDate ? new Date(work.startDate) : null;
+    const end = work.isCurrent ? new Date() : (work.endDate ? new Date(work.endDate) : null);
+
+    if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return '';
+    }
+
+    const totalMonths =
+      (end.getFullYear() - start.getFullYear()) * 12 +
+      (end.getMonth() - start.getMonth());
+
+    if (totalMonths <= 0) return 'Moins d’un mois';
+    if (totalMonths < 12) return `${totalMonths} mois`;
+
+    const years = Math.floor(totalMonths / 12);
+    const months = totalMonths % 12;
+
+    if (months > 0) {
+      return `${years} ${years === 1 ? 'an' : 'ans'} ${months} mois`;
+    }
+
+    return `${years} ${years === 1 ? 'an' : 'ans'}`;
   }
 
   private toDateInputValue(date: string | Date | undefined | null): string {

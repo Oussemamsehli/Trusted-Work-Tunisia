@@ -92,12 +92,33 @@ export class FreelancerProfileService {
     return this.http.get<Endorsement[]>(`${this.baseUrl}/endorsements/skill/${skillId}`);
   }
 
-  // ────────────────── WORK EXPERIENCES ──────────────────
+   // ────────────────── WORK EXPERIENCES ──────────────────
+
+     // ────────────────── WORK EXPERIENCES ──────────────────
 
   getWorkExperiences(userId: number): Observable<WorkExperience[]> {
     return this.http.get<WorkExperience[]>(`${this.baseUrl}/work-experiences/user/${userId}`);
   }
 
+  getWorkExperienceById(expId: number, userId: number): Observable<WorkExperience> {
+    return this.http.get<WorkExperience>(`${this.baseUrl}/work-experiences/${expId}/user/${userId}`);
+  }
+
+  addWorkExperience(userId: number, data: Partial<WorkExperience>): Observable<WorkExperience> {
+    return this.http.post<WorkExperience>(`${this.baseUrl}/work-experiences/user/${userId}`, data);
+  }
+
+  updateWorkExperience(expId: number, userId: number, data: Partial<WorkExperience>): Observable<WorkExperience> {
+    return this.http.put<WorkExperience>(`${this.baseUrl}/work-experiences/${expId}/user/${userId}`, data);
+  }
+
+  deleteWorkExperience(expId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/work-experiences/${expId}/user/${userId}`);
+  }
+
+  getTotalWorkExperienceDuration(userId: number): Observable<number> {
+    return this.http.get<number>(`${this.baseUrl}/work-experiences/user/${userId}/total-duration`);
+  }
   // ────────────────── EDUCATIONS ──────────────────
 
   getEducations(userId: number): Observable<Education[]> {
@@ -162,9 +183,7 @@ export class FreelancerProfileService {
     return this.http.delete<void>(`${this.baseUrl}/portfolio/${itemId}/user/${userId}`);
   }
 
-  deleteWorkExperience(expId: number, userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/work-experiences/${expId}/user/${userId}`);
-  }
+  
 
   addEducation(userId: number, data: Partial<Education>): Observable<Education> {
     return this.http.post<Education>(`${this.baseUrl}/educations/user/${userId}`, data);

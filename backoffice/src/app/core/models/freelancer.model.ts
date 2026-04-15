@@ -84,15 +84,22 @@ export interface ProfileReport {
   };
 }
 
-// --- WorkExperienceResponse ---
 export interface WorkExperience {
   id: number;
   jobTitle: string;
   company: string;
-  description: string;
+  location?: string;
+  description?: string;
   startDate: string;
-  endDate: string;
+  endDate?: string | null;
   isCurrent: boolean;
+
+  periodLabel?: string;
+  durationLabel?: string;
+  durationInMonths?: number;
+
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // --- EducationResponse ---

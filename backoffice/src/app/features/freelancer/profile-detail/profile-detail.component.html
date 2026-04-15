@@ -189,7 +189,6 @@
       </tbody>
     </table>
 
-    <!-- Panneau endorsements -->
     <div class="endorsement-panel" *ngIf="selectedSkill">
       <div class="endorsement-panel-header">
         <span>
@@ -244,7 +243,6 @@
       </button>
     </div>
 
-    <!-- Formulaire ajout certification -->
     <div class="inline-form" *ngIf="showAddCertForm">
       <div class="form-row-bo">
         <input type="text" [(ngModel)]="newCert.title" placeholder="Titre *" class="form-ctrl" maxlength="120" />
@@ -278,7 +276,6 @@
     <div class="timeline-list" *ngIf="certifications.length > 0">
       <div class="timeline-item" *ngFor="let c of certifications">
 
-        <!-- Mode lecture -->
         <ng-container *ngIf="editingCertId !== c.id">
           <div class="timeline-header">
             <div>
@@ -317,7 +314,6 @@
           </a>
         </ng-container>
 
-        <!-- Mode édition -->
         <ng-container *ngIf="editingCertId === c.id">
           <div class="form-row-bo">
             <input type="text" [(ngModel)]="editCert.title" placeholder="Titre *" class="form-ctrl" maxlength="120" />
@@ -352,26 +348,158 @@
   </div>
 
   <!-- ════ EXPÉRIENCES ════ -->
-  <div class="card section-card" *ngIf="workExperiences.length > 0">
+  <div class="card section-card">
     <div class="card-header">
-      <span class="card-title"><i class="fas fa-building"></i> Expériences ({{ workExperiences.length }})</span>
+      <span class="card-title">
+        <i class="fas fa-building"></i> Expériences ({{ workExperiences.length }})
+      </span>
+
+      <button class="btn btn-sm btn-primary-outline" (click)="showAddWorkForm = !showAddWorkForm">
+        {{ showAddWorkForm ? 'Annuler' : '+ Ajouter' }}
+      </button>
     </div>
 
-    <div class="timeline-list">
+    <div class="inline-form" *ngIf="showAddWorkForm">
+      <div class="form-row-bo">
+        <input type="text" [(ngModel)]="newWork.jobTitle" placeholder="Poste *" class="form-ctrl" maxlength="150" />
+        <input type="text" [(ngModel)]="newWork.company" placeholder="Entreprise *" class="form-ctrl" maxlength="150" />
+      </div>
+
+      <div class="form-row-bo">
+        <input type="text" [(ngModel)]="newWork.location" placeholder="Localisation" class="form-ctrl" maxlength="150" />
+        <input type="date" [(ngModel)]="newWork.startDate" class="form-ctrl" />
+      </div>
+
+      <div class="form-row-bo">
+        <input
+          type="date"
+          [(ngModel)]="newWork.endDate"
+          class="form-ctrl"
+          [disabled]="newWork.isCurrent" />
+
+        <label class="checkbox-inline-bo">
+          <input
+            type="checkbox"
+            [(ngModel)]="newWork.isCurrent"
+            (change)="onCurrentWorkChange('add')" />
+          <span>Poste actuel</span>
+        </label>
+      </div>
+
+      <div class="form-row-bo">
+        <textarea
+          [(ngModel)]="newWork.description"
+          placeholder="Description"
+          class="form-ctrl textarea-ctrl"
+          rows="4"
+          maxlength="2000"></textarea>
+      </div>
+
+      <div class="form-error-inline" *ngIf="newWork.startDate && newWork.endDate && !validateWorkDates(newWork.startDate, newWork.endDate, newWork.isCurrent)">
+        La date de fin doit être postérieure ou égale à la date de début.
+      </div>
+
+      <button class="btn btn-sm btn-success" (click)="addWorkExperience()">Enregistrer</button>
+    </div>
+
+    <p class="text-muted" style="padding:12px 0; margin:0;" *ngIf="workExperiences.length === 0 && !showAddWorkForm">
+      Aucune expérience déclarée.
+    </p>
+
+    <div class="timeline-list" *ngIf="workExperiences.length > 0">
       <div class="timeline-item" *ngFor="let w of workExperiences">
-        <div class="timeline-header">
-          <div>
-            <strong>{{ w.jobTitle }}</strong> — {{ w.company }}
-            <span *ngIf="w.isCurrent" class="badge badge-success" style="margin-left: 8px;">En poste</span>
+
+        <ng-container *ngIf="editingWorkId !== w.id">
+          <div class="timeline-header">
+            <div>
+              <strong>{{ w.jobTitle }}</strong>
+              <span class="text-muted"> — {{ w.company }}</span>
+
+              <span *ngIf="w.isCurrent" class="badge badge-success" style="margin-left: 8px;">
+                En poste
+              </span>
+
+              <span class="badge badge-muted" *ngIf="w.durationLabel" style="margin-left: 8px;">
+                {{ w.durationLabel }}
+              </span>
+            </div>
+
+            <div class="action-btns">
+              <button class="btn btn-sm btn-edit-icon" title="Modifier" (click)="startEditWork(w)">
+                <i class="fas fa-pencil"></i>
+              </button>
+              <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" (click)="deleteWorkExperience(w.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
           </div>
-          <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" (click)="deleteWorkExperience(w.id)">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-        <div class="text-muted" style="font-size: 12px;">
-          {{ w.startDate | date:'MM/yyyy' }} — {{ w.isCurrent ? 'Présent' : (w.endDate | date:'MM/yyyy') }}
-        </div>
-        <p *ngIf="w.description" class="text-secondary" style="margin-top: 4px;">{{ w.description }}</p>
+
+          <div class="text-muted" style="font-size:12px;">
+            <span *ngIf="w.periodLabel">{{ w.periodLabel }}</span>
+            <span *ngIf="!w.periodLabel">
+              {{ w.startDate | date:'MM/yyyy' }} — {{ w.isCurrent ? 'Présent' : (w.endDate | date:'MM/yyyy') }}
+            </span>
+          </div>
+
+          <div class="text-muted" style="font-size:12px; margin-top:4px;" *ngIf="w.location">
+            <i class="fas fa-location-dot"></i> {{ w.location }}
+          </div>
+
+          <p *ngIf="w.description" class="text-secondary" style="margin-top: 6px;">
+            {{ w.description }}
+          </p>
+
+          <div class="text-muted" style="font-size:12px; margin-top:6px;" *ngIf="!w.durationLabel">
+            {{ getWorkDurationLabel(w) }}
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="editingWorkId === w.id">
+          <div class="form-row-bo">
+            <input type="text" [(ngModel)]="editWork.jobTitle" placeholder="Poste *" class="form-ctrl" maxlength="150" />
+            <input type="text" [(ngModel)]="editWork.company" placeholder="Entreprise *" class="form-ctrl" maxlength="150" />
+          </div>
+
+          <div class="form-row-bo">
+            <input type="text" [(ngModel)]="editWork.location" placeholder="Localisation" class="form-ctrl" maxlength="150" />
+            <input type="date" [(ngModel)]="editWork.startDate" class="form-ctrl" />
+          </div>
+
+          <div class="form-row-bo">
+            <input
+              type="date"
+              [(ngModel)]="editWork.endDate"
+              class="form-ctrl"
+              [disabled]="editWork.isCurrent" />
+
+            <label class="checkbox-inline-bo">
+              <input
+                type="checkbox"
+                [(ngModel)]="editWork.isCurrent"
+                (change)="onCurrentWorkChange('edit')" />
+              <span>Poste actuel</span>
+            </label>
+          </div>
+
+          <div class="form-row-bo">
+            <textarea
+              [(ngModel)]="editWork.description"
+              placeholder="Description"
+              class="form-ctrl textarea-ctrl"
+              rows="4"
+              maxlength="2000"></textarea>
+          </div>
+
+          <div class="form-error-inline" *ngIf="editWork.startDate && editWork.endDate && !validateWorkDates(editWork.startDate, editWork.endDate, editWork.isCurrent)">
+            La date de fin doit être postérieure ou égale à la date de début.
+          </div>
+
+          <div class="inline-form-actions">
+            <button class="btn btn-sm btn-success" (click)="saveEditWork(w.id)">Sauvegarder</button>
+            <button class="btn btn-sm btn-secondary" (click)="cancelEditWork()">Annuler</button>
+          </div>
+        </ng-container>
+
       </div>
     </div>
   </div>
@@ -387,7 +515,6 @@
       </button>
     </div>
 
-    <!-- Formulaire d'ajout -->
     <div class="inline-form" *ngIf="showAddEduForm">
       <div class="form-row-bo">
         <input type="text" [(ngModel)]="newEdu.degree" placeholder="Diplôme *" class="form-ctrl" maxlength="100" />
@@ -410,7 +537,6 @@
     <div class="timeline-list" *ngIf="educations.length > 0">
       <div class="timeline-item" *ngFor="let e of educations">
 
-        <!-- Mode lecture -->
         <ng-container *ngIf="editingEduId !== e.id">
           <div class="timeline-header">
             <div>
@@ -431,7 +557,6 @@
           <div class="text-muted" style="font-size:12px;" *ngIf="e.fieldOfStudy">{{ e.fieldOfStudy }}</div>
         </ng-container>
 
-        <!-- Mode édition -->
         <ng-container *ngIf="editingEduId === e.id">
           <div class="form-row-bo">
             <input type="text" [(ngModel)]="editEduForm.degree" placeholder="Diplôme *" class="form-ctrl" maxlength="100" />
