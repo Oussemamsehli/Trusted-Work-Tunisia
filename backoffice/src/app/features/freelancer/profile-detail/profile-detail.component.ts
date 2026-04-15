@@ -79,6 +79,18 @@ export class ProfileDetailComponent implements OnInit {
     private userResolution: UserResolutionService
   ) {}
 
+  get pinnedPortfolio(): PortfolioItem[] {
+    return this.portfolio.filter(item => item.pinned);
+  }
+
+  get regularPortfolio(): PortfolioItem[] {
+    return this.portfolio.filter(item => !item.pinned);
+  }
+
+  get pinnedPortfolioCount(): number {
+    return this.pinnedPortfolio.length;
+  }
+
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (id) {
@@ -110,7 +122,9 @@ export class ProfileDetailComponent implements OnInit {
         });
 
         this.profileService.getPortfolio(userId).subscribe({
-          next: (p) => this.portfolio = p,
+          next: (p) => {
+            this.portfolio = this.sortPortfolioItems(p || []);
+          },
           error: () => this.portfolio = []
         });
 
@@ -146,6 +160,7 @@ export class ProfileDetailComponent implements OnInit {
               this.reviews = [];
               return;
             }
+
             forkJoin(rawReviews.map(r => this.userResolution.getFullName(r.clientId))).subscribe({
               next: (names) => {
                 this.reviews = rawReviews.map((r, i) => ({
@@ -206,6 +221,7 @@ export class ProfileDetailComponent implements OnInit {
 
   confirmDeleteProfile(): void {
     if (!this.profile) return;
+
     this.profileService.deleteProfile(this.profile.userId).subscribe({
       next: () => this.router.navigate(['/admin/freelancers']),
       error: (err) => {
@@ -217,6 +233,7 @@ export class ProfileDetailComponent implements OnInit {
 
   changeAvailability(status: 'AVAILABLE' | 'BUSY' | 'ON_VACATION'): void {
     if (!this.profile) return;
+
     this.profileService.updateAvailability(this.profile.userId, status).subscribe({
       next: (updated) => {
         this.profile = updated;
@@ -231,6 +248,7 @@ export class ProfileDetailComponent implements OnInit {
 
   deleteSkill(skillId: number): void {
     if (!this.profile) return;
+
     this.profileService.deleteSkill(skillId, this.profile.userId).subscribe({
       next: () => {
         this.skills = this.skills.filter(s => s.id !== skillId);
@@ -357,6 +375,7 @@ export class ProfileDetailComponent implements OnInit {
 
   deleteCertification(certId: number): void {
     if (!this.profile) return;
+
     this.profileService.deleteCertification(certId, this.profile.userId).subscribe({
       next: () => {
         this.certifications = this.certifications.filter(c => c.id !== certId);
@@ -376,6 +395,7 @@ export class ProfileDetailComponent implements OnInit {
 
   isCertExpiringSoon(expiryDate: string | Date | undefined, isExpired?: boolean): boolean {
     if (!expiryDate || isExpired) return false;
+
     const today = new Date();
     const expiry = new Date(expiryDate);
 
@@ -520,12 +540,14 @@ export class ProfileDetailComponent implements OnInit {
 
   addEducation(): void {
     if (!this.profile || !this.newEdu.degree.trim() || !this.newEdu.institution.trim()) return;
+
     const payload = {
       degree: this.newEdu.degree.trim(),
       institution: this.newEdu.institution.trim(),
       fieldOfStudy: this.newEdu.fieldOfStudy.trim() || undefined,
       graduationYear: this.newEdu.graduationYear ?? undefined
     };
+
     this.profileService.addEducation(this.profile.userId, payload).subscribe({
       next: (edu) => {
         this.educations = [...this.educations, edu].sort((a, b) => (b.graduationYear ?? 0) - (a.graduationYear ?? 0));
@@ -533,7 +555,9 @@ export class ProfileDetailComponent implements OnInit {
         this.showAddEduForm = false;
         this.showSuccess('Formation ajoutée');
       },
-      error: (err) => { this.errorMsg = err.error || "Erreur lors de l'ajout de la formation"; }
+      error: (err) => {
+        this.errorMsg = err.error || "Erreur lors de l'ajout de la formation";
+      }
     });
   }
 
@@ -553,25 +577,31 @@ export class ProfileDetailComponent implements OnInit {
 
   saveEditEdu(eduId: number): void {
     if (!this.profile) return;
+
     const payload = {
       degree: this.editEduForm.degree.trim(),
       institution: this.editEduForm.institution.trim(),
       fieldOfStudy: this.editEduForm.fieldOfStudy.trim() || undefined,
       graduationYear: this.editEduForm.graduationYear ?? undefined
     };
+
     this.profileService.updateEducation(eduId, this.profile.userId, payload).subscribe({
       next: (updated) => {
-        this.educations = this.educations.map(e => e.id === eduId ? updated : e)
+        this.educations = this.educations
+          .map(e => e.id === eduId ? updated : e)
           .sort((a, b) => (b.graduationYear ?? 0) - (a.graduationYear ?? 0));
         this.editingEduId = null;
         this.showSuccess('Formation mise à jour');
       },
-      error: (err) => { this.errorMsg = err.error || 'Erreur lors de la mise à jour'; }
+      error: (err) => {
+        this.errorMsg = err.error || 'Erreur lors de la mise à jour';
+      }
     });
   }
 
   deleteEducation(eduId: number): void {
     if (!this.profile) return;
+
     this.profileService.deleteEducation(eduId, this.profile.userId).subscribe({
       next: () => {
         this.educations = this.educations.filter(e => e.id !== eduId);
@@ -584,8 +614,43 @@ export class ProfileDetailComponent implements OnInit {
     });
   }
 
+  pinPortfolioItem(itemId: number): void {
+    if (!this.profile) return;
+
+    this.profileService.pinPortfolioItem(itemId, this.profile.userId).subscribe({
+      next: (updated) => {
+        this.portfolio = this.sortPortfolioItems(
+          this.portfolio.map(item => item.id === itemId ? updated : item)
+        );
+        this.showSuccess('Projet épinglé');
+      },
+      error: (err) => {
+        this.errorMsg = err?.error?.message || 'Erreur lors de l’épinglage du projet';
+        console.error(err);
+      }
+    });
+  }
+
+  unpinPortfolioItem(itemId: number): void {
+    if (!this.profile) return;
+
+    this.profileService.unpinPortfolioItem(itemId, this.profile.userId).subscribe({
+      next: (updated) => {
+        this.portfolio = this.sortPortfolioItems(
+          this.portfolio.map(item => item.id === itemId ? updated : item)
+        );
+        this.showSuccess('Projet désépinglé');
+      },
+      error: (err) => {
+        this.errorMsg = err?.error?.message || 'Erreur lors du désépinglage du projet';
+        console.error(err);
+      }
+    });
+  }
+
   deletePortfolioItem(itemId: number): void {
     if (!this.profile) return;
+
     this.profileService.deletePortfolioItem(itemId, this.profile.userId).subscribe({
       next: () => {
         this.portfolio = this.portfolio.filter(p => p.id !== itemId);
@@ -600,6 +665,7 @@ export class ProfileDetailComponent implements OnInit {
 
   deleteWorkExperience(expId: number): void {
     if (!this.profile) return;
+
     this.profileService.deleteWorkExperience(expId, this.profile.userId).subscribe({
       next: () => {
         this.workExperiences = this.workExperiences.filter(w => w.id !== expId);
@@ -617,6 +683,7 @@ export class ProfileDetailComponent implements OnInit {
       this.closeEndorsements();
       return;
     }
+
     this.selectedSkill = skill;
     this.endorsements = [];
     this.endorsementsLoading = true;
@@ -629,6 +696,7 @@ export class ProfileDetailComponent implements OnInit {
           this.endorsementsLoading = false;
           return;
         }
+
         forkJoin(rawList.map(e => this.userResolution.getFullName(e.endorserId))).subscribe({
           next: (names) => {
             this.endorsements = rawList.map((e, i) => ({
@@ -659,6 +727,30 @@ export class ProfileDetailComponent implements OnInit {
     this.selectedSkill = null;
     this.endorsements = [];
     this.endorsementsError = '';
+  }
+
+  getTechArray(technologies: string | undefined | null): string[] {
+    if (!technologies) return [];
+    return technologies
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean);
+  }
+
+  getProjectScoreClass(score: number | undefined | null): string {
+    const value = score ?? 0;
+    if (value >= 80) return 'badge-success';
+    if (value >= 60) return 'badge-warning';
+    return 'badge-danger';
+  }
+
+  getProjectScoreLabel(score: number | undefined | null): string {
+    const value = score ?? 0;
+    if (value >= 100) return 'Excellent';
+    if (value >= 80) return 'Très bon';
+    if (value >= 60) return 'Bon';
+    if (value >= 40) return 'Moyen';
+    return 'À compléter';
   }
 
   getStars(rating: number): string[] {
@@ -746,8 +838,10 @@ export class ProfileDetailComponent implements OnInit {
 
   private toDateInputValue(date: string | Date | undefined | null): string {
     if (!date) return '';
+
     const d = new Date(date);
     if (Number.isNaN(d.getTime())) return '';
+
     const year = d.getFullYear();
     const month = `${d.getMonth() + 1}`.padStart(2, '0');
     const day = `${d.getDate()}`.padStart(2, '0');
@@ -758,5 +852,14 @@ export class ProfileDetailComponent implements OnInit {
     if (!date) return 0;
     const d = new Date(date);
     return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+  }
+
+  private sortPortfolioItems(items: PortfolioItem[]): PortfolioItem[] {
+    return [...items].sort((a, b) => {
+      if (!!a.pinned !== !!b.pinned) {
+        return Number(!!b.pinned) - Number(!!a.pinned);
+      }
+      return this.getSortableDateValue(b.completionDate) - this.getSortableDateValue(a.completionDate);
+    });
   }
 }

@@ -15,19 +15,35 @@
           Présentez vos réalisations pour renforcer votre crédibilité et valoriser
           votre expertise auprès des clients.
         </p>
+
+        <div class="portfolio-stats" *ngIf="hasItems">
+          <div class="stat-pill">
+            <span class="stat-pill__label">Épinglés</span>
+            <strong>{{ pinnedCount }}/{{ maxPinnedItems }}</strong>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-pill__label">Total projets</span>
+            <strong>{{ portfolioItems.length }}</strong>
+          </div>
+        </div>
       </div>
 
       <div class="header-actions">
-        <button class="btn-add" (click)="showForm = !showForm">
+        <button class="btn-add" type="button" (click)="showForm = !showForm">
           {{ showForm ? 'Fermer le formulaire' : '+ Ajouter un projet' }}
         </button>
       </div>
     </div>
 
-    <!-- Erreur -->
+    <!-- Messages -->
     <div class="alert-error" *ngIf="errorMessage">
       <span>{{ errorMessage }}</span>
       <button type="button" (click)="errorMessage = ''">✕</button>
+    </div>
+
+    <div class="alert-success" *ngIf="successMessage">
+      <span>{{ successMessage }}</span>
+      <button type="button" (click)="successMessage = ''">✕</button>
     </div>
 
     <!-- Formulaire -->
@@ -55,7 +71,7 @@
           />
           <div class="field-meta">
             <small>Choisissez un titre clair et professionnel.</small>
-            <small>{{ titleLength }}/120</small>
+            <small>{{ titleLength }}/150</small>
           </div>
         </div>
 
@@ -96,6 +112,17 @@
         </div>
 
         <div class="form-group">
+          <label for="imageUrl">URL de l’image</label>
+          <input
+            id="imageUrl"
+            type="url"
+            [(ngModel)]="newItem.imageUrl"
+            placeholder="https://..."
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group">
           <label for="completionDate">Date de réalisation</label>
           <input
             id="completionDate"
@@ -104,15 +131,30 @@
             class="form-control"
           />
         </div>
+
+        <div class="form-group form-group--checkbox">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="newItem.pinned"
+              [disabled]="!canPinMore && !newItem.pinned"
+            />
+            <span>Épingler ce projet</span>
+          </label>
+          <small *ngIf="!canPinMore && !newItem.pinned">
+            Limite atteinte : vous avez déjà {{ maxPinnedItems }} projets épinglés.
+          </small>
+        </div>
       </div>
 
       <div class="form-actions">
         <button
           class="btn-save"
+          type="button"
           (click)="addItem()"
-          [disabled]="!newItem.title.trim()"
+          [disabled]="!newItem.title.trim() || isSubmitting"
         >
-          Enregistrer le projet
+          {{ isSubmitting ? 'Enregistrement...' : 'Enregistrer le projet' }}
         </button>
 
         <button
@@ -138,70 +180,223 @@
       <p>
         Ajoutez vos réalisations pour donner plus de poids à votre profil freelancer.
       </p>
-      <button class="btn-add" (click)="showForm = true">
+      <button class="btn-add" type="button" (click)="showForm = true">
         + Ajouter mon premier projet
       </button>
     </div>
 
-    <!-- Liste -->
-    <div class="projects-grid" *ngIf="!isLoading && hasItems">
-      <article
-        class="project-card"
-        *ngFor="let item of portfolioItems; trackBy: trackByProjectId"
-      >
-        <div class="project-card__top">
-          <div class="project-card__icon">🚀</div>
-
-          <button
-            class="btn-delete"
-            type="button"
-            (click)="deleteItem(item.id)"
-            title="Supprimer ce projet"
-          >
-            ✕
-          </button>
+    <!-- Projets épinglés -->
+    <section class="portfolio-section" *ngIf="!isLoading && pinnedItems.length > 0">
+      <div class="section-header">
+        <div>
+          <span class="section-chip">Pinned Projects</span>
+          <h2>Projets épinglés</h2>
+          <p>Vos réalisations les plus importantes mises en avant sur votre profil.</p>
         </div>
+      </div>
 
-        <div class="project-card__body">
-          <h3>{{ item.title }}</h3>
+      <div class="projects-grid projects-grid--pinned">
+        <article
+          class="project-card project-card--pinned"
+          *ngFor="let item of pinnedItems; trackBy: trackByProjectId"
+        >
+          <div class="project-card__top">
+            <div class="project-badges">
+              <span class="badge-pinned">📌 Épinglé</span>
+              <span class="badge-score">{{ item.projectScore }}%</span>
+            </div>
 
-          <p class="card-description" *ngIf="item.description; else noDescription">
-            {{ item.description }}
-          </p>
+            <div class="card-actions">
+              <button
+                class="btn-pin btn-pin--active"
+                type="button"
+                (click)="unpinItem(item)"
+                [disabled]="isPinning"
+              >
+                Désépingler
+              </button>
 
-          <ng-template #noDescription>
-            <p class="card-description card-description--muted">
-              Aucune description fournie pour ce projet.
-            </p>
+              <button
+                class="btn-delete"
+                type="button"
+                (click)="deleteItem(item.id)"
+                title="Supprimer ce projet"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <div class="project-cover" *ngIf="hasProjectImage(item); else pinnedFallbackImage">
+            <img [src]="item.imageUrl" [alt]="item.title" />
+          </div>
+
+          <ng-template #pinnedFallbackImage>
+            <div class="project-cover project-cover--fallback">
+              <span>Projet premium</span>
+            </div>
           </ng-template>
 
-          <div class="tech-tags" *ngIf="item.technologies">
-            <span
-              class="tech-tag"
-              *ngFor="let tech of getTechArray(item.technologies)"
-            >
-              {{ tech }}
-            </span>
+          <div class="project-card__body">
+            <h3>{{ item.title }}</h3>
+
+            <div class="score-block">
+              <div class="score-head">
+                <span>Project Score</span>
+                <strong>{{ getProjectScoreLabel(item.projectScore) }}</strong>
+              </div>
+              <div class="score-bar">
+                <div
+                  class="score-bar__fill"
+                  [style.width]="getProjectScoreWidth(item.projectScore)"
+                ></div>
+              </div>
+            </div>
+
+            <p class="card-description" *ngIf="item.description; else noPinnedDescription">
+              {{ item.description }}
+            </p>
+
+            <ng-template #noPinnedDescription>
+              <p class="card-description card-description--muted">
+                Aucune description fournie pour ce projet.
+              </p>
+            </ng-template>
+
+            <div class="tech-tags" *ngIf="item.technologies">
+              <span
+                class="tech-tag"
+                *ngFor="let tech of getTechArray(item.technologies)"
+              >
+                {{ tech }}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div class="project-card__footer">
-          <span class="completion-date" *ngIf="item.completionDate">
-            {{ item.completionDate | date:'MMM yyyy' }}
-          </span>
+          <div class="project-card__footer">
+            <span class="completion-date" *ngIf="item.completionDate">
+              {{ item.completionDate | date:'MMM yyyy' }}
+            </span>
 
-          <a
-            *ngIf="item.projectUrl"
-            [href]="item.projectUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="btn-link"
-          >
-            Voir le projet
-          </a>
+            <a
+              *ngIf="hasProjectLink(item)"
+              [href]="item.projectUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn-link"
+            >
+              Voir le projet
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Tous les projets -->
+    <section class="portfolio-section" *ngIf="!isLoading && regularItems.length > 0">
+      <div class="section-header">
+        <div>
+          <span class="section-chip">All Projects</span>
+          <h2>Tous les projets</h2>
+          <p>L’ensemble de vos réalisations visibles dans votre portfolio.</p>
         </div>
-      </article>
-    </div>
+      </div>
+
+      <div class="projects-grid">
+        <article
+          class="project-card"
+          *ngFor="let item of regularItems; trackBy: trackByProjectId"
+        >
+          <div class="project-card__top">
+            <div class="project-badges">
+              <span class="badge-score">{{ item.projectScore }}%</span>
+            </div>
+
+            <div class="card-actions">
+              <button
+                class="btn-pin"
+                type="button"
+                (click)="pinItem(item)"
+                [disabled]="isPinning || !canPinMore"
+              >
+                Épingler
+              </button>
+
+              <button
+                class="btn-delete"
+                type="button"
+                (click)="deleteItem(item.id)"
+                title="Supprimer ce projet"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <div class="project-cover" *ngIf="hasProjectImage(item); else regularFallbackImage">
+            <img [src]="item.imageUrl" [alt]="item.title" />
+          </div>
+
+          <ng-template #regularFallbackImage>
+            <div class="project-cover project-cover--fallback">
+              <span>{{ item.title }}</span>
+            </div>
+          </ng-template>
+
+          <div class="project-card__body">
+            <h3>{{ item.title }}</h3>
+
+            <div class="score-block">
+              <div class="score-head">
+                <span>Project Score</span>
+                <strong>{{ getProjectScoreLabel(item.projectScore) }}</strong>
+              </div>
+              <div class="score-bar">
+                <div
+                  class="score-bar__fill"
+                  [style.width]="getProjectScoreWidth(item.projectScore)"
+                ></div>
+              </div>
+            </div>
+
+            <p class="card-description" *ngIf="item.description; else noRegularDescription">
+              {{ item.description }}
+            </p>
+
+            <ng-template #noRegularDescription>
+              <p class="card-description card-description--muted">
+                Aucune description fournie pour ce projet.
+              </p>
+            </ng-template>
+
+            <div class="tech-tags" *ngIf="item.technologies">
+              <span
+                class="tech-tag"
+                *ngFor="let tech of getTechArray(item.technologies)"
+              >
+                {{ tech }}
+              </span>
+            </div>
+          </div>
+
+          <div class="project-card__footer">
+            <span class="completion-date" *ngIf="item.completionDate">
+              {{ item.completionDate | date:'MMM yyyy' }}
+            </span>
+
+            <a
+              *ngIf="hasProjectLink(item)"
+              [href]="item.projectUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn-link"
+            >
+              Voir le projet
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
 
   </div>
 </div>

@@ -67,8 +67,26 @@ export class FreelancerProfileService {
 
   // ────────────────── PORTFOLIO ──────────────────
 
-  getPortfolio(userId: number): Observable<PortfolioItem[]> {
+   // ────────────────── PORTFOLIO ──────────────────
+
+   getPortfolio(userId: number): Observable<PortfolioItem[]> {
     return this.http.get<PortfolioItem[]>(`${this.baseUrl}/portfolio/user/${userId}`);
+  }
+
+  getPinnedPortfolio(userId: number): Observable<PortfolioItem[]> {
+    return this.http.get<PortfolioItem[]>(`${this.baseUrl}/portfolio/user/${userId}/pinned`);
+  }
+
+  pinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
+    return this.http.patch<PortfolioItem>(`${this.baseUrl}/portfolio/${itemId}/user/${userId}/pin`, {});
+  }
+
+  unpinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
+    return this.http.patch<PortfolioItem>(`${this.baseUrl}/portfolio/${itemId}/user/${userId}/unpin`, {});
+  }
+
+  deletePortfolioItem(itemId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/portfolio/${itemId}/user/${userId}`);
   }
 
   // ────────────────── CERTIFICATIONS ──────────────────
@@ -92,7 +110,6 @@ export class FreelancerProfileService {
     return this.http.get<Endorsement[]>(`${this.baseUrl}/endorsements/skill/${skillId}`);
   }
 
-   // ────────────────── WORK EXPERIENCES ──────────────────
 
      // ────────────────── WORK EXPERIENCES ──────────────────
 
@@ -179,9 +196,7 @@ export class FreelancerProfileService {
     return this.http.delete<void>(`${this.baseUrl}/certifications/${certId}/user/${userId}`);
   }
 
-  deletePortfolioItem(itemId: number, userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/portfolio/${itemId}/user/${userId}`);
-  }
+  
 
   
 

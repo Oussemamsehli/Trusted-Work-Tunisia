@@ -36,6 +36,8 @@ export interface PortfolioItem {
   imageUrl: string;
   technologies: string;
   completionDate: string;
+  pinned: boolean;
+  projectScore: number;
 }
 
 // --- CertificationResponse ---

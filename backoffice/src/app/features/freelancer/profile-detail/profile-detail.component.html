@@ -580,26 +580,134 @@
   </div>
 
   <!-- ════ PORTFOLIO ════ -->
-  <div class="card section-card" *ngIf="portfolio.length > 0">
+   <!-- ════ PORTFOLIO ════ -->
+   <div class="card section-card" *ngIf="portfolio.length > 0">
     <div class="card-header">
-      <span class="card-title"><i class="fas fa-briefcase"></i> Portfolio ({{ portfolio.length }})</span>
+      <span class="card-title">
+        <i class="fas fa-briefcase"></i> Portfolio ({{ portfolio.length }})
+      </span>
+
+      <div class="text-muted" style="font-size:12px;">
+        {{ pinnedPortfolioCount }} projet(s) épinglé(s)
+      </div>
     </div>
 
-    <div class="portfolio-grid">
-      <div class="portfolio-item" *ngFor="let item of portfolio">
-        <div class="portfolio-item-header">
-          <h4>{{ item.title }}</h4>
-          <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" (click)="deletePortfolioItem(item.id)">
-            <i class="fas fa-trash"></i>
-          </button>
+    <!-- Projets épinglés -->
+    <div *ngIf="pinnedPortfolio.length > 0" style="margin-bottom: 20px;">
+      <div class="text-accent" style="font-weight:700; margin-bottom:12px;">
+        <i class="fas fa-thumbtack"></i> Projets épinglés
+      </div>
+
+      <div class="portfolio-grid">
+        <div class="portfolio-item portfolio-item--pinned" *ngFor="let item of pinnedPortfolio">
+          <div class="portfolio-item-header">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h4 style="margin:0;">{{ item.title }}</h4>
+              <span class="badge badge-warning">📌 Épinglé</span>
+              <span class="badge" [ngClass]="getProjectScoreClass(item.projectScore)">
+                {{ item.projectScore }}% · {{ getProjectScoreLabel(item.projectScore) }}
+              </span>
+            </div>
+
+            <div class="action-btns">
+              <button
+                class="btn btn-ghost btn-sm"
+                title="Désépingler"
+                (click)="unpinPortfolioItem(item.id)">
+                <i class="fas fa-thumbtack"></i> Désépingler
+              </button>
+
+              <button
+                class="btn btn-danger btn-sm btn-icon"
+                title="Supprimer"
+                (click)="deletePortfolioItem(item.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <p class="text-secondary" *ngIf="item.description">{{ item.description }}</p>
+          <p class="text-muted" *ngIf="!item.description">Aucune description fournie.</p>
+
+          <div *ngIf="item.technologies" class="chip-list" style="margin-top:10px;">
+            <span class="chip chip-info" *ngFor="let tech of getTechArray(item.technologies)">
+              {{ tech }}
+            </span>
+          </div>
+
+          <div class="text-muted" style="font-size:12px; margin-top:10px;" *ngIf="item.completionDate">
+            <i class="fas fa-calendar-alt"></i> {{ item.completionDate | date:'MMM yyyy' }}
+          </div>
+
+          <div style="margin-top: 12px; display:flex; gap:8px; flex-wrap:wrap;">
+            <a
+              *ngIf="item.projectUrl"
+              [href]="item.projectUrl"
+              target="_blank"
+              class="btn btn-ghost btn-sm">
+              <i class="fas fa-external-link-alt"></i> Voir le projet
+            </a>
+          </div>
         </div>
-        <p class="text-secondary">{{ item.description || '' }}</p>
-        <div *ngIf="item.technologies" class="text-muted" style="font-size: 12px; margin-top: 4px;">
-          <i class="fas fa-wrench"></i> {{ item.technologies }}
+      </div>
+    </div>
+
+    <!-- Tous les autres projets -->
+    <div *ngIf="regularPortfolio.length > 0">
+      <div class="text-accent" style="font-weight:700; margin-bottom:12px;">
+        <i class="fas fa-layer-group"></i> Tous les projets
+      </div>
+
+      <div class="portfolio-grid">
+        <div class="portfolio-item" *ngFor="let item of regularPortfolio">
+          <div class="portfolio-item-header">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <h4 style="margin:0;">{{ item.title }}</h4>
+              <span class="badge" [ngClass]="getProjectScoreClass(item.projectScore)">
+                {{ item.projectScore }}% · {{ getProjectScoreLabel(item.projectScore) }}
+              </span>
+            </div>
+
+            <div class="action-btns">
+              <button
+                class="btn btn-ghost btn-sm"
+                title="Épingler"
+                (click)="pinPortfolioItem(item.id)">
+                <i class="fas fa-thumbtack"></i> Épingler
+              </button>
+
+              <button
+                class="btn btn-danger btn-sm btn-icon"
+                title="Supprimer"
+                (click)="deletePortfolioItem(item.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <p class="text-secondary" *ngIf="item.description">{{ item.description }}</p>
+          <p class="text-muted" *ngIf="!item.description">Aucune description fournie.</p>
+
+          <div *ngIf="item.technologies" class="chip-list" style="margin-top:10px;">
+            <span class="chip chip-info" *ngFor="let tech of getTechArray(item.technologies)">
+              {{ tech }}
+            </span>
+          </div>
+
+          <div class="text-muted" style="font-size:12px; margin-top:10px;" *ngIf="item.completionDate">
+            <i class="fas fa-calendar-alt"></i> {{ item.completionDate | date:'MMM yyyy' }}
+          </div>
+
+          <div style="margin-top: 12px; display:flex; gap:8px; flex-wrap:wrap;">
+            <a
+              *ngIf="item.projectUrl"
+              [href]="item.projectUrl"
+              target="_blank"
+              class="btn btn-ghost btn-sm">
+              <i class="fas fa-external-link-alt"></i> Voir le projet
+            </a>
+          </div>
         </div>
-        <a *ngIf="item.projectUrl" [href]="item.projectUrl" target="_blank" class="btn btn-ghost btn-sm" style="margin-top: 8px;">
-          <i class="fas fa-external-link-alt"></i> Voir le projet
-        </a>
       </div>
     </div>
   </div>

@@ -75,10 +75,15 @@ export class FreelancerProfileService {
     return this.http.get<SkillGapResponse>(`${this.BASE_URL}/skills/user/${userId}/gaps`);
   }
 
-  // ===== PORTFOLIO =====
+
+   // ===== PORTFOLIO =====
 
   getMyPortfolio(userId: number): Observable<PortfolioItem[]> {
     return this.http.get<PortfolioItem[]>(`${this.BASE_URL}/portfolio/user/${userId}`);
+  }
+
+  getPinnedPortfolio(userId: number): Observable<PortfolioItem[]> {
+    return this.http.get<PortfolioItem[]>(`${this.BASE_URL}/portfolio/user/${userId}/pinned`);
   }
 
   addPortfolioItem(userId: number, data: Partial<PortfolioItem>): Observable<PortfolioItem> {
@@ -87,6 +92,14 @@ export class FreelancerProfileService {
 
   updatePortfolioItem(itemId: number, userId: number, data: Partial<PortfolioItem>): Observable<PortfolioItem> {
     return this.http.put<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}`, data);
+  }
+
+  pinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
+    return this.http.patch<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/pin`, {});
+  }
+
+  unpinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
+    return this.http.patch<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/unpin`, {});
   }
 
   deletePortfolioItem(itemId: number, userId: number): Observable<void> {

@@ -34,6 +34,8 @@ export interface PortfolioItem {
   imageUrl: string;
   technologies: string;
   completionDate: string;
+  pinned: boolean;
+  projectScore: number;
 }
 
 export interface Certification {
@@ -62,6 +64,7 @@ export interface ProfileReview {
   status: 'VISIBLE' | 'HIDDEN' | 'FLAGGED';
   reviewedAt: string;
 }
+
 
 export interface WorkExperience {
   id: number;
