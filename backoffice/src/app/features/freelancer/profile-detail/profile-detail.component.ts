@@ -36,6 +36,13 @@ export class ProfileDetailComponent implements OnInit {
   certifications: Certification[] = [];
   workExperiences: WorkExperience[] = [];
   educations: Education[] = [];
+
+  // ── État formulaire éducation (backoffice admin) ──
+  showAddEduForm = false;
+  newEdu = { degree: '', institution: '', fieldOfStudy: '', graduationYear: null as number | null };
+  editingEduId: number | null = null;
+  editEduForm = { degree: '', institution: '', fieldOfStudy: '', graduationYear: null as number | null };
+  eduYears: number[] = Array.from({ length: new Date().getFullYear() - 1949 }, (_, i) => new Date().getFullYear() - i);
   reviews: ReviewViewModel[] = [];  // ← enrichi
   averageRating = 0;
 
@@ -222,6 +229,58 @@ export class ProfileDetailComponent implements OnInit {
     this.profileService.deleteWorkExperience(expId, this.profile.userId).subscribe({
       next: () => { this.workExperiences = this.workExperiences.filter(w => w.id !== expId); this.showSuccess('Expérience supprimée'); },
       error: (err) => { this.errorMsg = "Erreur lors de la suppression de l'expérience"; console.error(err); }
+    });
+  }
+
+  // ── Ajouter une formation (admin) ──────────────────────────────────
+  addEducation(): void {
+    if (!this.profile || !this.newEdu.degree.trim() || !this.newEdu.institution.trim()) return;
+    const payload = {
+      degree: this.newEdu.degree.trim(),
+      institution: this.newEdu.institution.trim(),
+      fieldOfStudy: this.newEdu.fieldOfStudy.trim() || undefined,
+      graduationYear: this.newEdu.graduationYear ?? undefined
+    };
+    this.profileService.addEducation(this.profile.userId, payload).subscribe({
+      next: (edu) => {
+        this.educations = [...this.educations, edu].sort((a, b) => (b.graduationYear ?? 0) - (a.graduationYear ?? 0));
+        this.newEdu = { degree: '', institution: '', fieldOfStudy: '', graduationYear: null };
+        this.showAddEduForm = false;
+        this.showSuccess('Formation ajoutée');
+      },
+      error: (err) => { this.errorMsg = err.error || "Erreur lors de l'ajout de la formation"; }
+    });
+  }
+
+  // ── Éditer une formation (admin) ────────────────────────────────────
+  startEditEdu(edu: Education): void {
+    this.editingEduId = edu.id;
+    this.editEduForm = {
+      degree: edu.degree,
+      institution: edu.institution,
+      fieldOfStudy: edu.fieldOfStudy || '',
+      graduationYear: edu.graduationYear ?? null
+    };
+  }
+
+  cancelEditEdu(): void { this.editingEduId = null; }
+
+  saveEditEdu(eduId: number): void {
+    if (!this.profile) return;
+    const payload = {
+      degree: this.editEduForm.degree.trim(),
+      institution: this.editEduForm.institution.trim(),
+      fieldOfStudy: this.editEduForm.fieldOfStudy.trim() || undefined,
+      graduationYear: this.editEduForm.graduationYear ?? undefined
+    };
+    this.profileService.updateEducation(eduId, this.profile.userId, payload).subscribe({
+      next: (updated) => {
+        this.educations = this.educations.map(e => e.id === eduId ? updated : e)
+          .sort((a, b) => (b.graduationYear ?? 0) - (a.graduationYear ?? 0));
+        this.editingEduId = null;
+        this.showSuccess('Formation mise à jour');
+      },
+      error: (err) => { this.errorMsg = err.error || 'Erreur lors de la mise à jour'; }
     });
   }
 

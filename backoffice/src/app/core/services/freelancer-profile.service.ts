@@ -157,6 +157,14 @@ export class FreelancerProfileService {
     return this.http.delete<void>(`${this.baseUrl}/work-experiences/${expId}/user/${userId}`);
   }
 
+  addEducation(userId: number, data: Partial<Education>): Observable<Education> {
+    return this.http.post<Education>(`${this.baseUrl}/educations/user/${userId}`, data);
+  }
+
+  updateEducation(eduId: number, userId: number, data: Partial<Education>): Observable<Education> {
+    return this.http.put<Education>(`${this.baseUrl}/educations/${eduId}/user/${userId}`, data);
+  }
+
   deleteEducation(eduId: number, userId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/educations/${eduId}/user/${userId}`);
   }

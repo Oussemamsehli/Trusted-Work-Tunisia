@@ -66,6 +66,7 @@ export class SidebarComponent implements OnInit {
         { label: 'Portfolio', icon: 'fa-images', route: '/app/profile/portfolio' },
         { label: 'Expériences', icon: 'fa-building', route: '/app/profile/work-experience' },
         { label: 'Skills', icon: 'fa-code', route: '/app/profile/skills' },
+        { label: 'Formations',     icon: 'fa-graduation-cap', route: '/app/profile/education' },
         { label: 'Certifications', icon: 'fa-certificate', route: '/app/profile/certifications' },
         { label: 'Endorsements', icon: 'fa-handshake', route: '/app/profile/endorsements' },
         { label: 'Avis Clients', icon: 'fa-star', route: '/app/profile/reviews' },

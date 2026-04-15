@@ -170,4 +170,9 @@ export class FreelancerProfileService {
 reportProfile(profileId: number, data: { reporterId: number; reason: string }): Observable<any> {
   return this.http.post(`${this.BASE_URL}/reports/profile/${profileId}`, data);
 }
+
+
+updateEducation(eduId: number, userId: number, data: Partial<Education>): Observable<Education> {
+  return this.http.put<Education>(`${this.BASE_URL}/educations/${eduId}/user/${userId}`, data);
+}
 }

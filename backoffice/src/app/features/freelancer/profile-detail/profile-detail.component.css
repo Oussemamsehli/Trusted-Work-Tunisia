@@ -447,3 +447,93 @@
   font-weight: 600;
   color: var(--text-primary);
 }
+/* ═══ Formations CRUD — backoffice ═══════════════════════════════════════ */
+.inline-form {
+  background: #f8faff;
+  border: 1px dashed #c7d2fe;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.form-row-bo {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.form-ctrl {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.form-ctrl:focus { border-color: #6366f1; }
+
+.inline-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.action-btns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-edit-icon {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.btn-edit-icon:hover { background: #dcfce7; }
+
+.btn-primary-outline {
+  background: transparent;
+  color: #6366f1;
+  border: 1px solid #6366f1;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.btn-primary-outline:hover { background: #eef2ff; }
+
+.btn-success {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.btn-success:hover { background: #15803d; }
+
+.badge-year {
+  display: inline-block;
+  margin-left: 6px;
+  background: #eef2ff;
+  color: #6366f1;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+.badge-unknown {
+  background: #f9fafb;
+  color: #9ca3af;
+}

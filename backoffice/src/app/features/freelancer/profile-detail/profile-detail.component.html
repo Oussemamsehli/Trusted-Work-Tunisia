@@ -305,22 +305,81 @@
   </div>
 
   <!-- ════ FORMATIONS ════ -->
-  <div class="card section-card" *ngIf="educations.length > 0">
+  <div class="card section-card">
     <div class="card-header">
-      <span class="card-title"><i class="fas fa-graduation-cap"></i> Formations ({{ educations.length }})</span>
+      <span class="card-title">
+        <i class="fas fa-graduation-cap"></i> Formations ({{ educations.length }})
+      </span>
+      <button class="btn btn-sm btn-primary-outline" (click)="showAddEduForm = !showAddEduForm">
+        {{ showAddEduForm ? 'Annuler' : '+ Ajouter' }}
+      </button>
     </div>
 
-    <div class="timeline-list">
+    <!-- Formulaire d'ajout (admin) -->
+    <div class="inline-form" *ngIf="showAddEduForm">
+      <div class="form-row-bo">
+        <input type="text" [(ngModel)]="newEdu.degree" placeholder="Diplôme *" class="form-ctrl" maxlength="100" />
+        <input type="text" [(ngModel)]="newEdu.institution" placeholder="Établissement *" class="form-ctrl" maxlength="100" />
+      </div>
+      <div class="form-row-bo">
+        <input type="text" [(ngModel)]="newEdu.fieldOfStudy" placeholder="Domaine d'études" class="form-ctrl" maxlength="100" />
+        <select [(ngModel)]="newEdu.graduationYear" class="form-ctrl">
+          <option [ngValue]="null">-- Année --</option>
+          <option *ngFor="let y of eduYears" [value]="y">{{ y }}</option>
+        </select>
+      </div>
+      <button class="btn btn-sm btn-success" (click)="addEducation()">Enregistrer</button>
+    </div>
+
+    <!-- Liste vide -->
+    <p class="text-muted" style="padding:12px 0; margin:0;" *ngIf="educations.length === 0 && !showAddEduForm">
+      Aucune formation déclarée.
+    </p>
+
+    <!-- Liste formations -->
+    <div class="timeline-list" *ngIf="educations.length > 0">
       <div class="timeline-item" *ngFor="let e of educations">
-        <div class="timeline-header">
-          <div><strong>{{ e.degree }}</strong> — {{ e.institution }}</div>
-          <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" (click)="deleteEducation(e.id)">
-            <i class="fas fa-trash"></i>
-          </button>
-        </div>
-        <div class="text-muted" style="font-size: 12px;">
-          {{ e.fieldOfStudy }} · Promotion {{ e.graduationYear }}
-        </div>
+
+        <!-- Mode lecture -->
+        <ng-container *ngIf="editingEduId !== e.id">
+          <div class="timeline-header">
+            <div>
+              <strong>{{ e.degree }}</strong>
+              <span class="text-muted"> — {{ e.institution }}</span>
+              <span class="badge-year" *ngIf="e.graduationYear"> Promo {{ e.graduationYear }}</span>
+              <span class="badge-year badge-unknown" *ngIf="!e.graduationYear"> Année non renseignée</span>
+            </div>
+            <div class="action-btns">
+              <button class="btn btn-sm btn-edit-icon" title="Modifier" (click)="startEditEdu(e)">
+                <i class="fas fa-pencil"></i>
+              </button>
+              <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" (click)="deleteEducation(e.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="text-muted" style="font-size:12px;" *ngIf="e.fieldOfStudy">{{ e.fieldOfStudy }}</div>
+        </ng-container>
+
+        <!-- Mode édition inline -->
+        <ng-container *ngIf="editingEduId === e.id">
+          <div class="form-row-bo">
+            <input type="text" [(ngModel)]="editEduForm.degree" placeholder="Diplôme *" class="form-ctrl" maxlength="100" />
+            <input type="text" [(ngModel)]="editEduForm.institution" placeholder="Établissement *" class="form-ctrl" maxlength="100" />
+          </div>
+          <div class="form-row-bo">
+            <input type="text" [(ngModel)]="editEduForm.fieldOfStudy" placeholder="Domaine" class="form-ctrl" maxlength="100" />
+            <select [(ngModel)]="editEduForm.graduationYear" class="form-ctrl">
+              <option [ngValue]="null">-- Année --</option>
+              <option *ngFor="let y of eduYears" [value]="y">{{ y }}</option>
+            </select>
+          </div>
+          <div class="inline-form-actions">
+            <button class="btn btn-sm btn-success" (click)="saveEditEdu(e.id)">Sauvegarder</button>
+            <button class="btn btn-sm btn-secondary" (click)="cancelEditEdu()">Annuler</button>
+          </div>
+        </ng-container>
+
       </div>
     </div>
   </div>

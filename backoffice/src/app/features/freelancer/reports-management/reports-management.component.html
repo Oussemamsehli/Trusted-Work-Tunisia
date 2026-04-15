@@ -1,119 +1,220 @@
+<!-- ═══ Page Header ═══ -->
 <div class="page-header">
   <div>
-    <h1 class="page-title">Signalements de profils</h1>
-    <p class="page-subtitle">
-      {{ reports.length }} signalement(s) en attente
-    </p>
+    <div class="reports-header-row">
+      <h1 class="page-title">Signalements</h1>
+      <span class="pending-badge" *ngIf="!loading && !errorMsg && reports.length > 0">
+        <span class="pending-badge-dot"></span>
+        {{ reports.length }}
+      </span>
+    </div>
+    <p class="page-subtitle">Modération des profils freelancers</p>
   </div>
 
   <div class="page-actions">
+    <button class="btn btn-ghost btn-sm" [disabled]="loading" (click)="loadReports()">
+      <i class="fas fa-arrows-rotate" [class.fa-spin]="loading"></i> Rafraîchir
+    </button>
+  </div>
+</div>
+
+<!-- ═══ Toast ═══ -->
+<div *ngIf="successMsg" class="reports-toast">
+  <div class="reports-toast-icon"><i class="fas fa-check-circle"></i></div>
+  <span>{{ successMsg }}</span>
+</div>
+
+<!-- ═══ Reason Breakdown Strip ═══ -->
+<div class="reason-strip" *ngIf="!loading && !errorMsg && reports.length > 0">
+  <div class="reason-chip"
+       *ngFor="let entry of reasonBreakdown"
+       [ngClass]="'reason-chip--' + getReasonSeverity(entry.key)">
+    <span class="reason-chip-count">{{ entry.value }}</span>
+    <span class="reason-chip-label">{{ getReasonLabel(entry.key) }}</span>
+  </div>
+</div>
+
+<!-- ═══ Loading Skeleton ═══ -->
+<div *ngIf="loading" class="card reports-skeleton-card">
+  <div class="skeleton-row" *ngFor="let i of [1,2,3,4]">
+    <div class="skeleton-stripe"></div>
+    <div class="skeleton-cell skeleton-avatar"></div>
+    <div class="skeleton-cell skeleton-text skeleton-text--name"></div>
+    <div class="skeleton-cell skeleton-avatar"></div>
+    <div class="skeleton-cell skeleton-text skeleton-text--name"></div>
+    <div class="skeleton-cell skeleton-badge"></div>
+    <div class="skeleton-cell skeleton-text skeleton-text--date"></div>
+    <div class="skeleton-cell skeleton-actions"></div>
+  </div>
+</div>
+
+<!-- ═══ Error ═══ -->
+<div *ngIf="errorMsg && !loading" class="card reports-state-card">
+  <div class="reports-state reports-state--error">
+    <div class="reports-state-icon">
+      <i class="fas fa-exclamation-circle"></i>
+    </div>
+    <div class="reports-state-body">
+      <p class="reports-state-title">Impossible de charger les signalements</p>
+      <p class="reports-state-desc text-muted">{{ errorMsg }}</p>
+    </div>
     <button class="btn btn-ghost btn-sm" (click)="loadReports()">
-      <i class="fas fa-refresh"></i> Rafraîchir
+      <i class="fas fa-arrows-rotate"></i> Réessayer
     </button>
   </div>
 </div>
 
-<!-- Message succès -->
-<div *ngIf="successMsg" class="alert-success">
-  <i class="fas fa-check-circle"></i>
-  {{ successMsg }}
-</div>
-
-<!-- Loading -->
-<div *ngIf="loading" class="card">
-  <div class="empty-state">
-    <i class="fas fa-spinner fa-spin"></i>
-    <p>Chargement des signalements...</p>
+<!-- ═══ Empty State ═══ -->
+<div *ngIf="!loading && !errorMsg && reports.length === 0" class="card reports-state-card">
+  <div class="reports-state reports-state--empty">
+    <div class="reports-state-shield">
+      <i class="fas fa-shield-halved"></i>
+      <i class="fas fa-check reports-state-shield-check"></i>
+    </div>
+    <div class="reports-state-body">
+      <p class="reports-state-title">Aucun signalement en attente</p>
+      <p class="reports-state-desc text-muted">Tous les profils sont conformes. Revenez plus tard.</p>
+    </div>
   </div>
 </div>
 
-<!-- Erreur -->
-<div *ngIf="errorMsg && !loading" class="card">
-  <div class="empty-state">
-    <i class="fas fa-exclamation-triangle text-danger"></i>
-    <p class="text-danger">{{ errorMsg }}</p>
-    <button class="btn btn-primary" style="margin-top: 12px;" (click)="loadReports()">
-      <i class="fas fa-refresh"></i> Réessayer
-    </button>
-  </div>
-</div>
+<!-- ═══ Reports Table ═══ -->
+<div *ngIf="!loading && !errorMsg && reports.length > 0"
+     class="card reports-table-card">
 
-<!-- Aucun signalement -->
-<div *ngIf="!loading && !errorMsg && reports.length === 0" class="card">
-  <div class="empty-state">
-    <i class="fas fa-check-circle text-success"></i>
-    <p>Aucun signalement en attente</p>
-  </div>
-</div>
-
-<!-- Liste -->
-<div *ngIf="!loading && !errorMsg && reports.length > 0" class="card">
-  <table class="tw-table">
+  <table class="tw-table reports-table">
     <thead>
       <tr>
-        <th>Profil</th>
+        <th style="width:4px; padding:0;"></th>
+        <th>Profil signalé</th>
         <th>Signalé par</th>
         <th>Raison</th>
-        <th>Date du signalement</th>
-        <th>Actions</th>
+        <th>Date</th>
+        <th style="width:160px; text-align:right;">Actions</th>
       </tr>
     </thead>
 
     <tbody>
-      <tr *ngFor="let r of reports">
-        <td>
-          <ng-container *ngIf="r.profile?.id; else noProfile">
-            <a [routerLink]="['/admin/freelancers', r.profile?.id]" class="reporter-cell profile-link-clean">
-              <div class="reporter-avatar" style="background: var(--accent-soft); color: var(--accent);">
-                {{ r.freelancerInitials }}
-              </div>
-              <div>
-                <span>{{ r.freelancerFullName }}</span>
+      <ng-container *ngFor="let r of reports">
+
+        <!-- ── Main Row ── -->
+        <tr class="report-row"
+            [class.report-row--expanded]="expandedId === r.id"
+            [class.report-row--confirming]="confirmingId === r.id"
+            [style.border-left-color]="getReasonColor(r.reason)">
+
+          <td style="padding:0; border-left: 3px solid transparent;"></td>
+
+          <!-- Profil signalé -->
+          <td>
+            <a *ngIf="r.profile?.id; else noProfile"
+               [routerLink]="['/admin/freelancers', r.profile?.id]"
+               class="person-cell person-cell--link">
+              <div class="person-avatar person-avatar--accent">{{ r.freelancerInitials }}</div>
+              <div class="person-info">
+                <span class="person-name">{{ r.freelancerFullName }}</span>
+                <!-- ID SUPPRIMÉ ICI -->
               </div>
             </a>
-          </ng-container>
-
-          <ng-template #noProfile>
-            <div class="reporter-cell">
-              <div class="reporter-avatar" style="background: var(--accent-soft); color: var(--accent);">
-                {{ r.freelancerInitials }}
+            <ng-template #noProfile>
+              <div class="person-cell">
+                <div class="person-avatar person-avatar--muted">{{ r.freelancerInitials }}</div>
+                <div class="person-info">
+                  <span class="person-name person-name--muted">{{ r.freelancerFullName }}</span>
+                  <span class="person-id text-muted">Profil supprimé</span>
+                </div>
               </div>
-              <div>
-                <span>{{ r.freelancerFullName }}</span>
+            </ng-template>
+          </td>
+
+          <!-- Signalé par -->
+          <td>
+            <div class="person-cell">
+              <div class="person-avatar">{{ r.reporterInitials }}</div>
+              <div class="person-info">
+                <span class="person-name">{{ r.reporterFullName }}</span>
+                <!-- ID SUPPRIMÉ ICI -->
               </div>
             </div>
-          </ng-template>
-        </td>
+          </td>
 
-        <td>
-          <div class="reporter-cell">
-            <div class="reporter-avatar">{{ r.reporterInitials }}</div>
-            <span>{{ r.reporterFullName }}</span>
-          </div>
-        </td>
+          <!-- Raison -->
+          <td>
+            <span class="reason-badge"
+                  [ngClass]="'reason-badge--' + getReasonSeverity(r.reason)">
+              <i class="fas" [ngClass]="getReasonIcon(r.reason)"></i>
+              {{ getReasonLabel(r.reason) }}
+            </span>
+          </td>
 
-        <td class="description-cell">
-          <span class="badge badge-warning">{{ r.reason }}</span>
-        </td>
+          <!-- Date -->
+          <td class="text-muted reports-date-cell">
+            {{ r.reportedAt | date:'dd MMM yyyy' }}
+          </td>
 
-        <td>{{ r.reportedAt | date:'dd/MM/yyyy' }}</td>
+          <!-- Actions -->
+          <td>
+            <div class="report-actions" *ngIf="confirmingId !== r.id">
+              <button class="action-icon action-icon--resolve"
+                      title="Résoudre"
+                      (click)="confirmAction(r.id, 'RESOLVED')">
+                <i class="fas fa-check"></i>
+              </button>
+              <button class="action-icon action-icon--reject"
+                      title="Rejeter"
+                      (click)="confirmAction(r.id, 'REJECTED')">
+                <i class="fas fa-xmark"></i>
+              </button>
+              <button class="action-icon"
+                      [class.action-icon--active]="expandedId === r.id"
+                      title="Détails"
+                      (click)="toggleExpand(r.id)">
+                <i class="fas fa-chevron-down"></i>
+              </button>
+            </div>
 
-        <td>
-          <div class="action-btns">
-            <button
-              class="btn btn-success btn-sm"
-              (click)="resolve(r.id, 'RESOLVED')">
-              <i class="fas fa-check"></i> Résoudre
-            </button>
+            <div class="report-confirm" *ngIf="confirmingId === r.id">
+              <span class="report-confirm-label">
+                {{ pendingAction === 'RESOLVED' ? 'Résoudre ?' : 'Rejeter ?' }}
+              </span>
+              <button class="btn btn-sm"
+                      [ngClass]="pendingAction === 'RESOLVED' ? 'btn-success' : 'btn-danger'"
+                      (click)="resolve(r.id, pendingAction!)">
+                Oui
+              </button>
+              <button class="btn btn-ghost btn-sm" (click)="cancelConfirm()">
+                Non
+              </button>
+            </div>
+          </td>
+        </tr>
 
-            <button
-              class="btn btn-danger btn-sm"
-              (click)="resolve(r.id, 'REJECTED')">
-              <i class="fas fa-times"></i> Rejeter
-            </button>
-          </div>
-        </td>
-      </tr>
+        <!-- ── Expanded Detail Row ── -->
+        <tr class="report-detail-row" *ngIf="expandedId === r.id">
+          <td colspan="6" style="padding:0; border-left: 3px solid transparent;"
+              [style.border-left-color]="getReasonColor(r.reason)">
+            <div class="report-detail">
+              <div class="report-detail-grid">
+                <!-- IDs SUPPRIMÉS ICI -->
+                
+                <div class="report-detail-item">
+                  <span class="report-detail-label">Date & heure</span>
+                  <span class="report-detail-value">{{ r.reportedAt | date:'dd/MM/yyyy à HH:mm' }}</span>
+                </div>
+              </div>
+
+              <div class="report-detail-bottom">
+                <a *ngIf="r.profile?.id"
+                   [routerLink]="['/admin/freelancers', r.profile?.id]"
+                   class="btn btn-ghost btn-sm">
+                  <i class="fas fa-external-link-alt"></i> Voir le profil complet
+                </a>
+              </div>
+            </div>
+          </td>
+        </tr>
+
+      </ng-container>
     </tbody>
   </table>
 </div>
