@@ -21,6 +21,8 @@ export interface FreelancerProfile {
 export interface Skill {
   id: number;
   name: string;
+  normalizedName?: string;
+  category?: string;
   level: string;
   authenticityScore: number;
   examScore: number;

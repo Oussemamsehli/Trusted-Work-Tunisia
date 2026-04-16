@@ -29,7 +29,9 @@
 
     <div class="toolbar-actions">
       <div class="dropdown-group">
-        <span class="text-muted" style="font-size: 11px; margin-right: 6px;">Disponibilité :</span>
+        <span class="text-muted" style="font-size: 11px; margin-right: 6px;">
+          Disponibilité :
+        </span>
 
         <button
           class="btn btn-success btn-sm"
@@ -64,9 +66,11 @@
 
       <div *ngIf="showDeleteConfirm" class="confirm-delete">
         <span class="text-danger" style="font-size: 12px;">Confirmer ?</span>
+
         <button class="btn btn-danger btn-sm" (click)="confirmDeleteProfile()">
           <i class="fas fa-check"></i> Oui, supprimer
         </button>
+
         <button class="btn btn-ghost btn-sm" (click)="showDeleteConfirm = false">
           Annuler
         </button>
@@ -74,850 +78,110 @@
     </div>
   </div>
 
-  <!-- En-tête profil -->
-  <div class="card" style="margin-bottom: 20px;">
-    <div class="profile-header">
-      <div class="avatar avatar-lg avatar-accent">
-        {{ (profile.headline || 'U').charAt(0).toUpperCase() }}
-      </div>
+  <!-- Tabs -->
+  <div class="profile-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'overview'"
+      (click)="setTab('overview')">
+      Overview
+    </button>
 
-      <div class="profile-header-info">
-        <h1 class="page-title">{{ profile.headline || 'Sans titre' }}</h1>
-        <p class="page-subtitle">
-          {{ profileOwnerName }} · {{ profile.region || 'Région non définie' }}
-          · Rang régional #{{ profile.regionalRank || '—' }}
-          · {{ profile.totalViews || 0 }} vues
-        </p>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'skills'"
+      (click)="setTab('skills')">
+      Skills
+    </button>
 
-        <div class="profile-badges">
-          <span class="badge" [ngClass]="getStatusBadge(profile.availabilityStatus)">
-            {{ profile.availabilityStatus }}
-          </span>
-          <span *ngIf="profile.hourlyRate" class="badge badge-info">
-            {{ profile.hourlyRate }} TND/h
-          </span>
-          <span *ngIf="profile.visibility" class="badge badge-muted">
-            {{ profile.visibility }}
-          </span>
-          <span *ngIf="profile.projectType" class="badge badge-accent">
-            {{ profile.projectType }}
-          </span>
-        </div>
-      </div>
-    </div>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'experience'"
+      (click)="setTab('experience')">
+      Experience
+    </button>
 
-    <div class="divider"></div>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'portfolio'"
+      (click)="setTab('portfolio')">
+      Portfolio
+    </button>
 
-    <p class="profile-bio">
-      {{ profile.bio || 'Aucune bio renseignée.' }}
-    </p>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'reputation'"
+      (click)="setTab('reputation')">
+      Reviews
+    </button>
+
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'insights'"
+      (click)="setTab('insights')">
+      Insights
+    </button>
   </div>
 
-  <!-- Stats -->
-  <div class="stats-grid">
-    <div class="card stat-mini">
-      <div class="stat-mini-label">Complétude</div>
-      <div class="stat-mini-value" [ngClass]="getScoreClass(profile.completenessScore)">
-        {{ profile.completenessScore }}%
-      </div>
-    </div>
-
-    <div class="card stat-mini">
-      <div class="stat-mini-label">Note moyenne</div>
-      <div class="stat-mini-value">
-        <span *ngFor="let star of getStars(averageRating)">
-          <i [class]="star" style="color: var(--warning); font-size: 14px;"></i>
-        </span>
-        <span style="margin-left: 6px;">{{ averageRating | number:'1.1-1' }}</span>
-      </div>
-      <div class="stat-mini-hint">{{ reviews.length }} avis</div>
-    </div>
-
-    <div class="card stat-mini">
-      <div class="stat-mini-label">Compétences</div>
-      <div class="stat-mini-value">{{ skills.length }}</div>
-    </div>
-
-    <div class="card stat-mini">
-      <div class="stat-mini-label">Certifications</div>
-      <div class="stat-mini-value">{{ certifications.length }}</div>
-    </div>
-  </div>
-
-  <!-- ════ COMPÉTENCES ════ -->
-  <div class="card section-card" *ngIf="skills.length > 0">
-    <div class="card-header">
-      <span class="card-title"><i class="fas fa-code"></i> Compétences ({{ skills.length }})</span>
-    </div>
-
-    <table class="tw-table">
-      <thead>
-        <tr>
-          <th>Skill</th>
-          <th>Niveau</th>
-          <th>Authenticité</th>
-          <th>Exam</th>
-          <th>Endorsements</th>
-          <th>Admin</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let s of skills" [class.row-selected]="selectedSkill?.id === s.id">
-          <td>{{ s.name }}</td>
-          <td><span class="badge badge-accent">{{ s.level || '—' }}</span></td>
-          <td>{{ s.authenticityScore | number:'1.0-0' }}%</td>
-          <td>{{ s.examScore || '—' }}</td>
-          <td>
-            <button
-              class="btn btn-ghost btn-sm endorsement-btn"
-              [class.endorsement-btn--active]="selectedSkill?.id === s.id"
-              (click)="openEndorsements(s)"
-              [title]="s.endorsementCount + ' endorsement(s) — cliquer pour voir'">
-              <i class="fas fa-thumbs-up"></i>
-              {{ s.endorsementCount }}
-            </button>
-          </td>
-          <td>
-            <button
-              class="btn btn-danger btn-sm btn-icon"
-              title="Supprimer ce skill"
-              (click)="deleteSkill(s.id)">
-              <i class="fas fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="endorsement-panel" *ngIf="selectedSkill">
-      <div class="endorsement-panel-header">
-        <span>
-          <i class="fas fa-thumbs-up"></i>
-          Endorsements pour <strong>{{ selectedSkill.name }}</strong>
-        </span>
-        <button class="btn btn-ghost btn-sm btn-icon" (click)="closeEndorsements()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="endorsement-loading" *ngIf="endorsementsLoading">
-        <i class="fas fa-spinner fa-spin"></i> Chargement...
-      </div>
-
-      <div class="endorsement-error" *ngIf="endorsementsError && !endorsementsLoading">
-        <i class="fas fa-exclamation-triangle"></i> {{ endorsementsError }}
-      </div>
-
-      <div class="endorsement-empty" *ngIf="!endorsementsLoading && !endorsementsError && endorsements.length === 0">
-        <i class="fas fa-inbox"></i> Aucun endorsement pour ce skill.
-      </div>
-
-      <div class="endorsement-list" *ngIf="!endorsementsLoading && !endorsementsError && endorsements.length > 0">
-        <div class="endorsement-item" *ngFor="let e of endorsements">
-          <div class="endorsement-meta">
-            <div class="avatar avatar-sm avatar-accent" style="font-size: 11px;">
-              {{ e.endorserInitials }}
-            </div>
-            <div>
-              <div class="endorsement-endorser">{{ e.endorserFullName }}</div>
-              <div class="endorsement-date text-muted">{{ e.endorsedAt | date:'dd MMM yyyy' }}</div>
-            </div>
-          </div>
-          <div class="endorsement-comment" *ngIf="e.comment">
-            "{{ e.comment }}"
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ CERTIFICATIONS ════ -->
-  <div class="card section-card">
-    <div class="card-header">
-      <span class="card-title">
-        <i class="fas fa-certificate"></i> Certifications ({{ certifications.length }})
-      </span>
-
-      <button class="btn btn-sm btn-primary-outline" (click)="showAddCertForm = !showAddCertForm">
-        {{ showAddCertForm ? 'Annuler' : '+ Ajouter' }}
-      </button>
-    </div>
-
-    <div class="inline-form" *ngIf="showAddCertForm">
-      <div class="form-row-bo">
-        <input type="text" [(ngModel)]="newCert.title" placeholder="Titre *" class="form-ctrl" maxlength="120" />
-        <input type="text" [(ngModel)]="newCert.issuer" placeholder="Organisme émetteur *" class="form-ctrl" maxlength="120" />
-      </div>
-
-      <div class="form-row-bo">
-        <select [(ngModel)]="newCert.type" class="form-ctrl">
-          <option value="EXTERNAL">Externe</option>
-          <option value="ACADEMIC">Académique</option>
-        </select>
-        <input type="url" [(ngModel)]="newCert.certificateUrl" placeholder="URL certificat" class="form-ctrl" />
-      </div>
-
-      <div class="form-row-bo">
-        <input type="date" [(ngModel)]="newCert.issueDate" class="form-ctrl" />
-        <input type="date" [(ngModel)]="newCert.expiryDate" class="form-ctrl" />
-      </div>
-
-      <div class="form-error-inline" *ngIf="newCert.issueDate && newCert.expiryDate && !validateCertDates(newCert.issueDate, newCert.expiryDate)">
-        La date d’expiration doit être postérieure ou égale à la date d’obtention.
-      </div>
-
-      <button class="btn btn-sm btn-success" (click)="addCertification()">Enregistrer</button>
-    </div>
-
-    <p class="text-muted" style="padding:12px 0; margin:0;" *ngIf="certifications.length === 0 && !showAddCertForm">
-      Aucune certification déclarée.
-    </p>
-
-    <div class="timeline-list" *ngIf="certifications.length > 0">
-      <div class="timeline-item" *ngFor="let c of certifications">
-
-        <ng-container *ngIf="editingCertId !== c.id">
-          <div class="timeline-header">
-            <div>
-              <strong>{{ c.title }}</strong>
-              <span class="text-muted"> — {{ c.issuer }}</span>
-
-              <span class="badge" [ngClass]="getCertStatusClass(c)">
-                {{ getCertStatusLabel(c) }}
-              </span>
-
-              <span class="badge badge-muted" *ngIf="c.type">{{ c.type }}</span>
-            </div>
-
-            <div class="action-btns">
-              <button class="btn btn-sm btn-edit-icon" title="Modifier" (click)="startEditCert(c)">
-                <i class="fas fa-pencil"></i>
-              </button>
-              <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" (click)="deleteCertification(c.id)">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="text-muted" style="font-size:12px;">
-            <span *ngIf="c.issueDate">Obtenue le {{ c.issueDate | date:'dd/MM/yyyy' }}</span>
-            <span *ngIf="c.expiryDate"> · Expire le {{ c.expiryDate | date:'dd/MM/yyyy' }}</span>
-            <span *ngIf="!c.expiryDate"> · Sans expiration</span>
-          </div>
-
-          <a *ngIf="c.certificateUrl"
-             [href]="c.certificateUrl"
-             target="_blank"
-             class="btn btn-ghost btn-sm"
-             style="margin-top:8px;">
-            <i class="fas fa-external-link-alt"></i> Voir certificat
-          </a>
-        </ng-container>
-
-        <ng-container *ngIf="editingCertId === c.id">
-          <div class="form-row-bo">
-            <input type="text" [(ngModel)]="editCert.title" placeholder="Titre *" class="form-ctrl" maxlength="120" />
-            <input type="text" [(ngModel)]="editCert.issuer" placeholder="Organisme émetteur *" class="form-ctrl" maxlength="120" />
-          </div>
-
-          <div class="form-row-bo">
-            <select [(ngModel)]="editCert.type" class="form-ctrl">
-              <option value="EXTERNAL">Externe</option>
-              <option value="ACADEMIC">Académique</option>
-            </select>
-            <input type="url" [(ngModel)]="editCert.certificateUrl" placeholder="URL certificat" class="form-ctrl" />
-          </div>
-
-          <div class="form-row-bo">
-            <input type="date" [(ngModel)]="editCert.issueDate" class="form-ctrl" />
-            <input type="date" [(ngModel)]="editCert.expiryDate" class="form-ctrl" />
-          </div>
-
-          <div class="form-error-inline" *ngIf="editCert.issueDate && editCert.expiryDate && !validateCertDates(editCert.issueDate, editCert.expiryDate)">
-            La date d’expiration doit être postérieure ou égale à la date d’obtention.
-          </div>
-
-          <div class="inline-form-actions">
-            <button class="btn btn-sm btn-success" (click)="saveEditCert(c.id)">Sauvegarder</button>
-            <button class="btn btn-sm btn-secondary" (click)="cancelEditCert()">Annuler</button>
-          </div>
-        </ng-container>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ EXPÉRIENCES ════ -->
-  <div class="card section-card">
-    <div class="card-header">
-      <span class="card-title">
-        <i class="fas fa-building"></i> Expériences ({{ workExperiences.length }})
-      </span>
-
-      <button class="btn btn-sm btn-primary-outline" (click)="showAddWorkForm = !showAddWorkForm">
-        {{ showAddWorkForm ? 'Annuler' : '+ Ajouter' }}
-      </button>
-    </div>
-
-    <div class="inline-form" *ngIf="showAddWorkForm">
-      <div class="form-row-bo">
-        <input type="text" [(ngModel)]="newWork.jobTitle" placeholder="Poste *" class="form-ctrl" maxlength="150" />
-        <input type="text" [(ngModel)]="newWork.company" placeholder="Entreprise *" class="form-ctrl" maxlength="150" />
-      </div>
-
-      <div class="form-row-bo">
-        <input type="text" [(ngModel)]="newWork.location" placeholder="Localisation" class="form-ctrl" maxlength="150" />
-        <input type="date" [(ngModel)]="newWork.startDate" class="form-ctrl" />
-      </div>
-
-      <div class="form-row-bo">
-        <input
-          type="date"
-          [(ngModel)]="newWork.endDate"
-          class="form-ctrl"
-          [disabled]="newWork.isCurrent" />
-
-        <label class="checkbox-inline-bo">
-          <input
-            type="checkbox"
-            [(ngModel)]="newWork.isCurrent"
-            (change)="onCurrentWorkChange('add')" />
-          <span>Poste actuel</span>
-        </label>
-      </div>
-
-      <div class="form-row-bo">
-        <textarea
-          [(ngModel)]="newWork.description"
-          placeholder="Description"
-          class="form-ctrl textarea-ctrl"
-          rows="4"
-          maxlength="2000"></textarea>
-      </div>
-
-      <div class="form-error-inline" *ngIf="newWork.startDate && newWork.endDate && !validateWorkDates(newWork.startDate, newWork.endDate, newWork.isCurrent)">
-        La date de fin doit être postérieure ou égale à la date de début.
-      </div>
-
-      <button class="btn btn-sm btn-success" (click)="addWorkExperience()">Enregistrer</button>
-    </div>
-
-    <p class="text-muted" style="padding:12px 0; margin:0;" *ngIf="workExperiences.length === 0 && !showAddWorkForm">
-      Aucune expérience déclarée.
-    </p>
-
-    <div class="timeline-list" *ngIf="workExperiences.length > 0">
-      <div class="timeline-item" *ngFor="let w of workExperiences">
-
-        <ng-container *ngIf="editingWorkId !== w.id">
-          <div class="timeline-header">
-            <div>
-              <strong>{{ w.jobTitle }}</strong>
-              <span class="text-muted"> — {{ w.company }}</span>
-
-              <span *ngIf="w.isCurrent" class="badge badge-success" style="margin-left: 8px;">
-                En poste
-              </span>
-
-              <span class="badge badge-muted" *ngIf="w.durationLabel" style="margin-left: 8px;">
-                {{ w.durationLabel }}
-              </span>
-            </div>
-
-            <div class="action-btns">
-              <button class="btn btn-sm btn-edit-icon" title="Modifier" (click)="startEditWork(w)">
-                <i class="fas fa-pencil"></i>
-              </button>
-              <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" (click)="deleteWorkExperience(w.id)">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="text-muted" style="font-size:12px;">
-            <span *ngIf="w.periodLabel">{{ w.periodLabel }}</span>
-            <span *ngIf="!w.periodLabel">
-              {{ w.startDate | date:'MM/yyyy' }} — {{ w.isCurrent ? 'Présent' : (w.endDate | date:'MM/yyyy') }}
-            </span>
-          </div>
-
-          <div class="text-muted" style="font-size:12px; margin-top:4px;" *ngIf="w.location">
-            <i class="fas fa-location-dot"></i> {{ w.location }}
-          </div>
-
-          <p *ngIf="w.description" class="text-secondary" style="margin-top: 6px;">
-            {{ w.description }}
-          </p>
-
-          <div class="text-muted" style="font-size:12px; margin-top:6px;" *ngIf="!w.durationLabel">
-            {{ getWorkDurationLabel(w) }}
-          </div>
-        </ng-container>
-
-        <ng-container *ngIf="editingWorkId === w.id">
-          <div class="form-row-bo">
-            <input type="text" [(ngModel)]="editWork.jobTitle" placeholder="Poste *" class="form-ctrl" maxlength="150" />
-            <input type="text" [(ngModel)]="editWork.company" placeholder="Entreprise *" class="form-ctrl" maxlength="150" />
-          </div>
-
-          <div class="form-row-bo">
-            <input type="text" [(ngModel)]="editWork.location" placeholder="Localisation" class="form-ctrl" maxlength="150" />
-            <input type="date" [(ngModel)]="editWork.startDate" class="form-ctrl" />
-          </div>
-
-          <div class="form-row-bo">
-            <input
-              type="date"
-              [(ngModel)]="editWork.endDate"
-              class="form-ctrl"
-              [disabled]="editWork.isCurrent" />
-
-            <label class="checkbox-inline-bo">
-              <input
-                type="checkbox"
-                [(ngModel)]="editWork.isCurrent"
-                (change)="onCurrentWorkChange('edit')" />
-              <span>Poste actuel</span>
-            </label>
-          </div>
-
-          <div class="form-row-bo">
-            <textarea
-              [(ngModel)]="editWork.description"
-              placeholder="Description"
-              class="form-ctrl textarea-ctrl"
-              rows="4"
-              maxlength="2000"></textarea>
-          </div>
-
-          <div class="form-error-inline" *ngIf="editWork.startDate && editWork.endDate && !validateWorkDates(editWork.startDate, editWork.endDate, editWork.isCurrent)">
-            La date de fin doit être postérieure ou égale à la date de début.
-          </div>
-
-          <div class="inline-form-actions">
-            <button class="btn btn-sm btn-success" (click)="saveEditWork(w.id)">Sauvegarder</button>
-            <button class="btn btn-sm btn-secondary" (click)="cancelEditWork()">Annuler</button>
-          </div>
-        </ng-container>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ FORMATIONS ════ -->
-  <div class="card section-card">
-    <div class="card-header">
-      <span class="card-title">
-        <i class="fas fa-graduation-cap"></i> Formations ({{ educations.length }})
-      </span>
-      <button class="btn btn-sm btn-primary-outline" (click)="showAddEduForm = !showAddEduForm">
-        {{ showAddEduForm ? 'Annuler' : '+ Ajouter' }}
-      </button>
-    </div>
-
-    <div class="inline-form" *ngIf="showAddEduForm">
-      <div class="form-row-bo">
-        <input type="text" [(ngModel)]="newEdu.degree" placeholder="Diplôme *" class="form-ctrl" maxlength="100" />
-        <input type="text" [(ngModel)]="newEdu.institution" placeholder="Établissement *" class="form-ctrl" maxlength="100" />
-      </div>
-      <div class="form-row-bo">
-        <input type="text" [(ngModel)]="newEdu.fieldOfStudy" placeholder="Domaine d'études" class="form-ctrl" maxlength="100" />
-        <select [(ngModel)]="newEdu.graduationYear" class="form-ctrl">
-          <option [ngValue]="null">-- Année --</option>
-          <option *ngFor="let y of eduYears" [value]="y">{{ y }}</option>
-        </select>
-      </div>
-      <button class="btn btn-sm btn-success" (click)="addEducation()">Enregistrer</button>
-    </div>
-
-    <p class="text-muted" style="padding:12px 0; margin:0;" *ngIf="educations.length === 0 && !showAddEduForm">
-      Aucune formation déclarée.
-    </p>
-
-    <div class="timeline-list" *ngIf="educations.length > 0">
-      <div class="timeline-item" *ngFor="let e of educations">
-
-        <ng-container *ngIf="editingEduId !== e.id">
-          <div class="timeline-header">
-            <div>
-              <strong>{{ e.degree }}</strong>
-              <span class="text-muted"> — {{ e.institution }}</span>
-              <span class="badge-year" *ngIf="e.graduationYear"> Promo {{ e.graduationYear }}</span>
-              <span class="badge-year badge-unknown" *ngIf="!e.graduationYear"> Année non renseignée</span>
-            </div>
-            <div class="action-btns">
-              <button class="btn btn-sm btn-edit-icon" title="Modifier" (click)="startEditEdu(e)">
-                <i class="fas fa-pencil"></i>
-              </button>
-              <button class="btn btn-danger btn-sm btn-icon" title="Supprimer" (click)="deleteEducation(e.id)">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-          <div class="text-muted" style="font-size:12px;" *ngIf="e.fieldOfStudy">{{ e.fieldOfStudy }}</div>
-        </ng-container>
-
-        <ng-container *ngIf="editingEduId === e.id">
-          <div class="form-row-bo">
-            <input type="text" [(ngModel)]="editEduForm.degree" placeholder="Diplôme *" class="form-ctrl" maxlength="100" />
-            <input type="text" [(ngModel)]="editEduForm.institution" placeholder="Établissement *" class="form-ctrl" maxlength="100" />
-          </div>
-          <div class="form-row-bo">
-            <input type="text" [(ngModel)]="editEduForm.fieldOfStudy" placeholder="Domaine" class="form-ctrl" maxlength="100" />
-            <select [(ngModel)]="editEduForm.graduationYear" class="form-ctrl">
-              <option [ngValue]="null">-- Année --</option>
-              <option *ngFor="let y of eduYears" [value]="y">{{ y }}</option>
-            </select>
-          </div>
-          <div class="inline-form-actions">
-            <button class="btn btn-sm btn-success" (click)="saveEditEdu(e.id)">Sauvegarder</button>
-            <button class="btn btn-sm btn-secondary" (click)="cancelEditEdu()">Annuler</button>
-          </div>
-        </ng-container>
-
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ PORTFOLIO ════ -->
-   <!-- ════ PORTFOLIO ════ -->
-   <div class="card section-card" *ngIf="portfolio.length > 0">
-    <div class="card-header">
-      <span class="card-title">
-        <i class="fas fa-briefcase"></i> Portfolio ({{ portfolio.length }})
-      </span>
-
-      <div class="text-muted" style="font-size:12px;">
-        {{ pinnedPortfolioCount }} projet(s) épinglé(s)
-      </div>
-    </div>
-
-    <!-- Projets épinglés -->
-    <div *ngIf="pinnedPortfolio.length > 0" style="margin-bottom: 20px;">
-      <div class="text-accent" style="font-weight:700; margin-bottom:12px;">
-        <i class="fas fa-thumbtack"></i> Projets épinglés
-      </div>
-
-      <div class="portfolio-grid">
-        <div class="portfolio-item portfolio-item--pinned" *ngFor="let item of pinnedPortfolio">
-          <div class="portfolio-item-header">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <h4 style="margin:0;">{{ item.title }}</h4>
-              <span class="badge badge-warning">📌 Épinglé</span>
-              <span class="badge" [ngClass]="getProjectScoreClass(item.projectScore)">
-                {{ item.projectScore }}% · {{ getProjectScoreLabel(item.projectScore) }}
-              </span>
-            </div>
-
-            <div class="action-btns">
-              <button
-                class="btn btn-ghost btn-sm"
-                title="Désépingler"
-                (click)="unpinPortfolioItem(item.id)">
-                <i class="fas fa-thumbtack"></i> Désépingler
-              </button>
-
-              <button
-                class="btn btn-danger btn-sm btn-icon"
-                title="Supprimer"
-                (click)="deletePortfolioItem(item.id)">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-
-          <p class="text-secondary" *ngIf="item.description">{{ item.description }}</p>
-          <p class="text-muted" *ngIf="!item.description">Aucune description fournie.</p>
-
-          <div *ngIf="item.technologies" class="chip-list" style="margin-top:10px;">
-            <span class="chip chip-info" *ngFor="let tech of getTechArray(item.technologies)">
-              {{ tech }}
-            </span>
-          </div>
-
-          <div class="text-muted" style="font-size:12px; margin-top:10px;" *ngIf="item.completionDate">
-            <i class="fas fa-calendar-alt"></i> {{ item.completionDate | date:'MMM yyyy' }}
-          </div>
-
-          <div style="margin-top: 12px; display:flex; gap:8px; flex-wrap:wrap;">
-            <a
-              *ngIf="item.projectUrl"
-              [href]="item.projectUrl"
-              target="_blank"
-              class="btn btn-ghost btn-sm">
-              <i class="fas fa-external-link-alt"></i> Voir le projet
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tous les autres projets -->
-    <div *ngIf="regularPortfolio.length > 0">
-      <div class="text-accent" style="font-weight:700; margin-bottom:12px;">
-        <i class="fas fa-layer-group"></i> Tous les projets
-      </div>
-
-      <div class="portfolio-grid">
-        <div class="portfolio-item" *ngFor="let item of regularPortfolio">
-          <div class="portfolio-item-header">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <h4 style="margin:0;">{{ item.title }}</h4>
-              <span class="badge" [ngClass]="getProjectScoreClass(item.projectScore)">
-                {{ item.projectScore }}% · {{ getProjectScoreLabel(item.projectScore) }}
-              </span>
-            </div>
-
-            <div class="action-btns">
-              <button
-                class="btn btn-ghost btn-sm"
-                title="Épingler"
-                (click)="pinPortfolioItem(item.id)">
-                <i class="fas fa-thumbtack"></i> Épingler
-              </button>
-
-              <button
-                class="btn btn-danger btn-sm btn-icon"
-                title="Supprimer"
-                (click)="deletePortfolioItem(item.id)">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
-
-          <p class="text-secondary" *ngIf="item.description">{{ item.description }}</p>
-          <p class="text-muted" *ngIf="!item.description">Aucune description fournie.</p>
-
-          <div *ngIf="item.technologies" class="chip-list" style="margin-top:10px;">
-            <span class="chip chip-info" *ngFor="let tech of getTechArray(item.technologies)">
-              {{ tech }}
-            </span>
-          </div>
-
-          <div class="text-muted" style="font-size:12px; margin-top:10px;" *ngIf="item.completionDate">
-            <i class="fas fa-calendar-alt"></i> {{ item.completionDate | date:'MMM yyyy' }}
-          </div>
-
-          <div style="margin-top: 12px; display:flex; gap:8px; flex-wrap:wrap;">
-            <a
-              *ngIf="item.projectUrl"
-              [href]="item.projectUrl"
-              target="_blank"
-              class="btn btn-ghost btn-sm">
-              <i class="fas fa-external-link-alt"></i> Voir le projet
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ AVIS ════ -->
-  <div class="card section-card" *ngIf="reviews.length > 0">
-    <div class="card-header">
-      <span class="card-title"><i class="fas fa-star"></i> Avis ({{ reviews.length }})</span>
-    </div>
-
-    <div class="reviews-list">
-      <div class="review-item" *ngFor="let r of reviews">
-        <div class="review-header">
-          <span>
-            <span class="reviewer-name" style="font-weight: 600; margin-right: 8px;">{{ r.clientFullName }}</span>
-            <span *ngFor="let star of getStars(r.rating)">
-              <i [class]="star" style="color: var(--warning); font-size: 12px;"></i>
-            </span>
-            <span class="badge badge-muted" style="margin-left: 8px;">{{ r.status }}</span>
-          </span>
-          <span class="text-muted" style="font-size: 12px;">{{ r.reviewedAt | date:'dd/MM/yyyy' }}</span>
-        </div>
-        <p class="text-secondary" style="margin-top: 6px;">{{ r.comment || 'Pas de commentaire' }}</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ SKILL GAP ANALYSIS ════ -->
-  <div *ngIf="skillGapDiagnostic || skillGapRecommendations" class="card section-card">
-    <div class="card-header">
-      <span class="card-title">
-        <i class="fas fa-brain text-accent"></i> Analyse des compétences
-      </span>
-    </div>
-
-    <div class="skillgap-layout">
-
-      <div class="skillgap-col" *ngIf="skillGapDiagnostic">
-        <div class="skillgap-col-header">
-          <i class="fas fa-chart-bar text-warning"></i>
-          <span>Diagnostic plateforme</span>
-          <span class="badge badge-warning" style="margin-left: auto;">
-            {{ skillGapDiagnostic.gapCount }} gap{{ skillGapDiagnostic.gapCount !== 1 ? 's' : '' }}
-          </span>
-        </div>
-
-        <div class="skillgap-block" *ngIf="skillGapDiagnostic.mySkills.length > 0">
-          <div class="skillgap-block-label text-success">
-            <i class="fas fa-check-circle"></i> Compétences actuelles
-          </div>
-          <div class="chip-list">
-            <span class="chip chip-success" *ngFor="let s of skillGapDiagnostic.mySkills">{{ s }}</span>
-          </div>
-        </div>
-
-        <div class="skillgap-block" *ngIf="skillGapDiagnostic.topSkills.length > 0">
-          <div class="skillgap-block-label text-accent">
-            <i class="fas fa-fire"></i> Top compétences du marché
-          </div>
-          <div class="gap-compare-list">
-            <div class="gap-compare-item" *ngFor="let s of skillGapDiagnostic.topSkills"
-                 [class.gap-has]="skillGapDiagnostic.mySkills.includes(s)"
-                 [class.gap-missing]="!skillGapDiagnostic.mySkills.includes(s)">
-              <i class="fas" [ngClass]="skillGapDiagnostic.mySkills.includes(s) ? 'fa-check' : 'fa-xmark'"></i>
-              {{ s }}
-            </div>
-          </div>
-        </div>
-
-        <div class="skillgap-block" *ngIf="skillGapDiagnostic.gapSkills.length > 0">
-          <div class="skillgap-block-label text-danger">
-            <i class="fas fa-triangle-exclamation"></i> Compétences manquantes
-          </div>
-          <div class="chip-list">
-            <span class="chip chip-danger" *ngFor="let s of skillGapDiagnostic.gapSkills">{{ s }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="skillgap-col" *ngIf="skillGapRecommendations">
-        <div class="skillgap-col-header">
-          <i class="fas fa-lightbulb text-accent"></i>
-          <span>Recommandations</span>
-        </div>
-
-        <div class="skillgap-block" *ngIf="skillGapRecommendations.missingSkills && skillGapRecommendations.missingSkills.length > 0">
-          <div class="skillgap-block-label text-danger">
-            <i class="fas fa-triangle-exclamation"></i> Compétences manquantes
-          </div>
-          <div class="chip-list">
-            <span class="chip chip-danger" *ngFor="let s of skillGapRecommendations.missingSkills">{{ s }}</span>
-          </div>
-        </div>
-
-        <div class="skillgap-block" *ngIf="skillGapRecommendations.recommendedCourses && skillGapRecommendations.recommendedCourses.length > 0">
-          <div class="skillgap-block-label text-accent">
-            <i class="fas fa-book"></i> Cours recommandés
-          </div>
-          <ul class="suggestions-list">
-            <li *ngFor="let course of skillGapRecommendations.recommendedCourses">
-              <i class="fas fa-arrow-right text-accent"></i> {{ course }}
-            </li>
-          </ul>
-        </div>
-
-        <div class="skillgap-block" *ngIf="skillGapRecommendations.marketDemand && (skillGapRecommendations.marketDemand | keyvalue).length > 0">
-          <div class="skillgap-block-label text-warning">
-            <i class="fas fa-chart-line"></i> Demande du marché
-          </div>
-          <div class="market-demand-list">
-            <div class="market-demand-item" *ngFor="let entry of skillGapRecommendations.marketDemand | keyvalue">
-              <span class="market-skill">{{ entry.key }}</span>
-              <div class="mini-bar-track">
-                <div class="mini-bar-fill" [style.width.%]="entry.value"></div>
-              </div>
-              <span class="market-score">{{ entry.value }}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ════ COMPLÉTUDE DÉTAILLÉE ════ -->
-  <div class="card section-card" *ngIf="completeness">
-    <div class="card-header">
-      <span class="card-title"><i class="fas fa-chart-pie text-accent"></i> Analyse de complétude</span>
-    </div>
-
-    <div class="stats-grid">
-      <div class="card stat-mini">
-        <div class="stat-mini-label">Score global</div>
-        <div class="stat-mini-value" [ngClass]="getScoreClass(completeness.score)">{{ completeness.score }}%</div>
-      </div>
-      <div class="card stat-mini">
-        <div class="stat-mini-label">Bio</div>
-        <div class="stat-mini-value">{{ completeness.bioScore }}%</div>
-      </div>
-      <div class="card stat-mini">
-        <div class="stat-mini-label">Avatar</div>
-        <div class="stat-mini-value">{{ completeness.avatarScore }}%</div>
-      </div>
-      <div class="card stat-mini">
-        <div class="stat-mini-label">Skills</div>
-        <div class="stat-mini-value">{{ completeness.skillsScore }}%</div>
-      </div>
-      <div class="card stat-mini">
-        <div class="stat-mini-label">Portfolio</div>
-        <div class="stat-mini-value">{{ completeness.portfolioScore }}%</div>
-      </div>
-      <div class="card stat-mini">
-        <div class="stat-mini-label">Certifications</div>
-        <div class="stat-mini-value">{{ completeness.certifScore }}%</div>
-      </div>
-      <div class="card stat-mini">
-        <div class="stat-mini-label">Expérience</div>
-        <div class="stat-mini-value">{{ completeness.workExpScore }}%</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Suggestions -->
-  <div class="card section-card" *ngIf="completeness && completeness.suggestions.length > 0">
-    <div class="card-header">
-      <span class="card-title"><i class="fas fa-lightbulb text-warning"></i> Suggestions d'amélioration</span>
-    </div>
-    <ul class="suggestions-list">
-      <li *ngFor="let s of completeness.suggestions">
-        <i class="fas fa-arrow-right text-accent"></i> {{ s }}
-      </li>
-    </ul>
-  </div>
-
-  <!-- ════ PARCOURS DE CARRIÈRE ════ -->
-  <div class="card section-card" *ngIf="careerPath">
-    <div class="card-header">
-      <span class="card-title"><i class="fas fa-route text-accent"></i> Parcours de carrière</span>
-    </div>
-
-    <div class="career-info">
-      <p>
-        <strong>Parcours détecté :</strong>
-        <span class="badge badge-accent">{{ careerPath.detectedPath }}</span>
-      </p>
-      <p *ngIf="careerPath.description" class="text-secondary">{{ careerPath.description }}</p>
-
-      <div *ngIf="careerPath.currentSkills.length > 0" style="margin-top: 12px;">
-        <strong>Compétences actuelles :</strong>
-        <div class="chip-list" style="margin-top: 8px;">
-          <span class="chip chip-success" *ngFor="let s of careerPath.currentSkills">{{ s }}</span>
-        </div>
-      </div>
-
-      <div *ngIf="careerPath.missingSkills.length > 0" style="margin-top: 12px;">
-        <strong>Compétences à acquérir :</strong>
-        <div class="chip-list" style="margin-top: 8px;">
-          <span class="chip chip-danger" *ngFor="let s of careerPath.missingSkills">{{ s }}</span>
-        </div>
-      </div>
-
-      <div *ngIf="careerPath.nextSteps.length > 0" style="margin-top: 12px;">
-        <strong>Prochaines étapes :</strong>
-        <ul class="suggestions-list">
-          <li *ngFor="let step of careerPath.nextSteps">
-            <i class="fas fa-check text-success"></i> {{ step }}
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
+  <!-- Overview -->
+  <app-profile-overview-tab
+    *ngIf="activeTab === 'overview'"
+    [profile]="profile"
+    [profileOwnerName]="profileOwnerName"
+    [averageRating]="averageRating"
+    [reviewsCount]="reviews.length"
+    [skillsCount]="skills.length"
+    [certificationsCount]="certifications.length"
+    [completeness]="completeness">
+  </app-profile-overview-tab>
+
+  <!-- Skills -->
+  <app-profile-skills-tab
+    *ngIf="activeTab === 'skills'"
+    [skills]="skills"
+    [selectedSkill]="selectedSkill"
+    [endorsements]="endorsements"
+    [endorsementsLoading]="endorsementsLoading"
+    [endorsementsError]="endorsementsError"
+    (skillSelected)="openEndorsements($event)"
+    (endorsementsClosed)="closeEndorsements()"
+    (skillDeleted)="deleteSkill($event)">
+  </app-profile-skills-tab>
+
+  <!-- Experience -->
+  <app-profile-experience-tab
+    *ngIf="activeTab === 'experience'"
+    [certifications]="certifications"
+    [workExperiences]="workExperiences"
+    [educations]="educations">
+  </app-profile-experience-tab>
+
+  <!-- Portfolio -->
+  <app-profile-portfolio-tab
+    *ngIf="activeTab === 'portfolio'"
+    [portfolio]="portfolio"
+    [pinnedPortfolio]="pinnedPortfolio"
+    [regularPortfolio]="regularPortfolio"
+    [pinnedPortfolioCount]="pinnedPortfolioCount"
+    (pin)="pinPortfolioItem($event)"
+    (unpin)="unpinPortfolioItem($event)"
+    (delete)="deletePortfolioItem($event)">
+  </app-profile-portfolio-tab>
+
+  <!-- Reputation -->
+  <app-profile-reputation-tab
+    *ngIf="activeTab === 'reputation'"
+    [reviews]="reviews"
+    [averageRating]="averageRating">
+  </app-profile-reputation-tab>
+
+  <!-- Insights -->
+  <app-profile-insights-tab
+    *ngIf="activeTab === 'insights'"
+    [skillGapDiagnostic]="skillGapDiagnostic"
+    [skillGapRecommendations]="skillGapRecommendations"
+    [completeness]="completeness"
+    [careerPath]="careerPath">
+  </app-profile-insights-tab>
 
 </ng-container>

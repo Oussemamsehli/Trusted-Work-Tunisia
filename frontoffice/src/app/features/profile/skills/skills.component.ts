@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { Skill } from '../../../core/models/freelancer.model';
+import { Skill, SkillCategory } from '../../../core/models/freelancer.model';
 
 @Component({
   selector: 'app-skills',
@@ -20,8 +20,23 @@ export class SkillsComponent implements OnInit {
   deletingSkillId: number | null = null;
   refreshingSkillId: number | null = null;
 
-  newSkill: { name: string; examScore: number } = {
+  categoryOptions: { value: SkillCategory; label: string }[] = [
+    { value: 'FRONTEND', label: 'Frontend' },
+    { value: 'BACKEND', label: 'Backend' },
+    { value: 'FULLSTACK', label: 'Fullstack' },
+    { value: 'MOBILE', label: 'Mobile' },
+    { value: 'DEVOPS', label: 'DevOps' },
+    { value: 'CLOUD', label: 'Cloud' },
+    { value: 'DATA', label: 'Data' },
+    { value: 'AI', label: 'AI / Machine Learning' },
+    { value: 'DESIGN', label: 'Design' },
+    { value: 'SECURITY', label: 'Security' },
+    { value: 'OTHER', label: 'Other' }
+  ];
+
+  newSkill: { name: string; category: SkillCategory; examScore: number } = {
     name: '',
+    category: 'BACKEND',
     examScore: 0
   };
 
@@ -39,20 +54,28 @@ export class SkillsComponent implements OnInit {
   }
 
   get canSave(): boolean {
-    return !!this.newSkill.name.trim() &&
-           this.newSkill.examScore >= 0 &&
-           this.newSkill.examScore <= 100 &&
-           !this.isSaving;
+    return !!this.newSkill.name.trim()
+      && !!this.newSkill.category
+      && this.newSkill.examScore >= 0
+      && this.newSkill.examScore <= 100
+      && !this.isSaving;
   }
 
   get averageAuthenticity(): number {
-    if (!this.skills.length) return 0;
+    if (!this.skills.length) {
+      return 0;
+    }
+
     const total = this.skills.reduce((sum, skill) => sum + (skill.authenticityScore || 0), 0);
-    return (total / this.skills.length) * 100;
+    return total / this.skills.length;
   }
 
   get totalEndorsements(): number {
     return this.skills.reduce((sum, skill) => sum + (skill.endorsementCount || 0), 0);
+  }
+
+  get topSkill(): Skill | null {
+    return this.skills.length ? this.skills[0] : null;
   }
 
   loadSkills(): void {
@@ -61,7 +84,9 @@ export class SkillsComponent implements OnInit {
 
     this.profileService.getMySkills(this.currentUserId).subscribe({
       next: (data) => {
-        this.skills = data || [];
+        this.skills = (data || []).sort(
+          (a, b) => (b.authenticityScore || 0) - (a.authenticityScore || 0)
+        );
         this.isLoading = false;
       },
       error: () => {
@@ -83,14 +108,17 @@ export class SkillsComponent implements OnInit {
   }
 
   addSkill(): void {
-    if (!this.canSave) return;
+    if (!this.canSave) {
+      return;
+    }
 
     this.clearMessages();
     this.isSaving = true;
 
     const payload = {
       name: this.newSkill.name.trim(),
-      examScore: this.newSkill.examScore / 100
+      category: this.newSkill.category,
+      examScore: this.newSkill.examScore
     };
 
     this.profileService.addSkill(this.currentUserId, payload).subscribe({
@@ -111,7 +139,9 @@ export class SkillsComponent implements OnInit {
   }
 
   deleteSkill(skillId: number): void {
-    if (!confirm('Supprimer ce skill ?')) return;
+    if (!confirm('Supprimer ce skill ?')) {
+      return;
+    }
 
     this.clearMessages();
     this.deletingSkillId = skillId;
@@ -153,6 +183,7 @@ export class SkillsComponent implements OnInit {
   resetForm(): void {
     this.newSkill = {
       name: '',
+      category: 'BACKEND',
       examScore: 0
     };
   }
@@ -172,6 +203,7 @@ export class SkillsComponent implements OnInit {
   getLevelLabel(level: string): string {
     const labels: Record<string, string> = {
       JUNIOR: 'Junior',
+      INTERMEDIATE: 'Intermédiaire',
       CONFIRMED: 'Confirmé',
       EXPERT: 'Expert'
     };
@@ -181,6 +213,7 @@ export class SkillsComponent implements OnInit {
   getLevelClass(level: string): string {
     const classes: Record<string, string> = {
       JUNIOR: 'level-junior',
+      INTERMEDIATE: 'level-intermediate',
       CONFIRMED: 'level-confirmed',
       EXPERT: 'level-expert'
     };
@@ -188,9 +221,35 @@ export class SkillsComponent implements OnInit {
   }
 
   getAuthenticityClass(score: number): string {
-    if (score >= 0.75) return 'auth-high';
-    if (score >= 0.4) return 'auth-medium';
+    if (score >= 75) {
+      return 'auth-high';
+    }
+    if (score >= 40) {
+      return 'auth-medium';
+    }
     return 'auth-low';
+  }
+
+  getCategoryLabel(category: SkillCategory): string {
+    const labels: Record<SkillCategory, string> = {
+      FRONTEND: 'Frontend',
+      BACKEND: 'Backend',
+      FULLSTACK: 'Fullstack',
+      MOBILE: 'Mobile',
+      DEVOPS: 'DevOps',
+      CLOUD: 'Cloud',
+      DATA: 'Data',
+      AI: 'AI / ML',
+      DESIGN: 'Design',
+      SECURITY: 'Security',
+      OTHER: 'Other'
+    };
+
+    return labels[category] ?? category;
+  }
+
+  getCategoryClass(category: SkillCategory): string {
+    return `category-${category.toLowerCase()}`;
   }
 
   trackBySkill(index: number, skill: Skill): number {

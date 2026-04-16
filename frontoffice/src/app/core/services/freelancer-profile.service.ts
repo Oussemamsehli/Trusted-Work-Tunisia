@@ -12,7 +12,8 @@ import {
   Education,
   CompletenessResponse,
   CareerPathResponse,
-  SkillGapResponse
+  SkillGapResponse,
+  SkillCategory
 } from '../models/freelancer.model';
 
 /**
@@ -59,9 +60,12 @@ export class FreelancerProfileService {
     return this.http.get<Skill[]>(`${this.BASE_URL}/skills/user/${userId}`);
   }
 
-  addSkill(userId: number, data: { name: string; examScore: number }): Observable<Skill> {
-    return this.http.post<Skill>(`${this.BASE_URL}/skills/user/${userId}`, data);
-  }
+  addSkill(
+  userId: number,
+  data: { name: string; category: SkillCategory; examScore: number }
+): Observable<Skill> {
+  return this.http.post<Skill>(`${this.BASE_URL}/skills/user/${userId}`, data);
+}
 
   deleteSkill(skillId: number, userId: number): Observable<void> {
     return this.http.delete<void>(`${this.BASE_URL}/skills/${skillId}/user/${userId}`);
@@ -129,9 +133,16 @@ deleteCertification(certId: number, userId: number): Observable<void> {
     return this.http.get<Endorsement[]>(`${this.BASE_URL}/endorsements/skill/${skillId}`);
   }
 
-  addEndorsement(skillId: number, data: { endorserId: number; comment: string }): Observable<Endorsement> {
-    return this.http.post<Endorsement>(`${this.BASE_URL}/endorsements/skill/${skillId}`, data);
-  }
+  addEndorsement(
+  skillId: number,
+  data: { endorserId: number; comment?: string }
+): Observable<Endorsement> {
+  return this.http.post<Endorsement>(`${this.BASE_URL}/endorsements/skill/${skillId}`, data);
+}
+
+countEndorsements(skillId: number): Observable<number> {
+  return this.http.get<number>(`${this.BASE_URL}/endorsements/skill/${skillId}/count`);
+}
 
   // ===== REVIEWS =====
 

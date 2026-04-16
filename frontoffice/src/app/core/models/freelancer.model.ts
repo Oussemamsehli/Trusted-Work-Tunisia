@@ -1,4 +1,3 @@
-
 export interface FreelancerProfile {
   id: number;
   userId: number;
@@ -17,12 +16,32 @@ export interface FreelancerProfile {
   updatedAt: string;
 }
 
+export type SkillCategory =
+  | 'FRONTEND'
+  | 'BACKEND'
+  | 'FULLSTACK'
+  | 'MOBILE'
+  | 'DEVOPS'
+  | 'CLOUD'
+  | 'DATA'
+  | 'AI'
+  | 'DESIGN'
+  | 'SECURITY'
+  | 'OTHER';
+
+export type SkillLevel =
+  | 'JUNIOR'
+  | 'INTERMEDIATE'
+  | 'CONFIRMED'
+  | 'EXPERT';
+
 export interface Skill {
   id: number;
   name: string;
-  level: 'JUNIOR' | 'CONFIRMED' | 'EXPERT';
-  authenticityScore: number;
-  examScore: number;
+  category: SkillCategory;
+  level: SkillLevel;
+  authenticityScore: number; // 0 -> 100
+  examScore: number;         // 0 -> 100
   endorsementCount: number;
 }
 
@@ -52,7 +71,7 @@ export interface Certification {
 export interface Endorsement {
   id: number;
   endorserId: number;
-  comment: string;
+  comment: string | null;
   endorsedAt: string;
 }
 
@@ -64,7 +83,6 @@ export interface ProfileReview {
   status: 'VISIBLE' | 'HIDDEN' | 'FLAGGED';
   reviewedAt: string;
 }
-
 
 export interface WorkExperience {
   id: number;
@@ -83,6 +101,7 @@ export interface WorkExperience {
   createdAt?: string;
   updatedAt?: string;
 }
+
 export interface Education {
   id: number;
   degree: string;

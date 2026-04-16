@@ -32,7 +32,13 @@ import { ProfilesListComponent } from './features/freelancer/profiles-list/profi
 import { ProfileDetailComponent } from './features/freelancer/profile-detail/profile-detail.component';
 import { ReportsManagementComponent } from './features/freelancer/reports-management/reports-management.component';
 import { PlatformStatsComponent } from './features/freelancer/platform-stats/platform-stats.component';
+import { ProfileSkillsTabComponent } from './features/freelancer/profile-detail/components/profile-skills-tab/profile-skills-tab.component';
+import { ProfileExperienceTabComponent } from './features/freelancer/profile-detail/components/profile-experience-tab/profile-experience-tab.component';
+import { ProfilePortfolioTabComponent } from './features/freelancer/profile-detail/components/profile-portfolio-tab/profile-portfolio-tab.component';
+import { ProfileReputationTabComponent } from './features/freelancer/profile-detail/components/profile-reputation-tab/profile-reputation-tab.component';
+import { ProfileInsightsTabComponent } from './features/freelancer/profile-detail/components/profile-insights-tab/profile-insights-tab.component';
 
+import { ProfileOverviewTabComponent } from './features/freelancer/profile-detail/components/profile-overview-tab/profile-overview-tab.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -48,12 +54,18 @@ import { PlatformStatsComponent } from './features/freelancer/platform-stats/pla
     KycManagementComponent,
     AuditLogsComponent,
     SuspensionsComponent,
+    ProfileExperienceTabComponent,
     FilterCatPipe,
     // ── Module 02 ──
     ProfilesListComponent,
     ProfileDetailComponent,
     ReportsManagementComponent,
-    PlatformStatsComponent
+    PlatformStatsComponent,
+    ProfileSkillsTabComponent,
+    ProfilePortfolioTabComponent,
+    ProfileReputationTabComponent,
+    ProfileInsightsTabComponent,
+    ProfileOverviewTabComponent
   ],
   imports: [
     BrowserModule,
