@@ -2,6 +2,8 @@ package tn.esprit.freelancerprofileservice.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,29 +32,22 @@ public class WorkExperience {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     @Column(nullable = false, length = 150)
     private String jobTitle;
-
 
     @Column(nullable = false, length = 150)
     private String company;
 
-
     @Column(length = 150)
     private String location;
-
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-
     @Column(nullable = false)
     private LocalDate startDate;
 
-
     private LocalDate endDate;
-
 
     @Column(nullable = false)
     @Builder.Default
@@ -65,18 +60,16 @@ public class WorkExperience {
     /**
      * Dates techniques
      */
+    @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {
-        LocalDateTime now = LocalDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
-
         if (this.isCurrent == null) {
             this.isCurrent = false;
         }
@@ -88,8 +81,6 @@ public class WorkExperience {
 
     @PreUpdate
     public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-
         if (this.isCurrent == null) {
             this.isCurrent = false;
         }
