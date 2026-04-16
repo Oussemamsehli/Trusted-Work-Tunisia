@@ -1,16 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
-import { AuthService } from '../../../core/services/auth.service';
-import { ApiService } from '../../../core/services/api.service';
-import { ProfileReview } from '../../../core/models/freelancer.model';
-
-interface ReviewViewModel extends ProfileReview {
-  reviewerFullName: string;
-  reviewerRoleLabel: string;
-  reviewerInitials: string;
-}
+import {
+  ProfileReview,
+  ProfileReviewSummary
+} from '../../../core/models/freelancer.model';
 
 @Component({
   selector: 'app-reviews',
@@ -18,189 +11,207 @@ interface ReviewViewModel extends ProfileReview {
   styleUrls: ['./reviews.component.css']
 })
 export class ReviewsComponent implements OnInit {
-  reviews: ReviewViewModel[] = [];
+
+  reviews: ProfileReview[] = [];
+  reviewSummary: ProfileReviewSummary | null = null;
+
   averageRating = 0;
-  profileId: number | null = null;
+  latestRating: number | null = null;
 
   isLoading = false;
+  isReplying = false;
+
   errorMessage = '';
   successMessage = '';
 
-  constructor(
-    private profileService: FreelancerProfileService,
-    private authService: AuthService,
-    private api: ApiService
-  ) {}
+  activeReplyReviewId: number | null = null;
+  replyDraft = '';
+
+  canReply = true;
+
+  profileId = 1;
+  freelancerUserId = 1;
+
+  clientNames: Record<number, string> = {};
+  clientInitialsMap: Record<number, string> = {};
+
+  constructor(private profileService: FreelancerProfileService) {}
 
   ngOnInit(): void {
-    this.loadProfile();
+    this.loadReviewsData();
   }
 
-  get currentUserId(): number {
-    return this.authService.getCurrentAuthUser()!.userId;
-  }
-
-  get latestRating(): number {
-    return this.reviews.length ? this.reviews[0].rating : 0;
-  }
-
-  loadProfile(): void {
+  loadReviewsData(): void {
     this.isLoading = true;
     this.errorMessage = '';
-
-    this.profileService.getProfileByUserId(this.currentUserId).subscribe({
-      next: (profile) => {
-        this.profileId = profile.id;
-        this.loadReviews();
-        this.loadAverageRating();
-      },
-      error: () => {
-        this.errorMessage = 'Profil introuvable.';
-        this.isLoading = false;
-        this.autoClearMessages();
-      }
-    });
-  }
-
-  loadReviews(): void {
-    if (!this.profileId) return;
+    this.successMessage = '';
 
     this.profileService.getReviews(this.profileId).subscribe({
       next: (reviews) => {
-        const safeReviews = reviews || [];
-
-        if (safeReviews.length === 0) {
-          this.reviews = [];
-          this.isLoading = false;
-          return;
-        }
-
-        // CORRECTION : utiliser /identity/users/{clientId}
-        // C'est l'endpoint public du IdentityController — pas besoin d'auth
-        // Retourne PublicUserDTO : firstName, lastName, role, kycStatus, trustLevel
-        const enrichedRequests = safeReviews.map((review) =>
-          this.api.get<any>(`/identity/users/${review.clientId}`).pipe(
-            catchError(() =>
-              of({
-                firstName: '',
-                lastName: '',
-                role: 'CLIENT'
-              })
-            )
-          )
-        );
-
-        forkJoin(enrichedRequests).subscribe({
-          next: (users) => {
-            this.reviews = safeReviews.map((review, index) => {
-              const user = users[index] || {};
-
-              const firstName = (user.firstName || '').trim();
-              const lastName  = (user.lastName  || '').trim();
-              const fullName  = `${firstName} ${lastName}`.trim();
-
-              return {
-                ...review,
-                reviewerFullName:  fullName || 'Utilisateur',
-                reviewerRoleLabel: this.getRoleLabel(user.role),
-                reviewerInitials:  this.getInitials(firstName, lastName, fullName)
-              };
-            });
-
-            this.isLoading = false;
-          },
-          error: () => {
-            // Fail-open : si user-service down → afficher "Utilisateur"
-            this.reviews = safeReviews.map((review) => ({
-              ...review,
-              reviewerFullName:  'Utilisateur',
-              reviewerRoleLabel: 'Client',
-              reviewerInitials:  'U'
-            }));
-            this.isLoading = false;
-          }
-        });
+        this.reviews = reviews ?? [];
+        this.resolveClientNames();
+        this.latestRating = this.reviews.length > 0 ? this.reviews[0].rating : null;
+        this.loadAverageRating();
+        this.loadReviewSummary();
       },
       error: () => {
         this.errorMessage = 'Erreur lors du chargement des avis.';
         this.isLoading = false;
-        this.autoClearMessages();
       }
     });
   }
 
   loadAverageRating(): void {
-    if (!this.profileId) return;
-
     this.profileService.getAverageRating(this.profileId).subscribe({
-      next: (avg) => {
-        this.averageRating = avg || 0;
+      next: (average) => {
+        this.averageRating = average ?? 0;
       },
       error: () => {
-        this.averageRating = this.calculateAverage();
+        this.averageRating = 0;
       }
     });
   }
 
-  calculateAverage(): number {
-    if (this.reviews.length === 0) return 0;
-    const sum = this.reviews.reduce((acc, r) => acc + r.rating, 0);
-    return Math.round((sum / this.reviews.length) * 10) / 10;
+  loadReviewSummary(): void {
+    this.profileService.getReviewSummary(this.profileId).subscribe({
+      next: (summary) => {
+        this.reviewSummary = summary;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.reviewSummary = null;
+        this.isLoading = false;
+      }
+    });
   }
 
-  getStarArray(rating: number): string[] {
-    return Array.from({ length: 5 }, (_, i) =>
-      i < Math.floor(rating) ? 'full' : 'empty'
-    );
+  private resolveClientNames(): void {
+    const uniqueClientIds = [...new Set(this.reviews.map(review => review.clientId))];
+
+    uniqueClientIds.forEach(clientId => {
+      if (this.clientNames[clientId]) {
+        return;
+      }
+
+      this.profileService.getUserIdentity(clientId).subscribe({
+        next: (user) => {
+          const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+          const finalName = fullName || `Client #${clientId}`;
+
+          this.clientNames[clientId] = finalName;
+          this.clientInitialsMap[clientId] = this.buildInitials(finalName);
+        },
+        error: () => {
+          const fallbackName = `Client #${clientId}`;
+          this.clientNames[clientId] = fallbackName;
+          this.clientInitialsMap[clientId] = this.buildInitials(fallbackName);
+        }
+      });
+    });
+  }
+
+  toggleReply(reviewId: number): void {
+    if (this.activeReplyReviewId === reviewId) {
+      this.activeReplyReviewId = null;
+      this.replyDraft = '';
+      return;
+    }
+
+    this.activeReplyReviewId = reviewId;
+    this.replyDraft = '';
+  }
+
+  submitReply(review: ProfileReview): void {
+    const reply = this.replyDraft.trim();
+
+    if (!reply) {
+      return;
+    }
+
+    this.isReplying = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.profileService.replyToReview(
+      review.id,
+      this.freelancerUserId,
+      { reply }
+    ).subscribe({
+      next: (updatedReview) => {
+        const index = this.reviews.findIndex(r => r.id === review.id);
+
+        if (index !== -1) {
+          this.reviews[index] = {
+            ...this.reviews[index],
+            freelancerReply: updatedReview.freelancerReply,
+            updatedAt: updatedReview.updatedAt
+          };
+        }
+
+        this.successMessage = 'Réponse publiée avec succès.';
+        this.activeReplyReviewId = null;
+        this.replyDraft = '';
+        this.isReplying = false;
+      },
+      error: () => {
+        this.errorMessage = 'Erreur lors de la publication de la réponse.';
+        this.isReplying = false;
+      }
+    });
+  }
+
+  getStarArray(rating: number): ('full' | 'empty')[] {
+    const rounded = Math.round(rating);
+    const stars: ('full' | 'empty')[] = [];
+
+    for (let i = 1; i <= 5; i++) {
+      stars.push(i <= rounded ? 'full' : 'empty');
+    }
+
+    return stars;
   }
 
   getRatingLabel(rating: number): string {
-    if (rating >= 5) return 'Excellent';
-    if (rating >= 4) return 'Très bien';
-    if (rating >= 3) return 'Bien';
+    if (rating >= 4.5) return 'Excellent';
+    if (rating >= 4) return 'Très bon';
+    if (rating >= 3) return 'Bon';
     if (rating >= 2) return 'Moyen';
-    return 'Faible';
+    if (rating > 0) return 'Faible';
+    return 'Aucune note';
   }
 
-  getRoleLabel(role?: string): string {
-    const normalized = (role || '').toUpperCase();
-    if (normalized === 'CLIENT')     return 'Client';
-    if (normalized === 'FREELANCER') return 'Freelancer';
-    if (normalized === 'ADMIN')      return 'Admin';
-    return 'Utilisateur';
-  }
+  getDistributionPercentage(count: number): number {
+    const total = this.reviewSummary?.totalReviews ?? 0;
 
-  getInitials(firstName?: string, lastName?: string, fallback?: string): string {
-    const first = (firstName || '').trim();
-    const last  = (lastName  || '').trim();
-
-    if (first && last) {
-      return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+    if (total <= 0) {
+      return 0;
     }
 
-    if (first) {
-      return first.charAt(0).toUpperCase();
-    }
-
-    if (fallback && fallback.trim()) {
-      const parts = fallback.trim().split(' ').filter(Boolean);
-      if (parts.length >= 2) {
-        return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-      }
-      return parts[0][0].toUpperCase();
-    }
-
-    return 'U';
+    return (count / total) * 100;
   }
 
-  autoClearMessages(): void {
-    setTimeout(() => {
-      this.errorMessage  = '';
-      this.successMessage = '';
-    }, 3500);
+  getTotalReviews(): number {
+    return this.reviewSummary?.totalReviews ?? this.reviews.length;
   }
 
-  trackByReview(index: number, review: ReviewViewModel): number {
+  getClientDisplayName(review: ProfileReview): string {
+    return this.clientNames[review.clientId] || 'Client';
+  }
+
+  getClientInitials(review: ProfileReview): string {
+    return this.clientInitialsMap[review.clientId] || 'CL';
+  }
+
+  private buildInitials(fullName: string): string {
+    return fullName
+      .split(' ')
+      .filter(part => !!part.trim())
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('');
+  }
+
+  trackByReview(index: number, review: ProfileReview): number {
     return review.id;
   }
 }

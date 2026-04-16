@@ -13,7 +13,10 @@ import {
   CompletenessResponse,
   CareerPathResponse,
   SkillGapResponse,
-  SkillCategory
+  SkillCategory,
+  AddProfileReviewRequest,
+  ReplyToReviewRequest,
+  ProfileReviewSummary
 } from '../models/freelancer.model';
 
 /**
@@ -25,6 +28,7 @@ import {
 export class FreelancerProfileService {
 
   private readonly BASE_URL = 'http://localhost:8082/api';
+  private readonly IDENTITY_URL = 'http://localhost:8081/api/identity';
 
   constructor(private http: HttpClient) {}
 
@@ -61,11 +65,11 @@ export class FreelancerProfileService {
   }
 
   addSkill(
-  userId: number,
-  data: { name: string; category: SkillCategory; examScore: number }
-): Observable<Skill> {
-  return this.http.post<Skill>(`${this.BASE_URL}/skills/user/${userId}`, data);
-}
+    userId: number,
+    data: { name: string; category: SkillCategory; examScore: number }
+  ): Observable<Skill> {
+    return this.http.post<Skill>(`${this.BASE_URL}/skills/user/${userId}`, data);
+  }
 
   deleteSkill(skillId: number, userId: number): Observable<void> {
     return this.http.delete<void>(`${this.BASE_URL}/skills/${skillId}/user/${userId}`);
@@ -79,8 +83,7 @@ export class FreelancerProfileService {
     return this.http.get<SkillGapResponse>(`${this.BASE_URL}/skills/user/${userId}/gaps`);
   }
 
-
-   // ===== PORTFOLIO =====
+  // ===== PORTFOLIO =====
 
   getMyPortfolio(userId: number): Observable<PortfolioItem[]> {
     return this.http.get<PortfolioItem[]>(`${this.BASE_URL}/portfolio/user/${userId}`);
@@ -98,35 +101,36 @@ export class FreelancerProfileService {
     return this.http.put<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}`, data);
   }
 
-  pinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
-    return this.http.patch<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/pin`, {});
-  }
-
-  unpinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
-    return this.http.patch<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/unpin`, {});
-  }
-
   deletePortfolioItem(itemId: number, userId: number): Observable<void> {
     return this.http.delete<void>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}`);
   }
 
+  pinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
+    return this.http.put<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/pin`, {});
+  }
+
+  unpinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
+    return this.http.put<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/unpin`, {});
+  }
+
   // ===== CERTIFICATIONS =====
 
-getMyCertifications(userId: number): Observable<Certification[]> {
-  return this.http.get<Certification[]>(`${this.BASE_URL}/certifications/user/${userId}`);
-}
+  getMyCertifications(userId: number): Observable<Certification[]> {
+    return this.http.get<Certification[]>(`${this.BASE_URL}/certifications/user/${userId}`);
+  }
 
-addCertification(userId: number, data: Partial<Certification>): Observable<Certification> {
-  return this.http.post<Certification>(`${this.BASE_URL}/certifications/user/${userId}`, data);
-}
+  addCertification(userId: number, data: Partial<Certification>): Observable<Certification> {
+    return this.http.post<Certification>(`${this.BASE_URL}/certifications/user/${userId}`, data);
+  }
 
-updateCertification(certId: number, userId: number, data: Partial<Certification>): Observable<Certification> {
-  return this.http.put<Certification>(`${this.BASE_URL}/certifications/${certId}/user/${userId}`, data);
-}
+  updateCertification(certId: number, userId: number, data: Partial<Certification>): Observable<Certification> {
+    return this.http.put<Certification>(`${this.BASE_URL}/certifications/${certId}/user/${userId}`, data);
+  }
 
-deleteCertification(certId: number, userId: number): Observable<void> {
-  return this.http.delete<void>(`${this.BASE_URL}/certifications/${certId}/user/${userId}`);
-}
+  deleteCertification(certId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.BASE_URL}/certifications/${certId}/user/${userId}`);
+  }
+
   // ===== ENDORSEMENTS =====
 
   getEndorsementsBySkill(skillId: number): Observable<Endorsement[]> {
@@ -134,31 +138,46 @@ deleteCertification(certId: number, userId: number): Observable<void> {
   }
 
   addEndorsement(
-  skillId: number,
-  data: { endorserId: number; comment?: string }
-): Observable<Endorsement> {
-  return this.http.post<Endorsement>(`${this.BASE_URL}/endorsements/skill/${skillId}`, data);
-}
+    skillId: number,
+    data: { endorserId: number; comment?: string }
+  ): Observable<Endorsement> {
+    return this.http.post<Endorsement>(`${this.BASE_URL}/endorsements/skill/${skillId}`, data);
+  }
 
-countEndorsements(skillId: number): Observable<number> {
-  return this.http.get<number>(`${this.BASE_URL}/endorsements/skill/${skillId}/count`);
-}
+  countEndorsements(skillId: number): Observable<number> {
+    return this.http.get<number>(`${this.BASE_URL}/endorsements/skill/${skillId}/count`);
+  }
 
   // ===== REVIEWS =====
 
   getReviews(profileId: number): Observable<ProfileReview[]> {
-    return this.http.get<ProfileReview[]>(`${this.BASE_URL}/reviews/profile/${profileId}`);
+    return this.http.get<ProfileReview[]>(`${this.BASE_URL}/reviews/profiles/${profileId}`);
   }
 
   getAverageRating(profileId: number): Observable<number> {
-    return this.http.get<number>(`${this.BASE_URL}/reviews/profile/${profileId}/average`);
+    return this.http.get<number>(`${this.BASE_URL}/reviews/profiles/${profileId}/average`);
   }
 
-  addReview(profileId: number, data: { clientId: number; rating: number; comment: string }): Observable<ProfileReview> {
-    return this.http.post<ProfileReview>(`${this.BASE_URL}/reviews/profile/${profileId}`, data);
+  getReviewSummary(profileId: number): Observable<ProfileReviewSummary> {
+    return this.http.get<ProfileReviewSummary>(`${this.BASE_URL}/reviews/profiles/${profileId}/summary`);
   }
 
-    // ===== WORK EXPERIENCE =====
+  addReview(profileId: number, data: AddProfileReviewRequest): Observable<ProfileReview> {
+    return this.http.post<ProfileReview>(`${this.BASE_URL}/reviews/profiles/${profileId}`, data);
+  }
+
+  replyToReview(
+    reviewId: number,
+    freelancerUserId: number,
+    data: ReplyToReviewRequest
+  ): Observable<ProfileReview> {
+    return this.http.put<ProfileReview>(
+      `${this.BASE_URL}/reviews/${reviewId}/reply?freelancerUserId=${freelancerUserId}`,
+      data
+    );
+  }
+
+  // ===== WORK EXPERIENCE =====
 
   getMyWorkExperiences(userId: number): Observable<WorkExperience[]> {
     return this.http.get<WorkExperience[]>(`${this.BASE_URL}/work-experiences/user/${userId}`);
@@ -200,18 +219,23 @@ countEndorsements(skillId: number): Observable<number> {
     return this.http.post<Education>(`${this.BASE_URL}/educations/user/${userId}`, data);
   }
 
+  updateEducation(eduId: number, userId: number, data: Partial<Education>): Observable<Education> {
+    return this.http.put<Education>(`${this.BASE_URL}/educations/${eduId}/user/${userId}`, data);
+  }
+
   deleteEducation(eduId: number, userId: number): Observable<void> {
     return this.http.delete<void>(`${this.BASE_URL}/educations/${eduId}/user/${userId}`);
   }
 
   // ===== REPORTS =====
 
-reportProfile(profileId: number, data: { reporterId: number; reason: string }): Observable<any> {
-  return this.http.post(`${this.BASE_URL}/reports/profile/${profileId}`, data);
-}
+  reportProfile(profileId: number, data: { reporterId: number; reason: string }): Observable<any> {
+    return this.http.post(`${this.BASE_URL}/reports/profile/${profileId}`, data);
+  }
 
+  // ===== USER IDENTITY =====
 
-updateEducation(eduId: number, userId: number, data: Partial<Education>): Observable<Education> {
-  return this.http.put<Education>(`${this.BASE_URL}/educations/${eduId}/user/${userId}`, data);
-}
+  getUserIdentity(userId: number): Observable<any> {
+    return this.http.get<any>(`${this.IDENTITY_URL}/users/${userId}`);
+  }
 }

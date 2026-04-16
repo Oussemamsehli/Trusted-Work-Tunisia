@@ -40,8 +40,8 @@ export interface Skill {
   name: string;
   category: SkillCategory;
   level: SkillLevel;
-  authenticityScore: number; // 0 -> 100
-  examScore: number;         // 0 -> 100
+  authenticityScore: number;
+  examScore: number;
   endorsementCount: number;
 }
 
@@ -75,13 +75,40 @@ export interface Endorsement {
   endorsedAt: string;
 }
 
+export type ReviewStatus = 'VISIBLE' | 'HIDDEN' | 'FLAGGED';
+
 export interface ProfileReview {
   id: number;
   clientId: number;
   rating: number;
   comment: string;
-  status: 'VISIBLE' | 'HIDDEN' | 'FLAGGED';
+  freelancerReply?: string | null;
+  flagged: boolean;
+  flagReason?: string | null;
+  status: ReviewStatus;
   reviewedAt: string;
+  updatedAt?: string | null;
+}
+
+export interface AddProfileReviewRequest {
+  clientId: number;
+  rating: number;
+  comment: string;
+}
+
+export interface ReplyToReviewRequest {
+  reply: string;
+}
+
+export interface ProfileReviewSummary {
+  profileId: number;
+  averageRating: number;
+  totalReviews: number;
+  fiveStarCount: number;
+  fourStarCount: number;
+  threeStarCount: number;
+  twoStarCount: number;
+  oneStarCount: number;
 }
 
 export interface WorkExperience {
