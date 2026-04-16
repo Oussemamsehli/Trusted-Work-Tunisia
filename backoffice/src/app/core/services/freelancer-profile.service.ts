@@ -8,6 +8,7 @@ import {
   Certification,
   Endorsement,
   ProfileReview,
+  ProfileReviewSummary,
   ProfileReport,
   WorkExperience,
   Education,
@@ -67,9 +68,7 @@ export class FreelancerProfileService {
 
   // ────────────────── PORTFOLIO ──────────────────
 
-   // ────────────────── PORTFOLIO ──────────────────
-
-   getPortfolio(userId: number): Observable<PortfolioItem[]> {
+  getPortfolio(userId: number): Observable<PortfolioItem[]> {
     return this.http.get<PortfolioItem[]>(`${this.baseUrl}/portfolio/user/${userId}`);
   }
 
@@ -93,15 +92,18 @@ export class FreelancerProfileService {
 
   getCertifications(userId: number): Observable<Certification[]> {
     return this.http.get<Certification[]>(`${this.baseUrl}/certifications/user/${userId}`);
-    
   }
 
   addCertification(userId: number, data: Partial<Certification>): Observable<Certification> {
     return this.http.post<Certification>(`${this.baseUrl}/certifications/user/${userId}`, data);
   }
-  
+
   updateCertification(certId: number, userId: number, data: Partial<Certification>): Observable<Certification> {
     return this.http.put<Certification>(`${this.baseUrl}/certifications/${certId}/user/${userId}`, data);
+  }
+
+  deleteCertification(certId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/certifications/${certId}/user/${userId}`);
   }
 
   // ────────────────── ENDORSEMENTS ──────────────────
@@ -110,8 +112,7 @@ export class FreelancerProfileService {
     return this.http.get<Endorsement[]>(`${this.baseUrl}/endorsements/skill/${skillId}`);
   }
 
-
-     // ────────────────── WORK EXPERIENCES ──────────────────
+  // ────────────────── WORK EXPERIENCES ──────────────────
 
   getWorkExperiences(userId: number): Observable<WorkExperience[]> {
     return this.http.get<WorkExperience[]>(`${this.baseUrl}/work-experiences/user/${userId}`);
@@ -136,20 +137,58 @@ export class FreelancerProfileService {
   getTotalWorkExperienceDuration(userId: number): Observable<number> {
     return this.http.get<number>(`${this.baseUrl}/work-experiences/user/${userId}/total-duration`);
   }
+
   // ────────────────── EDUCATIONS ──────────────────
 
   getEducations(userId: number): Observable<Education[]> {
     return this.http.get<Education[]>(`${this.baseUrl}/educations/user/${userId}`);
   }
 
+  addEducation(userId: number, data: Partial<Education>): Observable<Education> {
+    return this.http.post<Education>(`${this.baseUrl}/educations/user/${userId}`, data);
+  }
+
+  updateEducation(eduId: number, userId: number, data: Partial<Education>): Observable<Education> {
+    return this.http.put<Education>(`${this.baseUrl}/educations/${eduId}/user/${userId}`, data);
+  }
+
+  deleteEducation(eduId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/educations/${eduId}/user/${userId}`);
+  }
+
   // ────────────────── REVIEWS ──────────────────
 
   getReviewsByProfile(profileId: number): Observable<ProfileReview[]> {
-    return this.http.get<ProfileReview[]>(`${this.baseUrl}/reviews/profile/${profileId}`);
+    return this.http.get<ProfileReview[]>(`${this.baseUrl}/reviews/profiles/${profileId}`);
   }
 
+  // CORRIGÉ : /reviews/profiles (avec s) au lieu de /reviews/profile
   getAverageRating(profileId: number): Observable<number> {
-    return this.http.get<number>(`${this.baseUrl}/reviews/profile/${profileId}/average`);
+    return this.http.get<number>(`${this.baseUrl}/reviews/profiles/${profileId}/average`);
+  }
+
+  // NOUVEAU : résumé avec distribution des notes
+  getReviewSummary(profileId: number): Observable<ProfileReviewSummary> {
+    return this.http.get<ProfileReviewSummary>(`${this.baseUrl}/reviews/profiles/${profileId}/summary`);
+  }
+
+  // NOUVEAU : réponse du freelancer à un avis
+  replyToReview(reviewId: number, freelancerUserId: number, reply: string): Observable<ProfileReview> {
+    return this.http.put<ProfileReview>(
+      `${this.baseUrl}/reviews/${reviewId}/reply`,
+      { reply },
+      { params: new HttpParams().set('freelancerUserId', freelancerUserId) }
+    );
+  }
+
+  // NOUVEAU : masquer un avis (action admin)
+  hideReview(reviewId: number): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/reviews/${reviewId}/hide`, {});
+  }
+
+  // NOUVEAU : supprimer un avis (action admin)
+  deleteReview(reviewId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/reviews/${reviewId}`);
   }
 
   // ────────────────── REPORTS (ADMIN) ──────────────────
@@ -190,25 +229,5 @@ export class FreelancerProfileService {
 
   deleteSkill(skillId: number, userId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/skills/${skillId}/user/${userId}`);
-  }
-
-  deleteCertification(certId: number, userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/certifications/${certId}/user/${userId}`);
-  }
-
-  
-
-  
-
-  addEducation(userId: number, data: Partial<Education>): Observable<Education> {
-    return this.http.post<Education>(`${this.baseUrl}/educations/user/${userId}`, data);
-  }
-
-  updateEducation(eduId: number, userId: number, data: Partial<Education>): Observable<Education> {
-    return this.http.put<Education>(`${this.baseUrl}/educations/${eduId}/user/${userId}`, data);
-  }
-
-  deleteEducation(eduId: number, userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/educations/${eduId}/user/${userId}`);
   }
 }

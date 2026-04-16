@@ -68,8 +68,24 @@ export interface ProfileReview {
   clientId: number;
   rating: number;
   comment: string;
-  status: string;
+  freelancerReply?: string | null;
+  flagged?: boolean;
+  flagReason?: string | null;
+  status: 'VISIBLE' | 'HIDDEN' | 'FLAGGED'; // CORRIGÉ : union type strict
   reviewedAt: string;
+  updatedAt?: string | null;
+}
+
+// NOUVEAU : Summary avec distribution des notes
+export interface ProfileReviewSummary {
+  profileId: number;
+  averageRating: number;
+  totalReviews: number;
+  fiveStarCount: number;
+  fourStarCount: number;
+  threeStarCount: number;
+  twoStarCount: number;
+  oneStarCount: number;
 }
 
 // --- ProfileReport ---
@@ -97,11 +113,9 @@ export interface WorkExperience {
   startDate: string;
   endDate?: string | null;
   isCurrent: boolean;
-
   periodLabel?: string;
   durationLabel?: string;
   durationInMonths?: number;
-
   createdAt?: string;
   updatedAt?: string;
 }
@@ -144,7 +158,7 @@ export interface SkillGapResponse {
   gapCount: number;
 }
 
-// --- SkillGapRecommendation (endpoint recommendations/skill-gap) ---
+// --- SkillGapRecommendation ---
 export interface SkillGapRecommendation {
   missingSkills: string[];
   recommendedCourses: string[];

@@ -17,6 +17,7 @@ import { SuspensionsComponent } from './features/admin/suspensions/suspensions.c
 import { ProfilesListComponent } from './features/freelancer/profiles-list/profiles-list.component';
 import { ProfileDetailComponent } from './features/freelancer/profile-detail/profile-detail.component';
 import { ReportsManagementComponent } from './features/freelancer/reports-management/reports-management.component';
+import { ReviewsManagementComponent } from './features/freelancer/reviews-management/reviews-management.component';
 import { PlatformStatsComponent } from './features/freelancer/platform-stats/platform-stats.component';
 
 const routes: Routes = [
@@ -26,7 +27,7 @@ const routes: Routes = [
     children: [
       { path: 'login',      component: LoginComponent },
       { path: 'auto-login', component: AutoLoginComponent },
-      { path: '', redirectTo: 'login', pathMatch: 'full' }
+      { path: '',           redirectTo: 'login', pathMatch: 'full' }
     ]
   },
   {
@@ -34,23 +35,25 @@ const routes: Routes = [
     component: AdminLayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: 'dashboard',              component: OverviewComponent },
-      { path: 'audit-logs',             component: AuditLogsComponent },
-      { path: 'suspensions',            component: SuspensionsComponent },
-      { path: 'users',                  component: UsersListComponent },
-      { path: 'users/kyc',             component: KycManagementComponent },
-      { path: 'users/:id',             component: UserDetailComponent },
+      { path: 'dashboard',   component: OverviewComponent },
+      { path: 'audit-logs',  component: AuditLogsComponent },
+      { path: 'suspensions', component: SuspensionsComponent },
+      { path: 'users',       component: UsersListComponent },
+      { path: 'users/kyc',   component: KycManagementComponent },
+      { path: 'users/:id',   component: UserDetailComponent },
 
-      // ── Module 02 routes ──
-      { path: 'freelancers',            component: ProfilesListComponent },
-      { path: 'freelancers/reports',    component: ReportsManagementComponent },
-      { path: 'freelancers/stats',      component: PlatformStatsComponent },
-      { path: 'freelancers/:id',        component: ProfileDetailComponent },
+      // ── Module 02 — routes statiques AVANT la route dynamique :id ──
+      { path: 'freelancers',          component: ProfilesListComponent },
+      { path: 'freelancers/reports',  component: ReportsManagementComponent },
+      { path: 'freelancers/reviews',  component: ReviewsManagementComponent },
+      { path: 'freelancers/stats',    component: PlatformStatsComponent },
+      // ⚠️ Route dynamique en DERNIER — sinon elle capture 'reports', 'reviews', 'stats'
+      { path: 'freelancers/:id',      component: ProfileDetailComponent },
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
-  { path: '', redirectTo: '/auth/login', pathMatch: 'full' },
+  { path: '',   redirectTo: '/auth/login', pathMatch: 'full' },
   { path: '**', redirectTo: '/auth/login' }
 ];
 

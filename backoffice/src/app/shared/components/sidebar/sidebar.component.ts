@@ -59,6 +59,11 @@ export class SidebarComponent implements OnInit {
       route: '/admin/freelancers'
     },
     {
+      label: 'Reviews',
+      icon: 'fa-star',
+      route: '/admin/freelancers/reviews'
+    },
+    {
       label: 'Profile Reports',
       icon: 'fa-flag',
       route: '/admin/freelancers/reports',
@@ -75,11 +80,6 @@ export class SidebarComponent implements OnInit {
   comingSoonItems: NavItem[] = [
     {
       sectionLabel: 'Reputation Engine',
-      label: 'Reviews',
-      icon: 'fa-star',
-      comingSoon: true
-    },
-    {
       label: 'Trust Scores',
       icon: 'fa-shield-halved',
       comingSoon: true
@@ -199,6 +199,9 @@ export class SidebarComponent implements OnInit {
 
       case '/admin/freelancers/stats':
         return currentUrl === '/admin/freelancers/stats';
+        
+        case '/admin/freelancers/reviews':
+          return currentUrl === '/admin/freelancers/reviews';
 
       default:
         return currentUrl === route;

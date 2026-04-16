@@ -37,6 +37,7 @@ import { ProfileExperienceTabComponent } from './features/freelancer/profile-det
 import { ProfilePortfolioTabComponent } from './features/freelancer/profile-detail/components/profile-portfolio-tab/profile-portfolio-tab.component';
 import { ProfileReputationTabComponent } from './features/freelancer/profile-detail/components/profile-reputation-tab/profile-reputation-tab.component';
 import { ProfileInsightsTabComponent } from './features/freelancer/profile-detail/components/profile-insights-tab/profile-insights-tab.component';
+import { ReviewsManagementComponent } from './features/freelancer/reviews-management/reviews-management.component';
 
 import { ProfileOverviewTabComponent } from './features/freelancer/profile-detail/components/profile-overview-tab/profile-overview-tab.component';
 @NgModule({
@@ -65,6 +66,7 @@ import { ProfileOverviewTabComponent } from './features/freelancer/profile-detai
     ProfilePortfolioTabComponent,
     ProfileReputationTabComponent,
     ProfileInsightsTabComponent,
+    ReviewsManagementComponent,
     ProfileOverviewTabComponent
   ],
   imports: [
