@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,11 +20,11 @@ import java.util.List;
 
 /**
  * Configuration Spring Security — stateless JWT
- * Endpoints publics : swagger, profils publics, reviews, rankings
- * Endpoints protégés : création/modification profil, skills, portfolio, etc.
+ * @EnableMethodSecurity : active @PreAuthorize sur les controllers
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity   // ← AJOUT : nécessaire pour que @PreAuthorize fonctionne
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -46,12 +47,16 @@ public class SecurityConfig {
                                 "/api-docs/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
+                        // WebSocket endpoint — accès libre
+                        .requestMatchers("/ws/**").permitAll()
                         // Profils publics — accès libre
                         .requestMatchers(HttpMethod.GET, "/api/profiles").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/profiles/{profileId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/profiles/ranking/**").permitAll()
                         // Reviews publiques — accès libre
                         .requestMatchers(HttpMethod.GET, "/api/reviews/profile/**").permitAll()
+                        // Notifications — protégées par JWT (token interceptor Angular l'ajoute automatiquement)
+                        .requestMatchers("/api/notifications/**").authenticated()
                         // Tout le reste — authentification requise
                         .anyRequest().authenticated()
                 )

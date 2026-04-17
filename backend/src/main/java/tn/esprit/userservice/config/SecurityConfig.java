@@ -51,17 +51,23 @@ public class SecurityConfig {
                         .requestMatchers("/auth/setup-2fa/**").permitAll()
                         .requestMatchers("/auth/confirm-2fa/**").permitAll()
                         .requestMatchers("/auth/disable-2fa/**").permitAll()
+
                         .requestMatchers("/identity/**").permitAll()
+
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
 
+                        // IMPORTANT : endpoint public pour les autres microservices
+                        .requestMatchers("/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
@@ -81,10 +87,10 @@ public class SecurityConfig {
         ));
 
         config.setAllowedMethods(List.of(
-                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
 
         config.setAllowedHeaders(List.of("*"));
-
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);

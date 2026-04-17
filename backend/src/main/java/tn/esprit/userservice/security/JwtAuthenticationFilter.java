@@ -25,14 +25,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
 
     /**
-     * Exclure /api/identity/** du filtre JWT.
-     * Ces endpoints sont publics — consommés par les autres microservices.
-     * Sans cette exclusion, Spring retourne une erreur HTML même avec permitAll().
+     * Endpoints exclus du filtre JWT — accès sans token autorisé.
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return path.startsWith("/api/identity/");
+
+        return path.startsWith("/api/identity/")
+                || path.startsWith("/api/users/")
+                || path.startsWith("/auth/")
+                || path.startsWith("/uploads/")
+                || path.startsWith("/swagger-ui/")
+                || path.startsWith("/v3/api-docs/");
     }
 
     @Override
