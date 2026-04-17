@@ -1,42 +1,43 @@
 package tn.esprit.freelancerprofileservice.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import tn.esprit.freelancerprofileservice.dto.request.AddReviewRequest;
 import tn.esprit.freelancerprofileservice.dto.request.ReplyToReviewRequest;
 import tn.esprit.freelancerprofileservice.dto.response.ProfileReviewSummaryResponse;
 import tn.esprit.freelancerprofileservice.dto.response.ReviewResponse;
+import tn.esprit.freelancerprofileservice.dto.websocket.ReviewNotificationMessage;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
+import tn.esprit.freelancerprofileservice.entities.Notification;
 import tn.esprit.freelancerprofileservice.entities.ProfileReview;
 import tn.esprit.freelancerprofileservice.enums.ReviewStatus;
 import tn.esprit.freelancerprofileservice.exceptions.DuplicateResourceException;
 import tn.esprit.freelancerprofileservice.exceptions.InvalidDataException;
 import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
+import tn.esprit.freelancerprofileservice.repositories.NotificationRepository;
 import tn.esprit.freelancerprofileservice.repositories.ProfileReviewRepository;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
  * Implémentation du service des avis clients.
- *
- * Fonctionnalités :
- * - ajout d'avis
- * - blocage auto-review
- * - blocage doublon review
- * - récupération des reviews visibles
- * - calcul de la moyenne
- * - résumé statistique
- * - réponse du freelancer
- * - flag automatique des reviews incohérentes
+ * Lors d'un nouvel avis :
+ *   1. Sauvegarde en MySQL (persistant — visible après reconnexion)
+ *   2. Envoi WebSocket temps réel (si le freelancer est connecté)
  */
 @Service
 @RequiredArgsConstructor
 public class ProfileReviewServiceImpl implements IProfileReviewService {
 
-    private final ProfileReviewRepository reviewRepository;
+    private final ProfileReviewRepository  reviewRepository;
     private final FreelancerProfileRepository profileRepository;
-    private final ReviewAnalysisService reviewAnalysisService;
+    private final ReviewAnalysisService    reviewAnalysisService;
+    private final SimpMessagingTemplate    messagingTemplate;
+    private final NotificationRepository   notificationRepository;
 
     @Override
     public ReviewResponse addReview(Long profileId, AddReviewRequest request) {
@@ -69,13 +70,64 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
                 .build();
 
         ProfileReview savedReview = reviewRepository.save(review);
+
+        // Étape 1 — Persister la notification en MySQL
+        persisterNotification(profile, savedReview);
+
+        // Étape 2 — Envoyer en temps réel via WebSocket
+        envoyerNotificationWebSocket(profile, savedReview);
+
         return mapToResponse(savedReview);
+    }
+
+    /**
+     * Sauvegarde la notification en base MySQL.
+     * Récupérée au prochain login via GET /api/notifications/user/{userId}/unread
+     */
+    private void persisterNotification(FreelancerProfile profile, ProfileReview review) {
+        if (profile.getUserId() == null) return;
+
+        String message = "Vous avez reçu un nouvel avis " + review.getRating() + "★"
+                + (review.getFlagged() ? " (signalé comme suspect)" : "");
+
+        Notification notification = Notification.builder()
+                .userId(profile.getUserId())
+                .type("NEW_REVIEW")
+                .message(message)
+                .payload("{\"profileId\":" + profile.getId()
+                        + ",\"rating\":" + review.getRating()
+                        + ",\"flagged\":" + review.getFlagged() + "}")
+                .read(false)
+                .build();
+
+        notificationRepository.save(notification);
+    }
+
+    /**
+     * Publie un message WebSocket sur le topic personnel du freelancer.
+     * Reçu instantanément si le freelancer est connecté au moment de l'envoi.
+     */
+    private void envoyerNotificationWebSocket(FreelancerProfile profile, ProfileReview review) {
+        if (profile.getUserId() == null) return;
+
+        String topic = "/topic/user/" + profile.getUserId() + "/notifications";
+
+        ReviewNotificationMessage message = ReviewNotificationMessage.builder()
+                .type("NEW_REVIEW")
+                .profileId(profile.getId())
+                .clientId(review.getClientId())
+                .rating(review.getRating())
+                .flagged(review.getFlagged())
+                .message("Vous avez reçu un nouvel avis " + review.getRating() + "★")
+                .createdAt(LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .build();
+
+        messagingTemplate.convertAndSend(topic, message);
     }
 
     @Override
     public List<ReviewResponse> getVisibleReviews(Long profileId) {
         ensureProfileExists(profileId);
-
         return reviewRepository
                 .findByProfileIdAndStatusOrderByReviewedAtDesc(profileId, ReviewStatus.VISIBLE)
                 .stream()
@@ -86,7 +138,6 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
     @Override
     public Double getAverageRating(Long profileId) {
         ensureProfileExists(profileId);
-
         Double avg = reviewRepository.findAverageRatingByProfileId(profileId);
         return avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0;
     }
@@ -95,14 +146,13 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
     public ProfileReviewSummaryResponse getReviewSummary(Long profileId) {
         ensureProfileExists(profileId);
 
-        long totalReviews = reviewRepository.countByProfileIdAndStatus(profileId, ReviewStatus.VISIBLE);
+        long totalReviews   = reviewRepository.countByProfileIdAndStatus(profileId, ReviewStatus.VISIBLE);
         double averageRating = getAverageRating(profileId);
-
-        long fiveStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 5, ReviewStatus.VISIBLE);
-        long fourStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 4, ReviewStatus.VISIBLE);
+        long fiveStarCount  = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 5, ReviewStatus.VISIBLE);
+        long fourStarCount  = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 4, ReviewStatus.VISIBLE);
         long threeStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 3, ReviewStatus.VISIBLE);
-        long twoStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 2, ReviewStatus.VISIBLE);
-        long oneStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 1, ReviewStatus.VISIBLE);
+        long twoStarCount   = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 2, ReviewStatus.VISIBLE);
+        long oneStarCount   = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 1, ReviewStatus.VISIBLE);
 
         return ProfileReviewSummaryResponse.builder()
                 .profileId(profileId)
@@ -128,9 +178,7 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
         }
 
         review.setFreelancerReply(request.getReply());
-
-        ProfileReview updatedReview = reviewRepository.save(review);
-        return mapToResponse(updatedReview);
+        return mapToResponse(reviewRepository.save(review));
     }
 
     private void ensureProfileExists(Long profileId) {

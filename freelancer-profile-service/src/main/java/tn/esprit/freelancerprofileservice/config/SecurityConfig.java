@@ -24,7 +24,7 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity   // ← AJOUT : nécessaire pour que @PreAuthorize fonctionne
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Preflight CORS — toujours autoriser
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // Swagger — accès libre
                         .requestMatchers(
                                 "/swagger-ui/**",
@@ -47,16 +48,25 @@ public class SecurityConfig {
                                 "/api-docs/**",
                                 "/v3/api-docs/**"
                         ).permitAll()
+
                         // WebSocket endpoint — accès libre
                         .requestMatchers("/ws/**").permitAll()
+
                         // Profils publics — accès libre
                         .requestMatchers(HttpMethod.GET, "/api/profiles").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/profiles/{profileId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/profiles/ranking/**").permitAll()
+
                         // Reviews publiques — accès libre
                         .requestMatchers(HttpMethod.GET, "/api/reviews/profile/**").permitAll()
-                        // Notifications — protégées par JWT (token interceptor Angular l'ajoute automatiquement)
+
+                        // Views publiques — accès libre
+                        .requestMatchers(HttpMethod.POST, "/api/views/profiles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/views/profiles/**").permitAll()
+
+                        // Notifications — protégées
                         .requestMatchers("/api/notifications/**").authenticated()
+
                         // Tout le reste — authentification requise
                         .anyRequest().authenticated()
                 )
