@@ -79,10 +79,15 @@
     </div>
   </nav>
 
+  <!-- Dans la section premium-navbar__right, remplace le bouton recherche seul par : -->
+
   <div class="premium-navbar__right">
     <button class="icon-btn" type="button" title="Recherche" (click)="toggleSearch()">
       <i class="fas fa-magnifying-glass"></i>
     </button>
+
+    <!-- Cloche de notification temps réel WebSocket -->
+    <app-notification-bell></app-notification-bell>
 
     <div class="user-chip">
       <div class="user-chip__avatar">{{ authService.getUserInitials() }}</div>

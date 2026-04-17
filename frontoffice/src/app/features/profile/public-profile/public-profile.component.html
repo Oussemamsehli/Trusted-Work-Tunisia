@@ -158,14 +158,30 @@
           <h2>Signaler ce profil</h2>
           <p>Le signalement sera transmis à l'administration TrustedWork pour vérification.</p>
         </div>
+
+        <!-- Catégorie — alignée sur l'enum ReportCategory du backend -->
+        <div class="form-group">
+          <label>Catégorie *</label>
+          <select [(ngModel)]="reportCategory" class="form-control">
+            <option value="FAKE_SKILLS">Compétences frauduleuses</option>
+            <option value="SPAM">Spam</option>
+            <option value="IDENTITY_THEFT">Usurpation d'identité</option>
+            <option value="INAPPROPRIATE_CONTENT">Contenu inapproprié</option>
+            <option value="OTHER">Autre</option>
+          </select>
+        </div>
+
         <div class="form-group">
           <label>Raison du signalement *</label>
           <textarea [(ngModel)]="reportReason"
             placeholder="Ex: informations trompeuses, faux profil, contenu inapproprié..."
             rows="4" class="form-control"></textarea>
         </div>
+
         <div class="form-actions">
-          <button class="btn-danger" (click)="submitReport()">Envoyer le signalement</button>
+          <button class="btn-danger" (click)="submitReport()" [disabled]="submittingReport">
+            {{ submittingReport ? 'Envoi en cours...' : 'Envoyer le signalement' }}
+          </button>
         </div>
       </section>
 
@@ -308,27 +324,130 @@
         </div>
       </section>
 
-      <!-- Reviews -->
-      <section class="section-card" *ngIf="reviews.length > 0">
-        <div class="section-head">
-          <div>
-            <span class="section-chip">Avis</span>
-            <h2>Retours clients</h2>
-          </div>
-          <span class="section-count">{{ reviews.length }} avis</span>
+      <!-- ===== SECTION AVIS CLIENTS ===== -->
+<section class="section-card">
+  <div class="section-head">
+    <div>
+      <span class="section-chip">Avis</span>
+      <h2>Retours clients</h2>
+    </div>
+    <div class="section-head-actions">
+      <span class="section-count">{{ reviews.length }} avis</span>
+
+      <!-- Bouton visible uniquement si l'utilisateur n'est pas le propriétaire -->
+      <button
+        *ngIf="!isOwner"
+        type="button"
+        class="btn-add-review"
+        (click)="showReviewForm = !showReviewForm">
+        <i class="fas fa-pen"></i>
+        {{ showReviewForm ? 'Annuler' : 'Laisser un avis' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Formulaire d'ajout d'avis -->
+  <div class="review-form-card" *ngIf="showReviewForm && !isOwner">
+
+    <!-- Sélection de la note avec étoiles cliquables -->
+    <div class="rating-selector">
+      <span class="rating-label">Votre note :</span>
+      <div class="stars-input">
+        <button
+          *ngFor="let star of [1,2,3,4,5]"
+          type="button"
+          class="star-btn"
+          [class.star-btn--active]="star <= newReview.rating"
+          (click)="newReview.rating = star">
+          ⭐
+        </button>
+      </div>
+      <span class="rating-value">{{ newReview.rating }} / 5</span>
+    </div>
+
+    <!-- Textarea avec compteur temps réel -->
+    <div class="textarea-wrapper">
+      <textarea
+        [(ngModel)]="newReview.comment"
+        placeholder="Décrivez votre expérience avec ce freelancer... (minimum 20 caractères)"
+        rows="4"
+        maxlength="1000"
+        class="review-textarea">
+      </textarea>
+
+      <!-- Compteur : rouge < 20 chars, vert >= 20 chars -->
+      <small
+        class="char-counter"
+        [class.char-counter--error]="(newReview.comment.length || 0) < 20"
+        [class.char-counter--ok]="(newReview.comment.length || 0) >= 20">
+        {{ newReview.comment.length || 0 }} / 1000
+        <span *ngIf="(newReview.comment.length || 0) < 20">
+          — encore {{ 20 - (newReview.comment.length || 0) }} caractère(s) minimum
+        </span>
+      </small>
+    </div>
+
+    <!-- Actions -->
+    <div class="review-form-actions">
+      <button
+        type="button"
+        class="btn-cancel"
+        (click)="showReviewForm = false; newReview = { rating: 5, comment: '' }">
+        Annuler
+      </button>
+      <button
+        type="button"
+        class="btn-submit-review"
+        [disabled]="submittingReview || (newReview.comment.length || 0) < 20"
+        (click)="submitReview()">
+        <i class="fas fa-paper-plane" *ngIf="!submittingReview"></i>
+        <i class="fas fa-spinner fa-spin" *ngIf="submittingReview"></i>
+        {{ submittingReview ? 'Publication...' : 'Publier l\'avis' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Liste des avis existants -->
+  <div class="reviews-list" *ngIf="reviews.length > 0">
+    <article class="review-item" *ngFor="let r of reviews; trackBy: trackByReview">
+      <div class="review-header">
+        <div class="review-stars">
+          <span *ngFor="let s of getStars(r.rating)">⭐</span>
         </div>
-        <div class="reviews-list">
-          <article class="review-item" *ngFor="let r of reviews; trackBy: trackByReview">
-            <div class="review-header">
-              <div class="review-stars">
-                <span *ngFor="let s of getStars(r.rating)">⭐</span>
-              </div>
-              <span class="review-date">{{ r.reviewedAt | date:'dd MMM yyyy' }}</span>
-            </div>
-            <p class="review-comment">{{ r.comment }}</p>
-          </article>
+        <span class="review-date">{{ r.reviewedAt | date:'dd MMM yyyy' }}</span>
+      </div>
+      <p class="review-comment">{{ r.comment }}</p>
+
+      <!-- Réponse du freelancer si elle existe -->
+      <div class="freelancer-reply" *ngIf="r.freelancerReply">
+        <i class="fas fa-reply"></i>
+        <div>
+          <strong>Réponse du freelancer</strong>
+          <p>{{ r.freelancerReply }}</p>
         </div>
-      </section>
+      </div>
+
+      <!-- Badge "signalé" visible uniquement pour le propriétaire -->
+      <div class="review-flagged" *ngIf="isOwner && r.flagged">
+        <i class="fas fa-flag"></i>
+        Avis signalé comme suspect
+      </div>
+    </article>
+  </div>
+
+  <!-- État vide -->
+  <div class="empty-reviews" *ngIf="reviews.length === 0 && !showReviewForm">
+    <i class="fas fa-star"></i>
+    <p>Aucun avis pour l'instant.</p>
+    <button
+      *ngIf="!isOwner"
+      type="button"
+      class="btn-add-review"
+      (click)="showReviewForm = true">
+      Être le premier à laisser un avis
+    </button>
+  </div>
+</section>
 
       <!-- Empty state -->
       <section class="empty-state-card"

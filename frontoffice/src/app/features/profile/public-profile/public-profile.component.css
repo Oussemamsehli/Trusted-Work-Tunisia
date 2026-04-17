@@ -1073,3 +1073,205 @@ textarea.form-control {
     grid-template-columns: 1fr;
   }
 }
+/* ===== SECTION HEAD ACTIONS ===== */
+.section-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ===== BOUTON AJOUTER UN AVIS ===== */
+.btn-add-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-add-review:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+/* ===== FORMULAIRE AVIS ===== */
+.review-form-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ===== SÉLECTEUR ÉTOILES ===== */
+.rating-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.rating-label {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+}
+.stars-input {
+  display: flex;
+  gap: 4px;
+}
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  opacity: 0.3;
+  transition: opacity 0.15s, transform 0.15s;
+  padding: 0;
+}
+.star-btn--active {
+  opacity: 1;
+}
+.star-btn:hover {
+  transform: scale(1.2);
+}
+.rating-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+/* ===== TEXTAREA ===== */
+.textarea-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.review-textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  padding: 12px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.review-textarea:focus {
+  border-color: #2563eb;
+}
+
+/* ===== COMPTEUR CARACTÈRES ===== */
+.char-counter {
+  font-size: 12px;
+  transition: color 0.2s;
+}
+.char-counter--error { color: #c85c3b; }
+.char-counter--ok    { color: #4caf50; }
+
+/* ===== ACTIONS FORMULAIRE ===== */
+.review-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.btn-cancel {
+  padding: 8px 18px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: rgba(255,255,255,0.6);
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 0.2s;
+}
+.btn-cancel:hover { border-color: rgba(255,255,255,0.35); }
+
+.btn-submit-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.btn-submit-review:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-submit-review:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+/* ===== RÉPONSE FREELANCER ===== */
+.freelancer-reply {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(37, 99, 235, 0.08);
+  border-left: 3px solid #2563eb;
+  border-radius: 0 8px 8px 0;
+  font-size: 13px;
+}
+.freelancer-reply i {
+  color: #2563eb;
+  margin-top: 2px;
+}
+.freelancer-reply strong {
+  display: block;
+  margin-bottom: 4px;
+  color: rgba(255,255,255,0.8);
+}
+.freelancer-reply p {
+  margin: 0;
+  color: rgba(255,255,255,0.6);
+}
+
+/* ===== AVIS FLAGGÉ ===== */
+.review-flagged {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  background: rgba(200, 92, 59, 0.12);
+  border-radius: 6px;
+  font-size: 11px;
+  color: #c85c3b;
+}
+
+/* ===== ÉTAT VIDE ===== */
+.empty-reviews {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+}
+.empty-reviews i {
+  font-size: 28px;
+}
+.empty-reviews p {
+  margin: 0;
+  font-size: 14px;
+}

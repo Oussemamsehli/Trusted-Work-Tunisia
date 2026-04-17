@@ -229,7 +229,15 @@ export class FreelancerProfileService {
 
   // ===== REPORTS =====
 
-  reportProfile(profileId: number, data: { reporterId: number; reason: string }): Observable<any> {
+  /**
+   * Signaler un profil freelancer.
+   * Le backend attend : { reporterId, category, description }
+   * Les catégories valides : FAKE_SKILLS | SPAM | IDENTITY_THEFT | INAPPROPRIATE_CONTENT | OTHER
+   */
+  reportProfile(
+    profileId: number,
+    data: { reporterId: number; category: string; description: string }
+  ): Observable<any> {
     return this.http.post(`${this.BASE_URL}/reports/profile/${profileId}`, data);
   }
 

@@ -49,7 +49,9 @@ export class PublicProfileComponent implements OnInit {
   newReview = { rating: 5, comment: '' };
 
   showReportForm = false;
-  reportReason = '';
+  reportReason   = '';
+  // Catégorie du signalement — valeurs alignées sur l'enum backend ReportCategory
+  reportCategory = 'FAKE_SKILLS';
 
   submittingEndorsement = false;
   submittingReview = false;
@@ -113,7 +115,6 @@ export class PublicProfileComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    // Charger le profil ET le nom de l'utilisateur en parallèle
     forkJoin({
       profile: this.profileService.getProfileByUserId(this.targetUserId),
       user: this.api.get<any>(`/identity/users/${this.targetUserId}`).pipe(
@@ -124,7 +125,6 @@ export class PublicProfileComponent implements OnInit {
         this.profile = profile;
         this.targetProfileId = profile.id;
 
-        // Résoudre le nom depuis user-service
         const firstName = (user.firstName || '').trim();
         const lastName  = (user.lastName  || '').trim();
         this.targetUserFullName = `${firstName} ${lastName}`.trim() || profile.headline || 'Freelancer';
@@ -200,7 +200,7 @@ export class PublicProfileComponent implements OnInit {
     };
 
     this.submittingEndorsement = true;
-    this.errorMessage  = '';
+    this.errorMessage   = '';
     this.successMessage = '';
 
     this.profileService.addEndorsement(skillId, payload).subscribe({
@@ -208,9 +208,9 @@ export class PublicProfileComponent implements OnInit {
         const skill = this.skills.find(s => s.id === skillId);
         if (skill) skill.endorsementCount = (skill.endorsementCount || 0) + 1;
 
-        this.endorsingSkillId  = null;
-        this.endorseComment    = '';
-        this.successMessage    = 'Compétence validée avec succès.';
+        this.endorsingSkillId      = null;
+        this.endorseComment        = '';
+        this.successMessage        = 'Compétence validée avec succès.';
         this.showToast('success', 'Endorsement envoyé', 'Votre validation a bien été prise en compte.');
         this.submittingEndorsement = false;
       },
@@ -232,66 +232,80 @@ export class PublicProfileComponent implements OnInit {
   }
 
   submitReview(): void {
-    if (this.submittingReview) return;
+  if (this.submittingReview) return;
 
-    const comment = this.newReview.comment?.trim() || '';
-    const rating  = Number(this.newReview.rating);
+  const comment = this.newReview.comment?.trim() || '';
+  const rating  = Number(this.newReview.rating);
 
-    if (!comment) {
-      this.showToast('error', 'Commentaire requis', 'Veuillez saisir un commentaire avant de publier votre avis.');
-      return;
-    }
-    if (rating < 1 || rating > 5) {
-      this.showToast('error', 'Note invalide', 'La note doit être comprise entre 1 et 5.');
-      return;
-    }
-
-    this.submittingReview = true;
-    this.errorMessage  = '';
-    this.successMessage = '';
-
-    this.profileService.addReview(this.targetProfileId, {
-      clientId: this.currentUserId,
-      rating,
-      comment
-    }).subscribe({
-      next: (review) => {
-        this.reviews.unshift(review);
-        this.showReviewForm = false;
-        this.newReview = { rating: 5, comment: '' };
-        this.successMessage = 'Avis ajouté avec succès.';
-        this.showToast('success', 'Avis publié', 'Votre retour a bien été ajouté au profil.');
-        this.submittingReview = false;
-        this.refreshAverageRating();
-      },
-      error: (err) => {
-        this.submittingReview = false;
-        this.errorMessage = err.error?.message || 'Erreur lors de l\'ajout de l\'avis.';
-        this.showToast('error', 'Publication impossible', this.errorMessage);
-      }
-    });
+  // Validations alignées sur les contraintes backend (@Size min=20, max=1000)
+  if (!comment) {
+    this.showToast('error', 'Commentaire requis', 'Veuillez saisir un commentaire avant de publier votre avis.');
+    return;
   }
+  if (comment.length < 20) {
+    this.showToast('error', 'Commentaire trop court', `Minimum 20 caractères requis (actuellement ${comment.length}).`);
+    return;
+  }
+  if (comment.length > 1000) {
+    this.showToast('error', 'Commentaire trop long', 'Le commentaire ne peut pas dépasser 1000 caractères.');
+    return;
+  }
+  if (rating < 1 || rating > 5) {
+    this.showToast('error', 'Note invalide', 'La note doit être comprise entre 1 et 5.');
+    return;
+  }
+
+  this.submittingReview = true;
+  this.errorMessage   = '';
+  this.successMessage = '';
+
+  this.profileService.addReview(this.targetProfileId, {
+    clientId: this.currentUserId,
+    rating,
+    comment
+  }).subscribe({
+    next: (review) => {
+      this.reviews.unshift(review);
+      this.showReviewForm = false;
+      this.newReview = { rating: 5, comment: '' };
+      this.successMessage = 'Avis ajouté avec succès.';
+      this.showToast('success', 'Avis publié', 'Votre retour a bien été ajouté au profil.');
+      this.submittingReview = false;
+      this.refreshAverageRating();
+    },
+    error: (err) => {
+      this.submittingReview = false;
+      // Affiche le message backend (400 ou autre) directement dans le toast
+      this.errorMessage = err.error?.message || 'Erreur lors de l\'ajout de l\'avis.';
+      this.showToast('error', 'Publication impossible', this.errorMessage);
+    }
+  });
+}
 
   submitReport(): void {
     if (this.submittingReport) return;
 
-    const reason = this.reportReason?.trim() || '';
-    if (!reason) {
+    const description = this.reportReason?.trim() || '';
+    if (!description) {
       this.showToast('error', 'Raison requise', 'Veuillez préciser la raison du signalement.');
       return;
     }
 
     this.submittingReport = true;
-    this.errorMessage  = '';
+    this.errorMessage   = '';
     this.successMessage = '';
 
+    // Envoi avec les champs exacts attendus par le backend :
+    // reporterId, category (enum ReportCategory), description
     this.profileService.reportProfile(this.targetProfileId, {
-      reporterId: this.currentUserId,
-      reason
+      reporterId:  this.currentUserId,
+      category:    this.reportCategory,
+      description
     }).subscribe({
       next: () => {
         this.showReportForm  = false;
         this.reportReason    = '';
+        this.reportCategory  = 'FAKE_SKILLS'; // reset au défaut
         this.successMessage  = 'Signalement envoyé à l\'administration.';
         this.showToast('success', 'Signalement envoyé', 'Votre signalement a bien été transmis à l\'équipe de modération.');
         this.submittingReport = false;
@@ -328,7 +342,7 @@ export class PublicProfileComponent implements OnInit {
     return Array(Math.round(rating)).fill(0);
   }
 
-  trackBySkill(index: number, skill: Skill): number         { return skill.id; }
+  trackBySkill(index: number, skill: Skill): number          { return skill.id; }
   trackByPortfolio(index: number, item: PortfolioItem): number { return item.id; }
   trackByReview(index: number, review: ProfileReview): number  { return review.id; }
 }
