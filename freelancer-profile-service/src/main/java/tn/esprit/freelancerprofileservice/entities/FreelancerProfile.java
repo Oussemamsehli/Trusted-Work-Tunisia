@@ -15,13 +15,16 @@ import java.util.List;
  */
 @Entity
 @Table(name = "freelancer_profiles")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class FreelancerProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
 
     @Column(nullable = false, unique = true)
     private Long userId;
@@ -48,9 +51,21 @@ public class FreelancerProfile {
     private Integer completenessScore = 0;
 
     private String region;
+
     private Integer regionalRank;
 
     private Integer totalViews = 0;
+
+    /**
+     * Score de risque du profil basé sur le nombre de signalements.
+     * 0 = aucun risque, 100 = risque maximal.
+     */
+    private Integer riskScore = 0;
+
+    /**
+     * Suspension automatique du profil après seuil de reports.
+     */
+    private Boolean suspended = false;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -89,12 +104,30 @@ public class FreelancerProfile {
 
     @PrePersist
     protected void onCreate() {
+        if (completenessScore == null) {
+            completenessScore = 0;
+        }
+        if (totalViews == null) {
+            totalViews = 0;
+        }
+        if (riskScore == null) {
+            riskScore = 0;
+        }
+        if (suspended == null) {
+            suspended = false;
+        }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
+        if (riskScore == null) {
+            riskScore = 0;
+        }
+        if (suspended == null) {
+            suspended = false;
+        }
         updatedAt = LocalDateTime.now();
     }
 }
