@@ -89,6 +89,16 @@ export class UserService {
     });
   }
 
+  /**
+   * Récupérer un utilisateur par son ID.
+   * Utilisé pour résoudre les noms dans les signalements.
+   */
+  getUserById(id: number): Observable<UserDTO> {
+    return this.http.get<UserDTO>(`${this.baseUrl}/admin/users/${id}`, {
+      headers: this.getHeaders()
+    });
+  }
+
   getUsersByRole(role: string): Observable<UserDTO[]> {
     return this.http.get<UserDTO[]>(`${this.baseUrl}/admin/users/role/${role}`, {
       headers: this.getHeaders()

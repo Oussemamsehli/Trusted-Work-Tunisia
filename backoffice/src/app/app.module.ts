@@ -17,6 +17,8 @@ import { TopbarComponent } from './shared/components/topbar/topbar.component';
 import { StatCardComponent } from './shared/components/stat-card/stat-card.component';
 
 import { LoginComponent } from './features/auth/login/login.component';
+// ✅ AutoLoginComponent ajouté — manquant dans la version précédente
+import { AutoLoginComponent } from './features/auth/auto-login/auto-login.component';
 import { OverviewComponent } from './features/dashboard/overview/overview.component';
 import { UsersListComponent } from './features/users/users-list/users-list.component';
 import { UserDetailComponent } from './features/users/user-detail/user-detail.component';
@@ -38,8 +40,8 @@ import { ProfilePortfolioTabComponent } from './features/freelancer/profile-deta
 import { ProfileReputationTabComponent } from './features/freelancer/profile-detail/components/profile-reputation-tab/profile-reputation-tab.component';
 import { ProfileInsightsTabComponent } from './features/freelancer/profile-detail/components/profile-insights-tab/profile-insights-tab.component';
 import { ReviewsManagementComponent } from './features/freelancer/reviews-management/reviews-management.component';
-
 import { ProfileOverviewTabComponent } from './features/freelancer/profile-detail/components/profile-overview-tab/profile-overview-tab.component';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -49,6 +51,7 @@ import { ProfileOverviewTabComponent } from './features/freelancer/profile-detai
     TopbarComponent,
     StatCardComponent,
     LoginComponent,
+    AutoLoginComponent, // ✅ déclaré ici
     OverviewComponent,
     UsersListComponent,
     UserDetailComponent,

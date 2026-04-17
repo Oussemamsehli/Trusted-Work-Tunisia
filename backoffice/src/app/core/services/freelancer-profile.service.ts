@@ -162,17 +162,14 @@ export class FreelancerProfileService {
     return this.http.get<ProfileReview[]>(`${this.baseUrl}/reviews/profiles/${profileId}`);
   }
 
-  // CORRIGÉ : /reviews/profiles (avec s) au lieu de /reviews/profile
   getAverageRating(profileId: number): Observable<number> {
     return this.http.get<number>(`${this.baseUrl}/reviews/profiles/${profileId}/average`);
   }
 
-  // NOUVEAU : résumé avec distribution des notes
   getReviewSummary(profileId: number): Observable<ProfileReviewSummary> {
     return this.http.get<ProfileReviewSummary>(`${this.baseUrl}/reviews/profiles/${profileId}/summary`);
   }
 
-  // NOUVEAU : réponse du freelancer à un avis
   replyToReview(reviewId: number, freelancerUserId: number, reply: string): Observable<ProfileReview> {
     return this.http.put<ProfileReview>(
       `${this.baseUrl}/reviews/${reviewId}/reply`,
@@ -181,12 +178,10 @@ export class FreelancerProfileService {
     );
   }
 
-  // NOUVEAU : masquer un avis (action admin)
   hideReview(reviewId: number): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/reviews/${reviewId}/hide`, {});
   }
 
-  // NOUVEAU : supprimer un avis (action admin)
   deleteReview(reviewId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/reviews/${reviewId}`);
   }
@@ -197,12 +192,26 @@ export class FreelancerProfileService {
     return this.http.get<ProfileReport[]>(`${this.baseUrl}/reports/pending`);
   }
 
+  getAllReports(): Observable<ProfileReport[]> {
+    return this.http.get<ProfileReport[]>(`${this.baseUrl}/reports`);
+  }
+
   resolveReport(reportId: number, status: string): Observable<ProfileReport> {
     const params = new HttpParams().set('status', status);
     return this.http.patch<ProfileReport>(
       `${this.baseUrl}/reports/${reportId}/resolve`,
       null,
       { params }
+    );
+  }
+
+  updateReportStatus(
+    reportId: number,
+    status: 'IN_REVIEW' | 'RESOLVED' | 'REJECTED'
+  ): Observable<ProfileReport> {
+    return this.http.patch<ProfileReport>(
+      `${this.baseUrl}/reports/${reportId}/status?status=${status}`,
+      {}
     );
   }
 

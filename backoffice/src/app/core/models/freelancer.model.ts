@@ -71,12 +71,12 @@ export interface ProfileReview {
   freelancerReply?: string | null;
   flagged?: boolean;
   flagReason?: string | null;
-  status: 'VISIBLE' | 'HIDDEN' | 'FLAGGED'; // CORRIGÉ : union type strict
+  status: 'VISIBLE' | 'HIDDEN' | 'FLAGGED';
   reviewedAt: string;
   updatedAt?: string | null;
 }
 
-// NOUVEAU : Summary avec distribution des notes
+// --- Review Summary ---
 export interface ProfileReviewSummary {
   profileId: number;
   averageRating: number;
@@ -91,19 +91,27 @@ export interface ProfileReviewSummary {
 // --- ProfileReport ---
 export interface ProfileReport {
   id: number;
+
   reporterId: number;
-  reason: string;
-  status: 'PENDING' | 'RESOLVED' | 'REJECTED';
-  reportedAt: string;
-  resolvedAt: string | null;
-  profile?: {
-    id: number;
-    userId: number;
-    headline: string;
-    region: string;
-  };
+  reporterName: string;
+
+  profileId: number;
+  freelancerUserId: number;
+  freelancerName: string;
+
+  category: 'FAKE_SKILLS' | 'SPAM' | 'IDENTITY_THEFT' | 'INAPPROPRIATE_CONTENT' | 'OTHER';
+  description: string;
+  status: 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED';
+
+  createdAt: string;
+  updatedAt?: string | null;
+  resolvedAt?: string | null;
+
+  riskScore: number;
+  suspended: boolean;
 }
 
+// --- WorkExperienceResponse ---
 export interface WorkExperience {
   id: number;
   jobTitle: string;

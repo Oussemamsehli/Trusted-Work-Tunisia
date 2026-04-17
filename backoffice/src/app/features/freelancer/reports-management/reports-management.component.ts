@@ -1,21 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { forkJoin, of, Subject } from 'rxjs';
-import { takeUntil, catchError } from 'rxjs/operators';
-import { ProfileReport } from '../../../core/models/freelancer.model';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
-import { UserResolutionService } from '../../../core/services/user-resolution.service';
-
-interface ReportViewModel extends ProfileReport {
-  reporterFullName: string;
-  reporterInitials: string;
-  freelancerFullName: string;
-  freelancerInitials: string;
-}
-
-interface ReasonEntry {
-  key: string;
-  value: number;
-}
+import { WebsocketService } from '../../../core/services/websocket.service';
+import { UserService, UserDTO } from '../../../core/services/user.service';
 
 @Component({
   selector: 'app-reports-management',
@@ -24,254 +14,459 @@ interface ReasonEntry {
 })
 export class ReportsManagementComponent implements OnInit, OnDestroy {
 
-  reports: ReportViewModel[] = [];
-  loading = true;
-  errorMsg = '';
-  successMsg = '';
+  reports: any[] = [];
+  filteredReports: any[] = [];
+  pagedReports: any[] = [];
 
-  expandedId: number | null = null;
-  confirmingId: number | null = null;
-  pendingAction: 'RESOLVED' | 'REJECTED' | null = null;
+  loading = false;
 
-  private resolving = new Set<number>();
-  private destroy$ = new Subject<void>();
-  private successTimer: ReturnType<typeof setTimeout> | null = null;
+  selectedStatus: 'ALL' | 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED' = 'ALL';
+  selectedCategory: 'ALL' | 'FAKE_SKILLS' | 'SPAM' | 'IDENTITY_THEFT' | 'INAPPROPRIATE_CONTENT' | 'OTHER' = 'ALL';
+  searchQuery = '';
+
+  currentPage = 1;
+  pageSize = 10;
+
+  notificationMessage = '';
+  showNotification = false;
+
+  private userNameCache: Map<number, string> = new Map();
+  private usersLoaded = false;
 
   constructor(
-    private profileService: FreelancerProfileService,
-    private userResolution: UserResolutionService
+    private freelancerProfileService: FreelancerProfileService,
+    private websocketService: WebsocketService,
+    private userService: UserService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.loadAllUsersIntoCache();
     this.loadReports();
+
+    this.websocketService.connect(() => {
+      this.websocketService.subscribeToReports((message: any) => {
+        switch (message?.type) {
+          case 'NEW_REPORT':
+            this.showRealtimeNotification('Nouveau signalement reçu');
+            break;
+          case 'REPORT_STATUS_UPDATED':
+            this.showRealtimeNotification('Statut mis à jour');
+            break;
+          case 'PROFILE_SUSPENDED':
+            this.showRealtimeNotification('Profil suspendu automatiquement');
+            break;
+          default:
+            this.showRealtimeNotification('Mise à jour en temps réel');
+            break;
+        }
+        this.loadReports();
+      });
+    });
   }
 
   ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.clearSuccessTimer();
+    this.websocketService.disconnect();
   }
 
-  // ───────────────────────────────────────
-  // Computed
-  // ───────────────────────────────────────
+  // ───────────────────── USERS CACHE ─────────────────────
 
-  get reasonBreakdown(): ReasonEntry[] {
-    const map: Record<string, number> = {};
-    for (const r of this.reports) {
-      const key = r.reason || 'OTHER';
-      map[key] = (map[key] || 0) + 1;
-    }
-    return Object.entries(map)
-      .map(([key, value]) => ({ key, value }))
-      .sort((a, b) => b.value - a.value);
+  private loadAllUsersIntoCache(): void {
+    if (this.usersLoaded) return;
+
+    this.userService.getAllUsers().pipe(
+      catchError(() => of([] as UserDTO[]))
+    ).subscribe((users: UserDTO[]) => {
+      users.forEach(user => {
+        const name =
+          `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+          user.email ||
+          `Utilisateur ${user.id}`;
+
+        this.userNameCache.set(user.id, name);
+      });
+
+      this.usersLoaded = true;
+      this.applyFilters();
+    });
   }
 
-  // ───────────────────────────────────────
-  // Loading
-  // ───────────────────────────────────────
+  getReporterName(reporterId: number): string {
+    return this.userNameCache.get(reporterId) || `Utilisateur ${reporterId}`;
+  }
+
+  // ───────────────────── LOAD REPORTS ─────────────────────
 
   loadReports(): void {
     this.loading = true;
-    this.errorMsg = '';
-    this.successMsg = '';
-    this.expandedId = null;
-    this.confirmingId = null;
-    this.pendingAction = null;
 
-    this.profileService.getPendingReports()
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError(() => {
-          this.errorMsg = 'Erreur lors du chargement des signalements';
-          this.loading = false;
-          return of(null);
-        })
-      )
-      .subscribe(data => {
-        if (!data || data.length === 0) {
-          this.reports = [];
-          this.loading = false;
-          return;
-        }
+    this.freelancerProfileService.getAllReports().subscribe({
+      next: (data: any[]) => {
+        this.reports = this.sortReports(data || []);
+        this.currentPage = 1;
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading reports:', err);
+        this.reports = [];
+        this.filteredReports = [];
+        this.pagedReports = [];
+        this.loading = false;
+      }
+    });
+  }
 
-        const reporterObs = data.map(r =>
-          this.safeName(() => this.userResolution.getFullName(r.reporterId))
+  refreshReports(): void {
+    this.loadReports();
+  }
+
+  // ───────────────────── FALLBACK HELPERS ─────────────────────
+  // Compatibles ancien format + nouveau DTO enrichi
+
+  getFreelancerName(report: any): string {
+    return (
+      report?.freelancerName ||
+      report?.profile?.headline ||
+      report?.profile?.fullName ||
+      report?.profile?.name ||
+      'Profil freelancer'
+    );
+  }
+
+  getFreelancerUserId(report: any): number | string {
+    return (
+      report?.freelancerUserId ??
+      report?.profile?.userId ??
+      0
+    );
+  }
+
+  getFreelancerRegion(report: any): string {
+    return report?.profile?.region || 'N/A';
+  }
+
+  getReporterDisplayName(report: any): string {
+    return (
+      report?.reporterName ||
+      this.getReporterName(report?.reporterId) ||
+      'Unknown user'
+    );
+  }
+
+  getRiskScore(report: any): number {
+    const raw =
+      report?.riskScore ??
+      report?.profile?.riskScore ??
+      report?.profile?.completenessScore ??
+      0;
+
+    const score = Number(raw);
+    return Number.isFinite(score) ? score : 0;
+  }
+
+  isSuspended(report: any): boolean {
+    return !!(
+      report?.suspended ??
+      report?.profile?.suspended ??
+      false
+    );
+  }
+
+  getProfileId(report: any): number | null {
+    return report?.profileId ?? report?.profile?.id ?? null;
+  }
+
+  // ───────────────────── SEARCH / FILTERS ─────────────────────
+
+  onSearchChange(): void {
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  filterByStatus(status: 'ALL' | 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED'): void {
+    this.selectedStatus = status;
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  filterByCategory(category: 'ALL' | 'FAKE_SKILLS' | 'SPAM' | 'IDENTITY_THEFT' | 'INAPPROPRIATE_CONTENT' | 'OTHER'): void {
+    this.selectedCategory = category;
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.searchQuery = '';
+    this.selectedStatus = 'ALL';
+    this.selectedCategory = 'ALL';
+    this.currentPage = 1;
+    this.applyFilters();
+  }
+
+  get hasActiveFilters(): boolean {
+    return this.searchQuery.trim() !== ''
+      || this.selectedStatus !== 'ALL'
+      || this.selectedCategory !== 'ALL';
+  }
+
+  applyFilters(): void {
+    let result = [...this.reports];
+
+    if (this.selectedStatus !== 'ALL') {
+      result = result.filter(r => r.status === this.selectedStatus);
+    }
+
+    if (this.selectedCategory !== 'ALL') {
+      result = result.filter(r => r.category === this.selectedCategory);
+    }
+
+    const q = this.searchQuery.trim().toLowerCase();
+    if (q) {
+      result = result.filter(r => {
+        const description = (r?.description || '').toLowerCase();
+        const freelancerName = this.getFreelancerName(r).toLowerCase();
+        const freelancerRegion = this.getFreelancerRegion(r).toLowerCase();
+        const reporterName = this.getReporterDisplayName(r).toLowerCase();
+
+        return (
+          description.includes(q) ||
+          freelancerName.includes(q) ||
+          freelancerRegion.includes(q) ||
+          reporterName.includes(q)
         );
-
-        // ───────────────────────────────────────
-        // FIX: Type narrowing pour userId
-        // ───────────────────────────────────────
-        const freelancerObs = data.map(r => {
-          const userId = r.profile?.userId;
-          
-          return userId
-            ? this.safeName(() => this.userResolution.getFullName(userId))
-            : of('Profil supprimé');
-        });
-
-        forkJoin([forkJoin(reporterObs), forkJoin(freelancerObs)])
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: ([reporterNames, freelancerNames]) => {
-              this.reports = data.map((report, i) => ({
-                ...report,
-                reporterFullName: reporterNames[i],
-                reporterInitials: this.userResolution.getInitials(reporterNames[i]),
-                freelancerFullName: freelancerNames[i],
-                freelancerInitials: this.userResolution.getInitials(freelancerNames[i])
-              }));
-              this.loading = false;
-            },
-            error: () => {
-              // ───────────────────────────────────────
-              // FIX PRO: Suppression des IDs (#123) dans l'affichage
-              // ───────────────────────────────────────
-              this.reports = data.map(report => ({
-                ...report,
-                reporterFullName: 'Utilisateur inconnu', // Plus de User #{id}
-                reporterInitials: 'U',
-                freelancerFullName: 'Profil introuvable', // Plus de User #{id}
-                freelancerInitials: 'P'
-              }));
-              this.loading = false;
-            }
-          });
       });
-  }
-
-  private safeName(fn: () => any): any {
-    return fn().pipe(catchError(() => of('Utilisateur inconnu')));
-  }
-
-  // ───────────────────────────────────────
-  // Expand / Confirm / Resolve
-  // ───────────────────────────────────────
-
-  toggleExpand(id: number): void {
-    const opening = this.expandedId !== id;
-    this.expandedId = opening ? id : null;
-    if (opening) {
-      this.confirmingId = null;
-      this.pendingAction = null;
     }
+
+    this.filteredReports = this.sortReports(result);
+    this.updatePage();
   }
 
-  confirmAction(id: number, action: 'RESOLVED' | 'REJECTED'): void {
-    this.confirmingId = id;
-    this.pendingAction = action;
+  private sortReports(reports: any[]): any[] {
+    return [...reports].sort((a, b) => {
+      const riskA = this.getRiskScore(a);
+      const riskB = this.getRiskScore(b);
+
+      if (riskB !== riskA) {
+        return riskB - riskA;
+      }
+
+      const dateA = new Date(a?.createdAt || 0).getTime();
+      const dateB = new Date(b?.createdAt || 0).getTime();
+
+      return dateB - dateA;
+    });
   }
 
-  cancelConfirm(): void {
-    this.confirmingId = null;
-    this.pendingAction = null;
+  // ───────────────────── PAGINATION ─────────────────────
+
+  get totalPages(): number {
+    return Math.ceil(this.filteredReports.length / this.pageSize) || 1;
   }
 
-  resolve(reportId: number, status: 'RESOLVED' | 'REJECTED'): void {
-    if (this.resolving.has(reportId) || !this.pendingAction) return;
-    this.resolving.add(reportId);
+  get pages(): number[] {
+    const total = this.totalPages;
+    const current = this.currentPage;
+    const delta = 2;
+    const range: number[] = [];
 
-    this.profileService.resolveReport(reportId, status)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.resolving.delete(reportId);
-          this.confirmingId = null;
-          this.pendingAction = null;
-          if (this.expandedId === reportId) this.expandedId = null;
-          this.reports = this.reports.filter(r => r.id !== reportId);
-          this.showSuccess(
-            `Signalement → ${status === 'RESOLVED' ? 'Résolu' : 'Rejeté'}`
-          );
-        },
-        error: (err) => {
-          this.resolving.delete(reportId);
-          // ───────────────────────────────────────
-          // FIX PRO: Message d'erreur générique sans ID technique
-          // ───────────────────────────────────────
-          this.errorMsg = 'Une erreur est survenue lors du traitement du signalement.';
-          console.error(err);
+    for (let i = Math.max(1, current - delta); i <= Math.min(total, current + delta); i++) {
+      range.push(i);
+    }
+
+    return range;
+  }
+
+  updatePage(): void {
+    const start = (this.currentPage - 1) * this.pageSize;
+    this.pagedReports = this.filteredReports.slice(start, start + this.pageSize);
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.currentPage = page;
+    this.updatePage();
+  }
+
+  get startIndex(): number {
+    return this.filteredReports.length === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get endIndex(): number {
+    return Math.min(this.currentPage * this.pageSize, this.filteredReports.length);
+  }
+
+  // ───────────────────── STATS ─────────────────────
+
+  get pendingCount(): number {
+    return this.reports.filter(r => r.status === 'PENDING').length;
+  }
+
+  get inReviewCount(): number {
+    return this.reports.filter(r => r.status === 'IN_REVIEW').length;
+  }
+
+  get resolvedCount(): number {
+    return this.reports.filter(r => r.status === 'RESOLVED').length;
+  }
+
+  // ───────────────────── ACTIONS ─────────────────────
+
+  viewProfile(report: any): void {
+    const profileId = this.getProfileId(report);
+
+    if (!profileId) {
+      this.showRealtimeNotification('Impossible d’ouvrir le profil.');
+      return;
+    }
+
+    this.router.navigate(['/admin/freelancers', profileId]);
+  }
+
+  markInReview(report: any): void {
+    this.updateStatus(report, 'IN_REVIEW');
+  }
+
+  resolveReport(report: any): void {
+    this.updateStatus(report, 'RESOLVED');
+  }
+
+  rejectReport(report: any): void {
+    this.updateStatus(report, 'REJECTED');
+  }
+
+  updateStatus(report: any, status: 'IN_REVIEW' | 'RESOLVED' | 'REJECTED'): void {
+    if (!report?.id) return;
+
+    this.freelancerProfileService.updateReportStatus(report.id, status).subscribe({
+      next: (updated: any) => {
+        const index = this.reports.findIndex(r => r.id === updated.id);
+        if (index !== -1) {
+          this.reports[index] = updated;
+          this.reports = this.sortReports(this.reports);
         }
-      });
+        this.applyFilters();
+        this.showRealtimeNotification(`Statut mis à jour → ${this.getStatusLabel(status)}`);
+      },
+      error: (err) => {
+        console.error('Update failed:', err);
+      }
+    });
   }
 
-  // ───────────────────────────────────────
-  // Display helpers
-  // ───────────────────────────────────────
+  // ───────────────────── UI HELPERS ─────────────────────
 
-  getReasonLabel(reason: string): string {
-    const map: Record<string, string> = {
-      SPAM: 'Spam',
-      FAKE_PROFILE: 'Profil fictif',
-      INAPPROPRIATE_CONTENT: 'Contenu inapproprié',
-      HARASSMENT: 'Harcèlement',
-      SCAM: 'Arnaque',
-      DUPLICATE: 'Doublon',
-      OTHER: 'Autre'
-    };
-    return map[reason] || reason || 'Autre';
+  getReporterInitials(report: any): string {
+    const name = this.getReporterDisplayName(report);
+    return this.getInitialsFromName(name, 'RU');
   }
 
-  getReasonSeverity(reason: string): string {
-    const map: Record<string, string> = {
-      SPAM: 'warning',
-      FAKE_PROFILE: 'danger',
-      INAPPROPRIATE_CONTENT: 'danger',
-      HARASSMENT: 'danger',
-      SCAM: 'danger',
-      DUPLICATE: 'muted',
-      OTHER: 'muted'
-    };
-    return map[reason] || 'muted';
+  getFreelancerInitials(report: any): string {
+    const name = this.getFreelancerName(report);
+    return this.getInitialsFromName(name, 'FR');
   }
 
-  getReasonColor(reason: string): string {
-    const map: Record<string, string> = {
-      SPAM: '#D97706',
-      FAKE_PROFILE: '#E11D48',
-      INAPPROPRIATE_CONTENT: '#E11D48',
-      HARASSMENT: '#E11D48',
-      SCAM: '#E11D48',
-      DUPLICATE: '#64748B',
-      OTHER: '#64748B'
-    };
-    return map[reason] || '#64748B';
-  }
+  private getInitialsFromName(name: string, fallback: string): string {
+    if (!name || !name.trim()) return fallback;
 
-  getReasonIcon(reason: string): string {
-    const map: Record<string, string> = {
-      SPAM: 'fa-ban',
-      FAKE_PROFILE: 'fa-user-slash',
-      INAPPROPRIATE_CONTENT: 'fa-flag',
-      HARASSMENT: 'fa-hand',
-      SCAM: 'fa-mask',
-      DUPLICATE: 'fa-clone',
-      OTHER: 'fa-ellipsis'
-    };
-    return map[reason] || 'fa-ellipsis';
-  }
-
-  getProfileId(report: ProfileReport): number | null {
-    return report.profile?.id ?? null;
-  }
-
-  // ───────────────────────────────────────
-  // Internal
-  // ───────────────────────────────────────
-
-  private showSuccess(msg: string): void {
-    this.clearSuccessTimer();
-    this.successMsg = msg;
-    this.successTimer = setTimeout(() => {
-      this.successMsg = '';
-      this.successTimer = null;
-    }, 3000);
-  }
-
-  private clearSuccessTimer(): void {
-    if (this.successTimer) {
-      clearTimeout(this.successTimer);
-      this.successTimer = null;
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 1) {
+      return parts[0].slice(0, 2).toUpperCase();
     }
+
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  getStatusClass(status: string): string {
+    switch (status) {
+      case 'PENDING':
+        return 'badge badge-warning';
+      case 'IN_REVIEW':
+        return 'badge badge-info';
+      case 'RESOLVED':
+        return 'badge badge-success';
+      case 'REJECTED':
+        return 'badge badge-danger';
+      default:
+        return 'badge badge-muted';
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'PENDING':
+        return 'En attente';
+      case 'IN_REVIEW':
+        return 'En cours';
+      case 'RESOLVED':
+        return 'Résolu';
+      case 'REJECTED':
+        return 'Rejeté';
+      default:
+        return status;
+    }
+  }
+
+  getCategoryClass(category: string): string {
+    switch (category) {
+      case 'FAKE_SKILLS':
+        return 'reason-badge reason-badge--danger';
+      case 'SPAM':
+        return 'reason-badge reason-badge--warning';
+      case 'IDENTITY_THEFT':
+        return 'reason-badge reason-badge--danger';
+      case 'INAPPROPRIATE_CONTENT':
+        return 'reason-badge reason-badge--warning';
+      default:
+        return 'reason-badge reason-badge--muted';
+    }
+  }
+
+  getCategoryLabel(category: string): string {
+    switch (category) {
+      case 'FAKE_SKILLS':
+        return 'Compétences fausses';
+      case 'SPAM':
+        return 'Spam';
+      case 'IDENTITY_THEFT':
+        return 'Usurpation d’identité';
+      case 'INAPPROPRIATE_CONTENT':
+        return 'Contenu inapproprié';
+      default:
+        return 'Autre';
+    }
+  }
+
+  getRiskClass(report: any): string {
+    const score = this.getRiskScore(report);
+
+    if (score >= 80) return 'badge badge-danger';
+    if (score >= 60) return 'badge badge-warning';
+    if (score >= 40) return 'badge badge-info';
+    return 'badge badge-success';
+  }
+
+  getSuspensionClass(report: any): string {
+    return this.isSuspended(report)
+      ? 'badge badge-danger'
+      : 'badge badge-success';
+  }
+
+  getSuspensionLabel(report: any): string {
+    return this.isSuspended(report) ? 'Suspendu' : 'Actif';
+  }
+
+  trackByReportId(index: number, report: any): number {
+    return report.id;
+  }
+
+  private showRealtimeNotification(message: string): void {
+    this.notificationMessage = message;
+    this.showNotification = true;
+
+    setTimeout(() => {
+      this.showNotification = false;
+      this.notificationMessage = '';
+    }, 3000);
   }
 }
