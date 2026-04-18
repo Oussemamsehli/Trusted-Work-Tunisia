@@ -35,6 +35,7 @@ export class PlatformStatsComponent implements OnInit {
   currentTime = '';
 
   constructor(private profileService: FreelancerProfileService) {}
+  
 
   ngOnInit(): void {
     this.loadStats();
@@ -293,5 +294,13 @@ export class PlatformStatsComponent implements OnInit {
     ctx.fillStyle = '#4B5563';
     ctx.font = "500 11px 'Inter', sans-serif";
     ctx.fillText('Total', cx, cy + 12);
+  }
+
+  exportExcel(): void {
+    this.profileService.exportProfilesExcel();
+  }
+  
+  exportPdf(): void {
+    this.profileService.exportAdminReportPdf();
   }
 }

@@ -17,6 +17,17 @@
         <button class="btn btn-ghost btn-sm" (click)="loadStats()">
           <i class="fas fa-rotate-right"></i> Rafraîchir
         </button>
+        <div class="export-actions">
+          <button class="btn-excel" (click)="exportExcel()">
+            <i class="fas fa-file-excel"></i>
+            Export Excel
+          </button>
+        
+          <button class="btn-pdf" (click)="exportPdf()">
+            <i class="fas fa-file-pdf"></i>
+            Rapport PDF
+          </button>
+        </div>
       </div>
     </div>
 
