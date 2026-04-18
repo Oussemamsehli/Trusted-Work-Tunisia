@@ -17,7 +17,6 @@ import java.util.List;
 /**
  * Filtre JWT — intercepte chaque requête et valide le token
  * émis par le user-service (Module 01)
- * Même pattern que dans user-service pour cohérence inter-services
  */
 @Component
 @RequiredArgsConstructor
@@ -30,6 +29,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+
+        // ✅ Laisser passer les requêtes preflight CORS
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String authHeader = request.getHeader("Authorization");
 
@@ -44,19 +49,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             if (jwtUtil.isTokenValid(token)) {
                 String username = jwtUtil.extractUsername(token);
-                String role     = jwtUtil.extractRole(token);
+                String role = jwtUtil.extractRole(token);
 
-                // ← ajoute cette ligne
                 System.out.println(">>> JWT OK — user: " + username + " role: " + role);
 
                 List<SimpleGrantedAuthority> authorities = List.of(
                         new SimpleGrantedAuthority("ROLE_" + role)
                 );
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(username, null, authorities);
+
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
                 System.out.println(">>> JWT INVALID — token rejected");
+                SecurityContextHolder.clearContext();
             }
         } catch (Exception e) {
             System.out.println(">>> JWT EXCEPTION — " + e.getMessage());
