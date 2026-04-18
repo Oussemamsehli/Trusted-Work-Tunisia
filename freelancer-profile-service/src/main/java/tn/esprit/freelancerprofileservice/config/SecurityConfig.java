@@ -18,10 +18,6 @@ import tn.esprit.freelancerprofileservice.security.JwtAuthFilter;
 
 import java.util.List;
 
-/**
- * Configuration Spring Security — stateless JWT
- * @EnableMethodSecurity : active @PreAuthorize sur les controllers
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -38,10 +34,8 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Preflight CORS — toujours autoriser
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Swagger — accès libre
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -49,25 +43,19 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
-                        // WebSocket endpoint — accès libre
                         .requestMatchers("/ws/**").permitAll()
 
-                        // Profils publics — accès libre
                         .requestMatchers(HttpMethod.GET, "/api/profiles").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/profiles/{profileId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/profiles/ranking/**").permitAll()
 
-                        // Reviews publiques — accès libre
                         .requestMatchers(HttpMethod.GET, "/api/reviews/profile/**").permitAll()
 
-                        // Views publiques — accès libre
                         .requestMatchers(HttpMethod.POST, "/api/views/profiles/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/views/profiles/**").permitAll()
 
-                        // Notifications — protégées
                         .requestMatchers("/api/notifications/**").authenticated()
 
-                        // Tout le reste — authentification requise
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -84,6 +72,7 @@ public class SecurityConfig {
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Content-Disposition", "Content-Type"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
