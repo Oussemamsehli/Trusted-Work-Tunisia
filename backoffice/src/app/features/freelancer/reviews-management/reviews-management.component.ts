@@ -46,7 +46,7 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
 
   expandedId: number | null = null;
 
-  // ID de la review en cours de suppression ou masquage (pour spinner)
+  // ID de la review en cours de suppression ou masquage
   processingId: number | null = null;
 
   private destroy$ = new Subject<void>();
@@ -79,7 +79,15 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
             return of([] as ReviewViewModel[]);
           }
 
-          const profileRequests = profiles.map(profile =>
+          const validProfiles = profiles.filter(
+            profile => profile?.id !== undefined && profile?.id !== null
+          );
+
+          if (validProfiles.length === 0) {
+            return of([] as ReviewViewModel[]);
+          }
+
+          const profileRequests = validProfiles.map(profile =>
             this.profileService.getReviewsByProfile(profile.id).pipe(
               switchMap((reviews: ProfileReview[]) => {
                 if (!reviews || reviews.length === 0) {
@@ -94,27 +102,28 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
                     switchMap(({ clientName, freelancerName }) => {
                       const vm: ReviewViewModel = {
                         ...review,
-                        profileId: profile.id,
-                        profileUserId: profile.userId,
-                        headline: profile.headline,
-                        region: profile.region,
-                        completenessScore: profile.completenessScore,
-                        totalViews: profile.totalViews,
+                        profileId: profile.id!,
+                        profileUserId: profile.userId!,
+                        headline: profile.headline || '—',
+                        region: profile.region || '—',
+                        completenessScore: profile.completenessScore ?? 0,
+                        totalViews: profile.totalViews ?? 0,
                         clientFullName: clientName,
                         clientInitials: this.userResolution.getInitials(clientName),
                         freelancerFullName: freelancerName,
                         freelancerInitials: this.userResolution.getInitials(freelancerName)
                       };
+
                       return of(vm);
                     }),
                     catchError(() => of({
                       ...review,
-                      profileId: profile.id,
-                      profileUserId: profile.userId,
-                      headline: profile.headline,
-                      region: profile.region,
-                      completenessScore: profile.completenessScore,
-                      totalViews: profile.totalViews,
+                      profileId: profile.id!,
+                      profileUserId: profile.userId!,
+                      headline: profile.headline || '—',
+                      region: profile.region || '—',
+                      completenessScore: profile.completenessScore ?? 0,
+                      totalViews: profile.totalViews ?? 0,
                       clientFullName: 'Client inconnu',
                       clientInitials: 'CI',
                       freelancerFullName: 'Freelancer inconnu',
@@ -142,14 +151,14 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
       )
       .subscribe((reviews: ReviewViewModel[]) => {
         this.reviews = reviews.sort((a, b) =>
-          new Date(b.reviewedAt).getTime() - new Date(a.reviewedAt).getTime()
+          new Date(b.reviewedAt || 0).getTime() - new Date(a.reviewedAt || 0).getTime()
         );
 
         this.availableRegions = [
           ...new Set(
             this.reviews
               .map(r => r.region)
-              .filter((region): region is string => !!region)
+              .filter((region): region is string => !!region && region.trim().length > 0 && region !== '—')
           )
         ].sort((a, b) => a.localeCompare(b));
 
@@ -163,20 +172,26 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
   hideReview(review: ReviewViewModel): void {
     if (!confirm(`Masquer cet avis de ${review.clientFullName} ?`)) return;
 
+    this.errorMsg = '';
+    this.successMsg = '';
     this.processingId = review.id;
+
     this.profileService.hideReview(review.id).subscribe({
       next: () => {
-        // Mettre à jour le statut localement sans recharger toute la liste
         const target = this.reviews.find(r => r.id === review.id);
-        if (target) target.status = 'HIDDEN';
+        if (target) {
+          target.status = 'HIDDEN';
+        }
+
         this.computeStats();
         this.applyFilters();
         this.processingId = null;
+        this.expandedId = null;
         this.successMsg = 'Avis masqué avec succès.';
         this.autoClearSuccess();
       },
       error: () => {
-        this.errorMsg = 'Erreur lors du masquage de l\'avis.';
+        this.errorMsg = 'Erreur lors du masquage de l’avis.';
         this.processingId = null;
       }
     });
@@ -184,9 +199,14 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
 
   // Supprimer une review (admin)
   deleteReview(review: ReviewViewModel): void {
-    if (!confirm(`Supprimer définitivement cet avis de ${review.clientFullName} ? Cette action est irréversible.`)) return;
+    if (!confirm(`Supprimer définitivement cet avis de ${review.clientFullName} ? Cette action est irréversible.`)) {
+      return;
+    }
 
+    this.errorMsg = '';
+    this.successMsg = '';
     this.processingId = review.id;
+
     this.profileService.deleteReview(review.id).subscribe({
       next: () => {
         this.reviews = this.reviews.filter(r => r.id !== review.id);
@@ -198,7 +218,7 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
         this.autoClearSuccess();
       },
       error: () => {
-        this.errorMsg = 'Erreur lors de la suppression de l\'avis.';
+        this.errorMsg = 'Erreur lors de la suppression de l’avis.';
         this.processingId = null;
       }
     });
@@ -213,14 +233,14 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
   computeStats(): void {
     this.totalReviews = this.reviews.length;
     this.visibleCount = this.reviews.filter(r => r.status === 'VISIBLE').length;
-    this.flaggedCount = this.reviews.filter(r => r.status === 'FLAGGED' || r.flagged).length;
+    this.flaggedCount = this.reviews.filter(r => r.status === 'FLAGGED' || !!r.flagged).length;
 
     if (this.reviews.length === 0) {
       this.averageRating = 0;
       return;
     }
 
-    const total = this.reviews.reduce((sum, review) => sum + review.rating, 0);
+    const total = this.reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
     this.averageRating = Math.round((total / this.reviews.length) * 10) / 10;
   }
 
@@ -230,9 +250,9 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
     this.filteredReviews = this.reviews.filter(review => {
       const matchesSearch =
         !term ||
-        review.clientFullName.toLowerCase().includes(term) ||
-        review.freelancerFullName.toLowerCase().includes(term) ||
-        review.headline.toLowerCase().includes(term) ||
+        (review.clientFullName || '').toLowerCase().includes(term) ||
+        (review.freelancerFullName || '').toLowerCase().includes(term) ||
+        (review.headline || '').toLowerCase().includes(term) ||
         (review.comment || '').toLowerCase().includes(term);
 
       const matchesRegion =
@@ -262,9 +282,11 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
 
   getRatingStars(rating: number): ('full' | 'empty')[] {
     const stars: ('full' | 'empty')[] = [];
+
     for (let i = 1; i <= 5; i++) {
       stars.push(i <= rating ? 'full' : 'empty');
     }
+
     return stars;
   }
 
@@ -278,19 +300,27 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
 
   getStatusLabel(status: string): string {
     switch (status) {
-      case 'VISIBLE': return 'Visible';
-      case 'HIDDEN':  return 'Masqué';
-      case 'FLAGGED': return 'Signalé';
-      default:        return status;
+      case 'VISIBLE':
+        return 'Visible';
+      case 'HIDDEN':
+        return 'Masqué';
+      case 'FLAGGED':
+        return 'Signalé';
+      default:
+        return status || '—';
     }
   }
 
   getStatusClass(status: string): string {
     switch (status) {
-      case 'VISIBLE': return 'success';
-      case 'HIDDEN':  return 'warning';
-      case 'FLAGGED': return 'danger';
-      default:        return 'muted';
+      case 'VISIBLE':
+        return 'success';
+      case 'HIDDEN':
+        return 'warning';
+      case 'FLAGGED':
+        return 'danger';
+      default:
+        return 'muted';
     }
   }
 
@@ -300,10 +330,38 @@ export class ReviewsManagementComponent implements OnInit, OnDestroy {
   }
 
   private autoClearSuccess(): void {
-    setTimeout(() => { this.successMsg = ''; }, 3000);
+    setTimeout(() => {
+      this.successMsg = '';
+    }, 3000);
   }
 
   trackByReview(index: number, review: ReviewViewModel): number {
     return review.id;
+  }
+
+  restoreReview(review: ReviewViewModel): void {
+    if (!confirm(`Rendre cet avis visible à nouveau ?`)) return;
+  
+    this.processingId = review.id;
+    this.errorMsg = '';
+    this.successMsg = '';
+  
+    this.profileService.restoreReview(review.id).subscribe({
+      next: () => {
+        const target = this.reviews.find(r => r.id === review.id);
+        if (target) {
+          target.status = 'VISIBLE';
+        }
+  
+        this.computeStats();
+        this.applyFilters();
+        this.processingId = null;
+        this.successMsg = 'Avis remis en ligne.';
+      },
+      error: () => {
+        this.errorMsg = 'Erreur lors de la restauration.';
+        this.processingId = null;
+      }
+    });
   }
 }

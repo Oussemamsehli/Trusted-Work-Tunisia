@@ -189,20 +189,33 @@
               <td>
                 <div class="action-btns">
                   <!-- Détails -->
-                  <button class="btn btn-ghost btn-sm" (click)="toggleExpand(review.id)" title="Voir les détails">
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    (click)="toggleExpand(review.id)"
+                    title="Voir les détails">
                     <i class="fas" [ngClass]="expandedId === review.id ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                   </button>
-  
-                  <!-- Masquer — seulement si VISIBLE ou FLAGGED -->
+              
+                  <!-- Masquer si review visible ou signalée -->
                   <button
+                    *ngIf="review.status === 'VISIBLE' || review.status === 'FLAGGED'"
                     class="btn btn-warning btn-sm"
-                    *ngIf="review.status !== 'HIDDEN'"
                     [disabled]="processingId === review.id"
                     (click)="hideReview(review)"
                     title="Masquer cet avis">
                     <i class="fas fa-eye-slash"></i>
                   </button>
-  
+              
+                  <!-- Rendre visible si review masquée -->
+                  <button
+                    *ngIf="review.status === 'HIDDEN'"
+                    class="btn btn-success btn-sm"
+                    [disabled]="processingId === review.id"
+                    (click)="restoreReview(review)"
+                    title="Rendre cet avis visible">
+                    <i class="fas fa-eye"></i>
+                  </button>
+              
                   <!-- Supprimer -->
                   <button
                     class="btn btn-danger btn-sm"
