@@ -3,10 +3,12 @@ package tn.esprit.freelancerprofileservice.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tn.esprit.freelancerprofileservice.dto.response.SkillResponse;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
 import tn.esprit.freelancerprofileservice.entities.Skill;
 import tn.esprit.freelancerprofileservice.enums.SkillLevel;
 import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
+import tn.esprit.freelancerprofileservice.exceptions.UnauthorizedActionException;
 import tn.esprit.freelancerprofileservice.repositories.EndorsementRepository;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
 import tn.esprit.freelancerprofileservice.repositories.PortfolioItemRepository;
@@ -119,5 +121,37 @@ public class SkillServiceImpl implements ISkillService {
 
     private String cleanDisplayName(String name) {
         return name.trim().replaceAll("\\s+", " ");
+    }
+
+
+    @Override
+    public SkillResponse updateExamScore(Long skillId, Long userId, Double examScore) {
+        // Vérifier appartenance au profil
+        Skill skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> new ResourceNotFoundException("Skill", skillId));
+
+        if (!skill.getProfile().getUserId().equals(userId)) {
+            throw new RuntimeException("Cette compétence ne vous appartient pas");
+        }
+
+        // Mettre à jour le score d'examen
+        skill.setExamScore(examScore);
+        skillRepository.save(skill);
+
+        // Recalcul automatique de l'authenticité
+        skillAuthenticityService.calculateAuthenticityScore(skillId);
+
+        // Retourner le skill mis à jour via le controller (mapping dans SkillController)
+        Skill updated = skillRepository.findById(skillId).orElse(skill);
+
+        return SkillResponse.builder()
+                .id(updated.getId())
+                .name(updated.getName())
+                .category(updated.getCategory())
+                .level(updated.getLevel())
+                .authenticityScore(updated.getAuthenticityScore())
+                .examScore(updated.getExamScore())
+                .endorsementCount(updated.getEndorsementCount())
+                .build();
     }
 }
