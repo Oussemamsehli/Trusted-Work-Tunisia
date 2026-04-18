@@ -33,11 +33,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProfileReviewServiceImpl implements IProfileReviewService {
 
-    private final ProfileReviewRepository  reviewRepository;
+    private final ProfileReviewRepository reviewRepository;
     private final FreelancerProfileRepository profileRepository;
-    private final ReviewAnalysisService    reviewAnalysisService;
-    private final SimpMessagingTemplate    messagingTemplate;
-    private final NotificationRepository   notificationRepository;
+    private final ReviewAnalysisService reviewAnalysisService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationRepository notificationRepository;
 
     @Override
     public ReviewResponse addReview(Long profileId, AddReviewRequest request) {
@@ -71,10 +71,7 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
 
         ProfileReview savedReview = reviewRepository.save(review);
 
-        // Étape 1 — Persister la notification en MySQL
         persisterNotification(profile, savedReview);
-
-        // Étape 2 — Envoyer en temps réel via WebSocket
         envoyerNotificationWebSocket(profile, savedReview);
 
         return mapToResponse(savedReview);
@@ -146,13 +143,13 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
     public ProfileReviewSummaryResponse getReviewSummary(Long profileId) {
         ensureProfileExists(profileId);
 
-        long totalReviews   = reviewRepository.countByProfileIdAndStatus(profileId, ReviewStatus.VISIBLE);
+        long totalReviews = reviewRepository.countByProfileIdAndStatus(profileId, ReviewStatus.VISIBLE);
         double averageRating = getAverageRating(profileId);
-        long fiveStarCount  = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 5, ReviewStatus.VISIBLE);
-        long fourStarCount  = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 4, ReviewStatus.VISIBLE);
+        long fiveStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 5, ReviewStatus.VISIBLE);
+        long fourStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 4, ReviewStatus.VISIBLE);
         long threeStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 3, ReviewStatus.VISIBLE);
-        long twoStarCount   = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 2, ReviewStatus.VISIBLE);
-        long oneStarCount   = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 1, ReviewStatus.VISIBLE);
+        long twoStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 2, ReviewStatus.VISIBLE);
+        long oneStarCount = reviewRepository.countByProfileIdAndRatingAndStatus(profileId, 1, ReviewStatus.VISIBLE);
 
         return ProfileReviewSummaryResponse.builder()
                 .profileId(profileId)
@@ -181,6 +178,24 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
         return mapToResponse(reviewRepository.save(review));
     }
 
+    @Override
+    public void hideReview(Long reviewId) {
+        ProfileReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Avis", reviewId));
+
+        review.setStatus(ReviewStatus.HIDDEN);
+        reviewRepository.save(review);
+    }
+
+    @Override
+    public void deleteReview(Long reviewId) {
+        if (!reviewRepository.existsById(reviewId)) {
+            throw new ResourceNotFoundException("Avis", reviewId);
+        }
+
+        reviewRepository.deleteById(reviewId);
+    }
+
     private void ensureProfileExists(Long profileId) {
         if (!profileRepository.existsById(profileId)) {
             throw new ResourceNotFoundException("Profil", profileId);
@@ -201,4 +216,17 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
                 .updatedAt(review.getUpdatedAt())
                 .build();
     }
+
+    @Override
+    public ReviewResponse restoreReview(Long reviewId) {
+        ProfileReview review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Avis", reviewId));
+
+        review.setStatus(ReviewStatus.VISIBLE);
+
+        ProfileReview saved = reviewRepository.save(review);
+        return mapToResponse(saved);
+    }
+
+
 }
