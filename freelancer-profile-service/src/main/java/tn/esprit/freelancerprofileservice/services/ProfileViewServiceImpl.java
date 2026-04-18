@@ -1,12 +1,15 @@
 package tn.esprit.freelancerprofileservice.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import tn.esprit.freelancerprofileservice.dto.response.ProfileViewAnalyticsResponse;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
+import tn.esprit.freelancerprofileservice.entities.Notification;
 import tn.esprit.freelancerprofileservice.entities.ProfileView;
 import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
+import tn.esprit.freelancerprofileservice.repositories.NotificationRepository;
 import tn.esprit.freelancerprofileservice.repositories.ProfileViewRepository;
 
 import java.time.LocalDateTime;
@@ -21,6 +24,8 @@ public class ProfileViewServiceImpl implements IProfileViewService {
 
     private final ProfileViewRepository viewRepository;
     private final FreelancerProfileRepository profileRepository;
+    private final NotificationRepository notificationRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public void recordView(Long profileId, Long viewerId) {
@@ -56,6 +61,8 @@ public class ProfileViewServiceImpl implements IProfileViewService {
         Integer currentViews = profile.getTotalViews() == null ? 0 : profile.getTotalViews();
         profile.setTotalViews(currentViews + 1);
         profileRepository.save(profile);
+
+        persisterEtEnvoyerNotificationVue(profileId, profile.getUserId(), viewerId);
     }
 
     @Override
@@ -88,5 +95,28 @@ public class ProfileViewServiceImpl implements IProfileViewService {
                 .uniqueViewers(uniqueViewers)
                 .viewsLast7Days(viewsLast7Days)
                 .build();
+    }
+
+    /**
+     * Persiste puis envoie en temps réel une notification lorsqu'un profil reçoit une nouvelle vue valide.
+     */
+    private void persisterEtEnvoyerNotificationVue(Long profileId, Long freelancerUserId, Long viewerId) {
+        String payload = "{\"profileId\":" + profileId +
+                ",\"viewerId\":" + (viewerId != null ? viewerId : "null") + "}";
+
+        Notification notification = Notification.builder()
+                .userId(freelancerUserId)
+                .type("PROFILE_VIEW")
+                .message("Votre profil a reçu une nouvelle vue.")
+                .payload(payload)
+                .read(false)
+                .build();
+
+        Notification savedNotification = notificationRepository.save(notification);
+
+        messagingTemplate.convertAndSend(
+                "/topic/user/" + freelancerUserId + "/notifications",
+                savedNotification
+        );
     }
 }
