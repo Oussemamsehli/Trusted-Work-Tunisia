@@ -74,6 +74,13 @@ export class SidebarComponent implements OnInit {
       label: 'Platform Stats',
       icon: 'fa-chart-pie',
       route: '/admin/freelancers/stats'
+    },
+    {
+      label: 'Trending',
+      icon:  'fa-fire',
+      route: '/admin/freelancers/trending',
+      badge: '🔥',
+      badgeType: 'accent'
     }
   ];
 
