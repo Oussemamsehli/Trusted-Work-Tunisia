@@ -4,12 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import tn.esprit.freelancerprofileservice.clients.UserClient;
 import tn.esprit.freelancerprofileservice.entities.Certification;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
 import tn.esprit.freelancerprofileservice.repositories.CertificationRepository;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
 import tn.esprit.freelancerprofileservice.repositories.SkillRepository;
 import tn.esprit.freelancerprofileservice.services.ICompletenessService;
+import tn.esprit.freelancerprofileservice.services.IEmailService;
 import tn.esprit.freelancerprofileservice.services.ISkillAuthenticityService;
 
 import java.time.LocalDate;
@@ -22,8 +24,8 @@ import java.util.Set;
  *
  * Tâche 1 : Recalcul nocturne des scores d'authenticité (chaque nuit à 1h)
  * Tâche 2 : Mise à jour du classement régional (chaque lundi)
- * Tâche 3 : Rappels de complétion de profil (chaque matin à 9h)
- * Tâche 4 : Vérification expiration certifications (1er de chaque mois)
+ * Tâche 3 : Rappels de complétion de profil (chaque matin à 9h) + EMAIL
+ * Tâche 4 : Vérification expiration certifications (1er de chaque mois) + EMAIL
  */
 @Component
 @RequiredArgsConstructor
@@ -35,11 +37,12 @@ public class ProfileScheduler {
     private final CertificationRepository certificationRepository;
     private final ISkillAuthenticityService skillAuthenticityService;
     private final ICompletenessService completenessService;
+    private final IEmailService emailService;   // ← AJOUT
+    private final UserClient userClient;        // ← AJOUT
 
     /**
      * TÂCHE 1 — Recalcul nocturne des scores d'authenticité
      * Exécution : chaque nuit à 1h00
-     * Objectif : maintenir les scores à jour automatiquement
      */
     @Scheduled(cron = "0 0 1 * * *")
     public void recalculateAllSkillScores() {
@@ -63,7 +66,6 @@ public class ProfileScheduler {
     /**
      * TÂCHE 2 — Mise à jour du classement régional
      * Exécution : chaque lundi à minuit
-     * Objectif : classer les freelancers par région selon leur score de complétude
      */
     @Scheduled(cron = "0 0 0 * * MON")
     public void updateRegionalRankings() {
@@ -92,10 +94,9 @@ public class ProfileScheduler {
     }
 
     /**
-     * TÂCHE 3 — Rappels de complétion de profil
+     * TÂCHE 3 — Rappels de complétion de profil + EMAIL
      * Exécution : chaque matin à 9h
-     * Objectif : recalculer et logger les profils incomplets (score < 60)
-     * En production : envoyer un email via notification-service
+     * Objectif : notifier les freelancers avec score < 60% par email
      */
     @Scheduled(cron = "0 0 9 * * *")
     public void sendProfileCompletionReminders() {
@@ -104,61 +105,105 @@ public class ProfileScheduler {
         List<FreelancerProfile> incompleteProfiles =
                 profileRepository.findProfilesBelowScore(60);
 
+        int emailSentCount = 0;
+
         for (FreelancerProfile profile : incompleteProfiles) {
             try {
+                // Recalculer le score avant d'envoyer
                 completenessService.calculateCompleteness(profile.getUserId());
+
                 log.info(">>> [SCHEDULER] Rappel profil userId={} score={}",
                         profile.getUserId(), profile.getCompletenessScore());
-                // TODO : appel notification-service pour envoyer email
+
+                // Récupérer email + nom depuis user-service
+                String email    = userClient.getUserEmail(profile.getUserId());
+                String fullName = userClient.getUserFullName(profile.getUserId());
+
+                if (email != null && !email.isBlank()) {
+                    emailService.sendProfileIncompleteReminder(
+                            email,
+                            fullName,
+                            profile.getCompletenessScore() != null
+                                    ? profile.getCompletenessScore()
+                                    : 0
+                    );
+                    emailSentCount++;
+                    log.info(">>> [SCHEDULER] Email rappel envoyé → {}", email);
+                } else {
+                    log.warn(">>> [SCHEDULER] Email absent pour userId={}", profile.getUserId());
+                }
+
             } catch (Exception e) {
                 log.error("Erreur rappel profil {} : {}", profile.getId(), e.getMessage());
             }
         }
 
-        log.info(">>> [SCHEDULER] {} profils incomplets détectés.", incompleteProfiles.size());
+        log.info(">>> [SCHEDULER] {} profils incomplets détectés, {} emails envoyés.",
+                incompleteProfiles.size(), emailSentCount);
     }
 
     /**
-     * TÂCHE 4 — Vérification expiration des certifications
+     * TÂCHE 4 — Vérification expiration certifications + EMAIL
      * Exécution : le 1er de chaque mois à minuit
-     * Objectif : marquer les certifications expirées automatiquement
-     * En production : notifier le freelancer par email
+     * Objectif : marquer les certifications expirées + alerter le freelancer par email
      */
     @Scheduled(cron = "0 0 0 1 * *")
     public void checkCertificationExpiry() {
         log.info(">>> [SCHEDULER] Début vérification expiration certifications...");
 
-        LocalDate today = LocalDate.now();
+        LocalDate today    = LocalDate.now();
         LocalDate deadline = today.plusDays(30);
 
         List<Certification> expiring =
                 certificationRepository.findExpiringCertifications(deadline);
 
-        int expiredCount = 0;
+        int expiredCount      = 0;
+        int emailSentCount    = 0;
         Set<Long> impactedUserIds = new HashSet<>();
 
         for (Certification cert : expiring) {
             try {
+                Long userId = cert.getProfile().getUserId();
+
                 if (cert.getExpiryDate() != null && cert.getExpiryDate().isBefore(today)) {
+                    // ── Certification déjà expirée → marquer ──────────────
                     cert.setIsExpired(true);
                     certificationRepository.save(cert);
                     expiredCount++;
-
-                    Long userId = cert.getProfile().getUserId();
                     impactedUserIds.add(userId);
 
-                    log.info(">>> [SCHEDULER] Certification expirée : '{}' (profil userId={})",
+                    log.info(">>> [SCHEDULER] Certification expirée : '{}' (userId={})",
                             cert.getTitle(), userId);
+
                 } else {
-                    log.warn(">>> [SCHEDULER] Certification '{}' expire le {} (profil userId={})",
-                            cert.getTitle(), cert.getExpiryDate(), cert.getProfile().getUserId());
-                    // TODO : appel notification-service pour alerter le freelancer
+                    // ── Certification expire dans < 30 jours → alerter ────
+                    log.warn(">>> [SCHEDULER] Certification '{}' expire le {} (userId={})",
+                            cert.getTitle(), cert.getExpiryDate(), userId);
+
+                    // Envoyer email d'alerte au freelancer
+                    String email    = userClient.getUserEmail(userId);
+                    String fullName = userClient.getUserFullName(userId);
+
+                    if (email != null && !email.isBlank()) {
+                        emailService.sendCertificationExpiryAlert(
+                                email,
+                                fullName,
+                                cert.getTitle(),
+                                cert.getExpiryDate().toString()
+                        );
+                        emailSentCount++;
+                        log.info(">>> [SCHEDULER] Email alerte expiration → {}", email);
+                    } else {
+                        log.warn(">>> [SCHEDULER] Email absent pour userId={}", userId);
+                    }
                 }
+
             } catch (Exception e) {
                 log.error("Erreur traitement certification {} : {}", cert.getId(), e.getMessage());
             }
         }
 
+        // Recalculer completeness pour les profils impactés
         int recalculatedCount = 0;
         for (Long userId : impactedUserIds) {
             try {
@@ -171,6 +216,7 @@ public class ProfileScheduler {
         }
 
         log.info(">>> [SCHEDULER] {} certifications expirées marquées.", expiredCount);
+        log.info(">>> [SCHEDULER] {} emails d'alerte envoyés.", emailSentCount);
         log.info(">>> [SCHEDULER] Completeness recalculé pour {} profil(s).", recalculatedCount);
     }
 }

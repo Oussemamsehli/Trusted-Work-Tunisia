@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   FreelancerProfile,
@@ -21,21 +21,33 @@ import {
 
 /**
  * Service HTTP — communication avec le freelancer-profile-service (port 8082)
+ * URLs alignées sur les controllers backend réels après audit complet.
  */
 @Injectable({
   providedIn: 'root'
 })
 export class FreelancerProfileService {
 
-  private readonly BASE_URL = 'http://localhost:8082/api';
-  private readonly IDENTITY_URL = 'http://localhost:8081/api/identity';
+  private readonly BASE_URL      = 'http://localhost:8082/api';
+  private readonly USER_BASE_URL = 'http://localhost:8081/api';
 
   constructor(private http: HttpClient) {}
 
-  // ===== PROFIL =====
+  // =========================================================
+  // PROFILE — /api/profiles
+  // =========================================================
+
+  // Alias vers user-service — utilisé par reviews.component pour résoudre les noms
+  getUserIdentity(userId: number): Observable<any> {
+    return this.http.get<any>(`${this.USER_BASE_URL}/identity/users/${userId}`);
+  }
 
   createProfile(data: Partial<FreelancerProfile>): Observable<FreelancerProfile> {
     return this.http.post<FreelancerProfile>(`${this.BASE_URL}/profiles`, data);
+  }
+
+  getProfileById(profileId: number): Observable<FreelancerProfile> {
+    return this.http.get<FreelancerProfile>(`${this.BASE_URL}/profiles/${profileId}`);
   }
 
   getProfileByUserId(userId: number): Observable<FreelancerProfile> {
@@ -44,6 +56,17 @@ export class FreelancerProfileService {
 
   updateProfile(userId: number, data: Partial<FreelancerProfile>): Observable<FreelancerProfile> {
     return this.http.put<FreelancerProfile>(`${this.BASE_URL}/profiles/user/${userId}`, data);
+  }
+
+  updateAvailability(userId: number, status: string): Observable<FreelancerProfile> {
+    return this.http.patch<FreelancerProfile>(
+      `${this.BASE_URL}/profiles/user/${userId}/availability?status=${status}`,
+      {}
+    );
+  }
+
+  deleteProfile(userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.BASE_URL}/profiles/user/${userId}`);
   }
 
   getCompleteness(userId: number): Observable<CompletenessResponse> {
@@ -58,10 +81,43 @@ export class FreelancerProfileService {
     return this.http.get<FreelancerProfile[]>(`${this.BASE_URL}/profiles/ranking/${region}`);
   }
 
-  // ===== SKILLS =====
+  searchProfiles(filters: {
+    region?: string;
+    availability?: 'AVAILABLE' | 'BUSY' | 'ON_VACATION' | '';
+    minRate?: number | null;
+    maxRate?: number | null;
+  }): Observable<FreelancerProfile[]> {
+    let params = new HttpParams();
+
+    if (filters.region) {
+      params = params.set('region', filters.region);
+    }
+
+    if (filters.availability) {
+      params = params.set('availability', filters.availability);
+    }
+
+    if (filters.minRate !== null && filters.minRate !== undefined) {
+      params = params.set('minRate', filters.minRate.toString());
+    }
+
+    if (filters.maxRate !== null && filters.maxRate !== undefined) {
+      params = params.set('maxRate', filters.maxRate.toString());
+    }
+
+    return this.http.get<FreelancerProfile[]>(`${this.BASE_URL}/profiles/search`, { params });
+  }
+
+  // =========================================================
+  // SKILLS — /api/skills
+  // =========================================================
 
   getMySkills(userId: number): Observable<Skill[]> {
     return this.http.get<Skill[]>(`${this.BASE_URL}/skills/user/${userId}`);
+  }
+
+  getSkillsByUserId(userId: number): Observable<Skill[]> {
+    return this.getMySkills(userId);
   }
 
   addSkill(
@@ -83,10 +139,23 @@ export class FreelancerProfileService {
     return this.http.get<SkillGapResponse>(`${this.BASE_URL}/skills/user/${userId}/gaps`);
   }
 
-  // ===== PORTFOLIO =====
+  updateExamScore(skillId: number, userId: number, examScore: number): Observable<Skill> {
+  return this.http.patch<Skill>(
+    `${this.BASE_URL}/skills/${skillId}/user/${userId}/exam-score`,
+    { examScore }
+  );
+}
+
+  // =========================================================
+  // PORTFOLIO — /api/portfolio
+  // =========================================================
 
   getMyPortfolio(userId: number): Observable<PortfolioItem[]> {
     return this.http.get<PortfolioItem[]>(`${this.BASE_URL}/portfolio/user/${userId}`);
+  }
+
+  getPortfolioByUserId(userId: number): Observable<PortfolioItem[]> {
+    return this.getMyPortfolio(userId);
   }
 
   getPinnedPortfolio(userId: number): Observable<PortfolioItem[]> {
@@ -106,17 +175,23 @@ export class FreelancerProfileService {
   }
 
   pinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
-    return this.http.put<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/pin`, {});
+    return this.http.patch<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/pin`, {});
   }
 
   unpinPortfolioItem(itemId: number, userId: number): Observable<PortfolioItem> {
-    return this.http.put<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/unpin`, {});
+    return this.http.patch<PortfolioItem>(`${this.BASE_URL}/portfolio/${itemId}/user/${userId}/unpin`, {});
   }
 
-  // ===== CERTIFICATIONS =====
+  // =========================================================
+  // CERTIFICATIONS — /api/certifications
+  // =========================================================
 
   getMyCertifications(userId: number): Observable<Certification[]> {
     return this.http.get<Certification[]>(`${this.BASE_URL}/certifications/user/${userId}`);
+  }
+
+  getCertificationsByUserId(userId: number): Observable<Certification[]> {
+    return this.getMyCertifications(userId);
   }
 
   addCertification(userId: number, data: Partial<Certification>): Observable<Certification> {
@@ -131,7 +206,9 @@ export class FreelancerProfileService {
     return this.http.delete<void>(`${this.BASE_URL}/certifications/${certId}/user/${userId}`);
   }
 
-  // ===== ENDORSEMENTS =====
+  // =========================================================
+  // ENDORSEMENTS — /api/endorsements
+  // =========================================================
 
   getEndorsementsBySkill(skillId: number): Observable<Endorsement[]> {
     return this.http.get<Endorsement[]>(`${this.BASE_URL}/endorsements/skill/${skillId}`);
@@ -139,19 +216,32 @@ export class FreelancerProfileService {
 
   addEndorsement(
     skillId: number,
-    data: { endorserId: number; comment?: string }
+    data: { endorserId: number; comment?: string | null }
   ): Observable<Endorsement> {
     return this.http.post<Endorsement>(`${this.BASE_URL}/endorsements/skill/${skillId}`, data);
+  }
+
+  endorseSkill(
+    skillId: number,
+    data: { endorserId: number; comment?: string | null }
+  ): Observable<Endorsement> {
+    return this.addEndorsement(skillId, data);
   }
 
   countEndorsements(skillId: number): Observable<number> {
     return this.http.get<number>(`${this.BASE_URL}/endorsements/skill/${skillId}/count`);
   }
 
-  // ===== REVIEWS =====
+  // =========================================================
+  // REVIEWS — /api/reviews
+  // =========================================================
 
   getReviews(profileId: number): Observable<ProfileReview[]> {
     return this.http.get<ProfileReview[]>(`${this.BASE_URL}/reviews/profiles/${profileId}`);
+  }
+
+  getVisibleReviews(profileId: number): Observable<ProfileReview[]> {
+    return this.getReviews(profileId);
   }
 
   getAverageRating(profileId: number): Observable<number> {
@@ -166,6 +256,10 @@ export class FreelancerProfileService {
     return this.http.post<ProfileReview>(`${this.BASE_URL}/reviews/profiles/${profileId}`, data);
   }
 
+  addProfileReview(profileId: number, data: AddProfileReviewRequest): Observable<ProfileReview> {
+    return this.addReview(profileId, data);
+  }
+
   replyToReview(
     reviewId: number,
     freelancerUserId: number,
@@ -177,10 +271,16 @@ export class FreelancerProfileService {
     );
   }
 
-  // ===== WORK EXPERIENCE =====
+  // =========================================================
+  // WORK EXPERIENCE — /api/work-experiences
+  // =========================================================
 
   getMyWorkExperiences(userId: number): Observable<WorkExperience[]> {
     return this.http.get<WorkExperience[]>(`${this.BASE_URL}/work-experiences/user/${userId}`);
+  }
+
+  getWorkExperiencesByUserId(userId: number): Observable<WorkExperience[]> {
+    return this.getMyWorkExperiences(userId);
   }
 
   getWorkExperienceById(expId: number, userId: number): Observable<WorkExperience> {
@@ -203,13 +303,9 @@ export class FreelancerProfileService {
     return this.http.get<number>(`${this.BASE_URL}/work-experiences/user/${userId}/total-duration`);
   }
 
-  // ===== RECOMMENDATIONS =====
-
-  getCareerPath(userId: number): Observable<CareerPathResponse> {
-    return this.http.get<CareerPathResponse>(`${this.BASE_URL}/recommendations/user/${userId}/career-path`);
-  }
-
-  // ===== EDUCATION =====
+  // =========================================================
+  // EDUCATION — /api/educations
+  // =========================================================
 
   getMyEducations(userId: number): Observable<Education[]> {
     return this.http.get<Education[]>(`${this.BASE_URL}/educations/user/${userId}`);
@@ -227,13 +323,22 @@ export class FreelancerProfileService {
     return this.http.delete<void>(`${this.BASE_URL}/educations/${eduId}/user/${userId}`);
   }
 
-  // ===== REPORTS =====
+  // =========================================================
+  // RECOMMENDATIONS — /api/recommendations
+  // =========================================================
 
-  /**
-   * Signaler un profil freelancer.
-   * Le backend attend : { reporterId, category, description }
-   * Les catégories valides : FAKE_SKILLS | SPAM | IDENTITY_THEFT | INAPPROPRIATE_CONTENT | OTHER
-   */
+  getCareerPath(userId: number): Observable<CareerPathResponse> {
+    return this.http.get<CareerPathResponse>(`${this.BASE_URL}/recommendations/user/${userId}/career-path`);
+  }
+
+  getSkillGapFromRecommendations(userId: number): Observable<SkillGapResponse> {
+    return this.http.get<SkillGapResponse>(`${this.BASE_URL}/recommendations/user/${userId}/skill-gap`);
+  }
+
+  // =========================================================
+  // REPORTS — /api/reports
+  // =========================================================
+
   reportProfile(
     profileId: number,
     data: { reporterId: number; category: string; description: string }
@@ -241,9 +346,79 @@ export class FreelancerProfileService {
     return this.http.post(`${this.BASE_URL}/reports/profile/${profileId}`, data);
   }
 
-  // ===== USER IDENTITY =====
+  // =========================================================
+  // PROFILE VIEWS — /api/views
+  // =========================================================
 
-  getUserIdentity(userId: number): Observable<any> {
-    return this.http.get<any>(`${this.IDENTITY_URL}/users/${userId}`);
+  recordProfileView(profileId: number, viewerId?: number): Observable<any> {
+    let params = new HttpParams();
+    if (viewerId !== undefined && viewerId !== null) {
+      params = params.set('viewerId', String(viewerId));
+    }
+    return this.http.post(`${this.BASE_URL}/views/profiles/${profileId}`, null, { params });
   }
+
+  getProfileViewsCount(profileId: number): Observable<number> {
+    return this.http.get<number>(`${this.BASE_URL}/views/profiles/${profileId}/count`);
+  }
+
+  getProfileViewsAnalytics(profileId: number): Observable<any> {
+    return this.http.get<any>(`${this.BASE_URL}/views/profiles/${profileId}/analytics`);
+  }
+
+  // =========================================================
+  // NOTIFICATIONS — /api/notifications
+  // =========================================================
+
+  getUnreadNotifications(userId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.BASE_URL}/notifications/user/${userId}/unread`);
+  }
+
+  getUnreadNotificationsCount(userId: number): Observable<number> {
+    return this.http.get<number>(`${this.BASE_URL}/notifications/user/${userId}/count`);
+  }
+
+  markAllNotificationsAsRead(userId: number): Observable<void> {
+    return this.http.put<void>(`${this.BASE_URL}/notifications/user/${userId}/read-all`, {});
+  }
+
+  // =========================================================
+  // USER SERVICE — endpoints publics (port 8081)
+  // Appelés directement sans passer par ApiService
+  // /users/{id}/trust-level est en permitAll() dans user-service SecurityConfig
+  // =========================================================
+
+  getUserTrustLevel(userId: number): Observable<{ userId: number; trustLevel: number }> {
+    return this.http.get<{ userId: number; trustLevel: number }>(
+      `${this.USER_BASE_URL}/users/${userId}/trust-level`
+    );
+  }
+
+
+  exportMyCv(userId: number): void {
+  this.http.get(`${this.BASE_URL}/export/profiles/${userId}/cv`, {
+    responseType: 'blob'
+  }).subscribe(blob => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cv-${userId}.pdf`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  });
 }
+
+
+// =========================================================
+// ML SERVICE — /api/ml
+// =========================================================
+
+getMlTrustScore(userId: number, kycVerified = false, twoFactorEnabled = false): Observable<any> {
+  return this.http.get<any>(
+    `${this.BASE_URL}/ml/profiles/user/${userId}/trust-score`,
+    { params: { kycVerified: String(kycVerified), twoFactorEnabled: String(twoFactorEnabled) } }
+  );
+}
+}
+
+

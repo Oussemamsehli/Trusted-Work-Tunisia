@@ -19,7 +19,7 @@ interface FreelancerViewModel extends FreelancerProfile {
 /**
  * Liste des profils publics — permet de naviguer vers le profil public
  * d'un freelancer pour l'endorser ou lui laisser un avis
- * Intégration inter-services : freelancer-profile-service (8082) + user-service (8081)
+ * Intégration inter-services : freelancer-profile-service + user-service
  */
 @Component({
   selector: 'app-freelancers-list',
@@ -31,6 +31,16 @@ export class FreelancersListComponent implements OnInit {
   freelancers: FreelancerViewModel[] = [];
   isLoading = false;
   errorMessage = '';
+  currentTime = '';
+
+private clockInterval: any;
+
+  selectedRegion = '';
+  selectedStatus: 'AVAILABLE' | 'BUSY' | 'ON_VACATION' | '' = '';
+  minRate: number | null = null;
+  maxRate: number | null = null;
+
+  availableRegions: string[] = [];
 
   constructor(
     private profileService: FreelancerProfileService,
@@ -48,16 +58,31 @@ export class FreelancersListComponent implements OnInit {
   }
 
   /**
-   * Charge les profils publics puis résout le nom de chaque freelancer
-   * via /identity/users/{userId} du user-service
+   * Charge les profils publics filtrés via le backend
+   * puis résout le nom de chaque freelancer via /identity/users/{userId}
    */
   loadFreelancers(): void {
     this.isLoading = true;
+    this.errorMessage = '';
 
-    this.profileService.getAllPublicProfiles().subscribe({
+    this.profileService.searchProfiles({
+      region: this.selectedRegion || undefined,
+      availability: this.selectedStatus || undefined,
+      minRate: this.minRate,
+      maxRate: this.maxRate
+    }).subscribe({
       next: (data) => {
         // Exclure son propre profil de la liste
         const others = data.filter(f => f.userId !== this.currentUserId);
+
+        // Alimenter la liste des régions depuis le résultat backend
+        this.availableRegions = [
+          ...new Set(
+            data
+              .map(f => f.region)
+              .filter((region): region is string => !!region && region.trim().length > 0)
+          )
+        ].sort((a, b) => a.localeCompare(b));
 
         if (others.length === 0) {
           this.freelancers = [];
@@ -75,25 +100,26 @@ export class FreelancersListComponent implements OnInit {
         forkJoin(userRequests).subscribe({
           next: (users) => {
             this.freelancers = others.map((f, index) => {
-              const user      = users[index] || {};
+              const user = users[index] || {};
               const firstName = (user.firstName || '').trim();
-              const lastName  = (user.lastName  || '').trim();
-              const fullName  = `${firstName} ${lastName}`.trim();
+              const lastName = (user.lastName || '').trim();
+              const fullName = `${firstName} ${lastName}`.trim();
 
               return {
                 ...f,
-                fullName:  fullName || f.headline || 'Freelancer',
-                initials:  this.buildInitials(firstName, lastName, f.headline)
+                fullName: fullName || f.headline || 'Freelancer',
+                initials: this.buildInitials(firstName, lastName, f.headline)
               };
             });
+
             this.isLoading = false;
           },
           error: () => {
             // Fail-open — afficher avec headline comme fallback
             this.freelancers = others.map(f => ({
               ...f,
-              fullName:  f.headline || 'Freelancer',
-              initials:  f.headline?.charAt(0)?.toUpperCase() || 'F'
+              fullName: f.headline || 'Freelancer',
+              initials: f.headline?.charAt(0)?.toUpperCase() || 'F'
             }));
             this.isLoading = false;
           }
@@ -106,15 +132,37 @@ export class FreelancersListComponent implements OnInit {
     });
   }
 
+  applyFilters(): void {
+    this.loadFreelancers();
+  }
+
+  resetFilters(): void {
+    this.selectedRegion = '';
+    this.selectedStatus = '';
+    this.minRate = null;
+    this.maxRate = null;
+    this.loadFreelancers();
+  }
+
   buildInitials(firstName: string, lastName: string, fallback?: string): string {
     const f = (firstName || '').trim();
-    const l = (lastName  || '').trim();
+    const l = (lastName || '').trim();
+
     if (f && l) return `${f.charAt(0)}${l.charAt(0)}`.toUpperCase();
-    if (f)      return f.charAt(0).toUpperCase();
+    if (f) return f.charAt(0).toUpperCase();
+
     return fallback?.charAt(0)?.toUpperCase() || 'F';
   }
 
   viewProfile(userId: number): void {
     this.router.navigate(['/app/profile/public', userId]);
   }
-}
+
+  updateClock(): void {
+  this.currentTime = new Date().toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+}}

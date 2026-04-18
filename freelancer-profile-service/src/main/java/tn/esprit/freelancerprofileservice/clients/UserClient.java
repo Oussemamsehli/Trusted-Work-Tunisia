@@ -12,61 +12,56 @@ public class UserClient {
     private final RestTemplate restTemplate;
 
     private static final String BASE_URL = "http://localhost:8081/api/users/";
+    // Endpoint identity — expose phone
+    private static final String IDENTITY_URL = "http://localhost:8081/api/identity/users/";
 
     public PublicUserResponse getPublicUser(Long userId) {
         try {
-            String url = BASE_URL + userId + "/public";
-            System.out.println(">>> USER CLIENT PUBLIC URL = " + url);
+            // Utiliser l'endpoint identity qui expose le phone
+            String url = IDENTITY_URL + userId;
+            System.out.println(">>> USER CLIENT IDENTITY URL = " + url);
 
-            PublicUserResponse response = restTemplate.getForObject(
-                    url,
-                    PublicUserResponse.class
-            );
+            PublicUserResponse response = restTemplate.getForObject(url, PublicUserResponse.class);
 
             if (response == null) {
-                System.out.println(">>> USER CLIENT PUBLIC - response is null");
-                return null;
+                System.out.println(">>> USER CLIENT - response is null, fallback legacy");
+                // Fallback vers l'ancien endpoint
+                url = BASE_URL + userId + "/public";
+                response = restTemplate.getForObject(url, PublicUserResponse.class);
             }
-
-            System.out.println(">>> USER CLIENT PUBLIC - response email = " + response.getEmail());
-            System.out.println(">>> USER CLIENT PUBLIC - firstName = " + response.getFirstName());
-            System.out.println(">>> USER CLIENT PUBLIC - lastName = " + response.getLastName());
 
             return response;
 
         } catch (Exception e) {
-            System.out.println(">>> USER CLIENT PUBLIC ERROR - " + e.getMessage());
+            System.out.println(">>> USER CLIENT ERROR - " + e.getMessage());
             return null;
         }
     }
 
     public String getUserFullName(Long userId) {
         PublicUserResponse response = getPublicUser(userId);
-
-        if (response == null) {
-            return "Unknown User";
-        }
-
+        if (response == null) return "Unknown User";
         String firstName = response.getFirstName() != null ? response.getFirstName().trim() : "";
-        String lastName = response.getLastName() != null ? response.getLastName().trim() : "";
-        String fullName = (firstName + " " + lastName).trim();
-
-        System.out.println(">>> USER CLIENT FULLNAME - fullName = " + fullName);
-
+        String lastName  = response.getLastName()  != null ? response.getLastName().trim()  : "";
+        String fullName  = (firstName + " " + lastName).trim();
         return fullName.isEmpty() ? "Unknown User" : fullName;
     }
 
     public String getUserEmail(Long userId) {
         PublicUserResponse response = getPublicUser(userId);
-
-        if (response == null || response.getEmail() == null) {
-            return null;
-        }
-
+        if (response == null || response.getEmail() == null) return null;
         String email = response.getEmail().trim();
-        System.out.println(">>> USER CLIENT EMAIL = " + email);
-
         return email.isBlank() ? null : email;
+    }
+
+    /**
+     * Récupère le numéro de téléphone d'un utilisateur pour l'envoi de SMS.
+     */
+    public String getUserPhone(Long userId) {
+        PublicUserResponse response = getPublicUser(userId);
+        if (response == null || response.getPhone() == null) return null;
+        String phone = response.getPhone().trim();
+        return phone.isBlank() ? null : phone;
     }
 
     @Data
@@ -76,6 +71,7 @@ public class UserClient {
         private String firstName;
         private String lastName;
         private String email;
+        private String phone; // ← AJOUT
         private String role;
         private String kycStatus;
         private int trustLevel;

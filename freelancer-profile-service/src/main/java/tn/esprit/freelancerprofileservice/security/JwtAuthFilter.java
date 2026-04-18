@@ -24,21 +24,40 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
+    // URLs qui ne nécessitent pas de JWT
+    private static final List<String> PUBLIC_PATHS = List.of(
+            "/api/ml/",
+            "/api/reviews/profiles/",
+            "/api/views/profiles/",
+            "/swagger-ui",
+            "/api-docs",
+            "/v3/api-docs",
+            "/ws/"
+    );
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+
+        // Laisser passer OPTIONS (preflight CORS)
+        if ("OPTIONS".equalsIgnoreCase(method)) {
+            return true;
+        }
+
+        // Laisser passer tous les endpoints publics
+        return PUBLIC_PATHS.stream().anyMatch(path::contains);
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // ✅ Laisser passer les requêtes preflight CORS
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         String authHeader = request.getHeader("Authorization");
 
-        // Vérifier la présence et le format du header Authorization
+        // Pas de token — on continue sans authentification
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;

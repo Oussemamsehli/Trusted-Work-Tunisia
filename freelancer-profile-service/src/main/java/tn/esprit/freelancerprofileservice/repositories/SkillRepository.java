@@ -2,6 +2,7 @@ package tn.esprit.freelancerprofileservice.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import tn.esprit.freelancerprofileservice.entities.Skill;
 import tn.esprit.freelancerprofileservice.enums.SkillCategory;
 import tn.esprit.freelancerprofileservice.enums.SkillLevel;
@@ -45,4 +46,8 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
             WHERE s.normalizedName = :normalizedName
             """)
     long countDistinctProfilesByNormalizedName(String normalizedName);
+
+
+    @Query("SELECT COALESCE(SUM(s.endorsementCount), 0) FROM Skill s WHERE s.profile.id = :profileId")
+    long sumEndorsementsByProfileId(@Param("profileId") Long profileId);
 }

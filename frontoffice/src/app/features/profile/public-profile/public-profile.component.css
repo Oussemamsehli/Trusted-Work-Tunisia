@@ -1,4 +1,4 @@
-public-profile.component.css
+/* public-profile.component.css */
 :host {
   display: block;
 }
@@ -1274,4 +1274,42 @@ textarea.form-control {
 .empty-reviews p {
   margin: 0;
   font-size: 14px;
+}
+/* ── Trust Score ML Badge ── */
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 8px;
+  border: 1.5px solid transparent;
+}
+.trust-badge--high   { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.trust-badge--medium { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.trust-badge--low    { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.trust-badge--unknown{ display: none; }
+
+.trust-badge__score {
+  background: rgba(0,0,0,0.08);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 11px;
+}
+
+/* ── Review Flag Badge ── */
+.review-flag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 6px;
 }

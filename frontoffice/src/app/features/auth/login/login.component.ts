@@ -72,9 +72,7 @@ export class LoginComponent implements OnInit {
 
         if (res.twoFactorRequired) {
           this.successMessage = 'Code de vérification requis.';
-          // CORRECTION : suppression du double stockage sessionStorage
-          // authService.login() appelle déjà savePendingTwoFactorState()
-          // qui sauvegarde 2fa_email, remember_me et 2fa_created_at
+          
           this.router.navigate(['/auth/2fa']);
           return;
         }

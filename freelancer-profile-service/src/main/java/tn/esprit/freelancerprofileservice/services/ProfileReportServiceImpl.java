@@ -18,7 +18,7 @@ import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
 import tn.esprit.freelancerprofileservice.repositories.NotificationRepository;
 import tn.esprit.freelancerprofileservice.repositories.ProfileReportRepository;
-
+import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,6 +28,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class ProfileReportServiceImpl implements IProfileReportService {
 
     private static final long AUTO_SUSPENSION_THRESHOLD = 5;
@@ -41,6 +42,8 @@ public class ProfileReportServiceImpl implements IProfileReportService {
     private final SimpMessagingTemplate messagingTemplate;
     private final UserClient userClient;
     private final IEmailService emailService;
+    private final SmsService smsService;
+
 
     @Override
     public ProfileReport reportProfile(Long profileId, Long reporterId,
@@ -159,6 +162,10 @@ public class ProfileReportServiceImpl implements IProfileReportService {
         );
 
         sendStatusEmailToReporter(updatedReport);
+        // Envoi SMS si rapport résolu ou rejeté
+        if (newStatus == ReportStatus.RESOLVED || newStatus == ReportStatus.REJECTED) {
+            sendReportResolvedSms(updatedReport);
+        }
 
         refreshProfileModerationState(updatedReport.getProfile());
         sendReportStatusUpdatedNotification(updatedReport);
@@ -357,5 +364,29 @@ public class ProfileReportServiceImpl implements IProfileReportService {
                 .riskScore(profile.getRiskScore())
                 .suspended(profile.getSuspended())
                 .build();
+    }
+
+    // =========================================================
+// SMS
+// =========================================================
+
+    private void sendReportResolvedSms(ProfileReport report) {
+        try {
+            Long freelancerUserId = report.getProfile().getUserId();
+            // Récupérer le prénom pour personnaliser le SMS
+            String firstName = userClient.getUserFullName(freelancerUserId).split(" ")[0];
+
+            smsService.sendReportResolvedSms(
+                    null,        // ignoré — numéro fixe dans SmsService
+                    firstName,
+                    report.getId(),
+                    report.getStatus().name()
+            );
+
+            log.info(">>> SMS lancé pour rapport #{}", report.getId());
+
+        } catch (Exception e) {
+            log.error(">>> SMS ERROR — {}", e.getMessage());
+        }
     }
 }

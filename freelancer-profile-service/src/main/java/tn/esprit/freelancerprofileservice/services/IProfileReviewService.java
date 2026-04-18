@@ -4,6 +4,7 @@ import tn.esprit.freelancerprofileservice.dto.request.AddReviewRequest;
 import tn.esprit.freelancerprofileservice.dto.request.ReplyToReviewRequest;
 import tn.esprit.freelancerprofileservice.dto.response.ProfileReviewSummaryResponse;
 import tn.esprit.freelancerprofileservice.dto.response.ReviewResponse;
+import tn.esprit.freelancerprofileservice.entities.ProfileReview;
 
 import java.util.List;
 
@@ -18,4 +19,10 @@ public interface IProfileReviewService {
     ProfileReviewSummaryResponse getReviewSummary(Long profileId);
 
     ReviewResponse replyToReview(Long reviewId, Long freelancerUserId, ReplyToReviewRequest request);
+
+    void hideReview(Long reviewId);
+
+    void deleteReview(Long reviewId);
+
+    public ReviewResponse restoreReview(Long reviewId);
 }

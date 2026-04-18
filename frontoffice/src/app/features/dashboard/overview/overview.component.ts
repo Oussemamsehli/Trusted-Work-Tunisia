@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
-import { finalize, forkJoin, catchError, of } from 'rxjs';
+import { finalize, catchError, of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
-import { UserService, UserProfileResponse } from '../../../core/services/user.service';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 import { DashboardUser } from '../../../core/models/user.model';
 import { FreelancerProfile } from '../../../core/models/freelancer.model';
@@ -15,9 +13,9 @@ import { FreelancerProfile } from '../../../core/models/freelancer.model';
 export class OverviewComponent implements OnInit {
 
   /* ─── États de chargement ─── */
-  loadingUser       = true;
+  loadingUser        = true;
   loadingFreelancers = true;
-  userError         = '';
+  userError          = '';
 
   /* ─── Données utilisateur connecté ─── */
   connectedUser: DashboardUser = {
@@ -25,51 +23,50 @@ export class OverviewComponent implements OnInit {
     lastName: '', email: '', role: ''
   };
 
-  trustLevel        = 1;
-  kycStatus         = 'PENDING';
-  twoFactorEnabled  = false;
-  livenessPassed    = false;
+  trustLevel       = 1;
+  kycStatus        = 'PENDING';
+  twoFactorEnabled = false;
+  livenessPassed   = false;
 
-  /* ─── Top Freelancers (données réelles via API) ─── */
+  /* ─── Top Freelancers ─── */
   topFreelancers: FreelancerProfile[] = [];
 
-  /* ─── Tendances marché (statiques — représentation métier) ─── */
+  /* ─── Tendances marché (statiques) ─── */
   trends = [
-    { label: 'Développement Web',  growth: 34, icon: 'fa-code',        hot: true  },
-    { label: 'Design UI/UX',       growth: 28, icon: 'fa-pen-nib',     hot: true  },
-    { label: 'Data Science / AI',  growth: 51, icon: 'fa-brain',       hot: true  },
-    { label: 'DevOps / Cloud',     growth: 42, icon: 'fa-cloud',       hot: false },
-    { label: 'Rédaction Content',  growth: 19, icon: 'fa-feather',     hot: false },
-    { label: 'Marketing Digital',  growth: 23, icon: 'fa-chart-bar',   hot: false }
+    { label: 'Développement Web',  growth: 34, icon: 'fa-code',      hot: true  },
+    { label: 'Design UI/UX',       growth: 28, icon: 'fa-pen-nib',   hot: true  },
+    { label: 'Data Science / AI',  growth: 51, icon: 'fa-brain',     hot: true  },
+    { label: 'DevOps / Cloud',     growth: 42, icon: 'fa-cloud',     hot: false },
+    { label: 'Rédaction Content',  growth: 19, icon: 'fa-feather',   hot: false },
+    { label: 'Marketing Digital',  growth: 23, icon: 'fa-chart-bar', hot: false }
   ];
 
   /* ─── Offres recommandées (statiques — module Job Board = module 03) ─── */
   featuredJobs = [
-    { title: 'Développeur Angular Senior',    company: 'TechStart Tunis',  budget: '2 500 – 4 000 DT', tags: ['Angular','TypeScript','Spring Boot'], urgency: 'Urgent',  posted: 'Il y a 2h',  trustRequired: 3 },
-    { title: 'Designer UI/UX — App Mobile',   company: 'Fintech Labs',     budget: '1 800 – 2 800 DT', tags: ['Figma','Mobile','Prototypage'],       urgency: '',        posted: 'Il y a 5h',  trustRequired: 2 },
-    { title: 'Data Analyst — Dashboard BI',   company: 'Retail Group TN',  budget: '3 000 – 5 000 DT', tags: ['Python','Power BI','SQL'],            urgency: 'Premium', posted: 'Il y a 1j',  trustRequired: 4 },
-    { title: 'Développeur Full Stack React',  company: 'Startup Hub Sfax', budget: '2 000 – 3 500 DT', tags: ['React','Node.js','MySQL'],            urgency: '',        posted: 'Il y a 3h',  trustRequired: 2 }
+    { title: 'Développeur Angular Senior',   company: 'TechStart Tunis',  budget: '2 500 – 4 000 DT', tags: ['Angular','TypeScript','Spring Boot'], urgency: 'Urgent',  posted: 'Il y a 2h', trustRequired: 3 },
+    { title: 'Designer UI/UX — App Mobile',  company: 'Fintech Labs',     budget: '1 800 – 2 800 DT', tags: ['Figma','Mobile','Prototypage'],       urgency: '',        posted: 'Il y a 5h', trustRequired: 2 },
+    { title: 'Data Analyst — Dashboard BI',  company: 'Retail Group TN',  budget: '3 000 – 5 000 DT', tags: ['Python','Power BI','SQL'],            urgency: 'Premium', posted: 'Il y a 1j', trustRequired: 4 },
+    { title: 'Développeur Full Stack React', company: 'Startup Hub Sfax', budget: '2 000 – 3 500 DT', tags: ['React','Node.js','MySQL'],            urgency: '',        posted: 'Il y a 3h', trustRequired: 2 }
   ];
 
-  /* ─── Activité récente ─── */
+  /* ─── Activité récente (statique) ─── */
   recentActivity = [
-    { icon: 'fa-circle-check',  color: '#22c55e', text: 'KYC approuvé avec succès',      time: "Aujourd'hui"   },
-    { icon: 'fa-shield-halved', color: '#3b82f6', text: 'Trust Level mis à jour : 4/5',  time: "Aujourd'hui"   },
-    { icon: 'fa-id-card',       color: '#f59e0b', text: 'Documents KYC soumis',           time: 'Hier'          },
-    { icon: 'fa-user-plus',     color: '#8b5cf6', text: 'Compte créé sur TrustedWork',   time: 'Cette semaine' }
+    { icon: 'fa-circle-check',  color: '#22c55e', text: 'KYC approuvé avec succès',     time: "Aujourd'hui"   },
+    { icon: 'fa-shield-halved', color: '#3b82f6', text: 'Trust Level mis à jour : 4/5', time: "Aujourd'hui"   },
+    { icon: 'fa-id-card',       color: '#f59e0b', text: 'Documents KYC soumis',          time: 'Hier'          },
+    { icon: 'fa-user-plus',     color: '#8b5cf6', text: 'Compte créé sur TrustedWork',  time: 'Cette semaine' }
   ];
 
-  /* ─── Stats plateforme ─── */
+  /* ─── Stats plateforme (statiques) ─── */
   platformStats = [
-    { label: 'Freelancers actifs', value: '12 400+', icon: 'fa-users',          color: '#f97316' },
-    { label: 'Missions publiées',  value: '3 200+',  icon: 'fa-briefcase',      color: '#3b82f6' },
-    { label: 'Contrats signés',    value: '8 900+',  icon: 'fa-file-contract',  color: '#22c55e' },
-    { label: 'Taux satisfaction',  value: '97%',     icon: 'fa-star',           color: '#f59e0b' }
+    { label: 'Freelancers actifs', value: '12 400+', icon: 'fa-users',         color: '#f97316' },
+    { label: 'Missions publiées',  value: '3 200+',  icon: 'fa-briefcase',     color: '#3b82f6' },
+    { label: 'Contrats signés',    value: '8 900+',  icon: 'fa-file-contract', color: '#22c55e' },
+    { label: 'Taux satisfaction',  value: '97%',     icon: 'fa-star',          color: '#f59e0b' }
   ];
 
   constructor(
     private authService: AuthService,
-    private userService: UserService,
     private freelancerService: FreelancerProfileService
   ) {}
 
@@ -79,45 +76,43 @@ export class OverviewComponent implements OnInit {
     this.loadTopFreelancers();
   }
 
-  /* ─── Initialisation rapide depuis le token JWT ─── */
+  /* ─── Initialisation rapide depuis le token JWT — aucun appel API ─── */
   private initializeConnectedUser(): void {
     const authUser = this.authService.getCurrentAuthUser();
     if (authUser) {
       this.connectedUser = {
-        id: authUser.userId,
-        fullName: authUser.email,
+        id:        authUser.userId,
+        fullName:  this.extractDisplayName(authUser.email),
         firstName: this.extractDisplayName(authUser.email),
-        lastName: '', email: authUser.email, role: authUser.role
+        lastName:  '',
+        email:     authUser.email,
+        role:      authUser.role
       };
     }
   }
 
-  /* ─── Chargement du profil utilisateur complet ─── */
+  /**
+   * Chargement du trustLevel via l'endpoint public /users/{id}/trust-level.
+   * ✅ Endpoint en permitAll() — pas de risque de 403.
+   * Remplace l'ancien appel à /users/me qui retournait 403.
+   */
   private loadProfileData(): void {
+    const authUser = this.authService.getCurrentAuthUser();
+
+    if (!authUser?.userId) {
+      this.loadingUser = false;
+      return;
+    }
+
     this.loadingUser = true;
-    this.userService.getMyProfile()
-      .pipe(finalize(() => this.loadingUser = false))
-      .subscribe({
-        next: (data: UserProfileResponse) => {
-          const firstName = data.firstName || this.connectedUser.firstName;
-          const lastName  = data.lastName  || '';
-          this.connectedUser = {
-            id: (data as any).id ?? this.connectedUser.id,
-            fullName: `${firstName} ${lastName}`.trim() || this.connectedUser.fullName,
-            firstName, lastName,
-            email: data.email || this.connectedUser.email,
-            role:  data.role  || this.connectedUser.role,
-            cin:   data.cin
-          };
-          this.trustLevel       = (data as any).trustLevel     ?? 1;
-          this.kycStatus        = data.kycStatus                ?? 'PENDING';
-          this.twoFactorEnabled = data.twoFactorEnabled         ?? false;
-          this.livenessPassed   = (data as any).livenessPassed  ?? false;
-        },
-        error: (err: HttpErrorResponse) => {
-          this.userError = 'Impossible de charger le profil.';
-          console.error(err);
-        }
+
+    this.freelancerService.getUserTrustLevel(authUser.userId)
+      .pipe(
+        catchError(() => of({ userId: authUser.userId, trustLevel: 1 })),
+        finalize(() => this.loadingUser = false)
+      )
+      .subscribe((data: any) => {
+        this.trustLevel = Number(data?.trustLevel ?? 1);
       });
   }
 
@@ -130,7 +125,6 @@ export class OverviewComponent implements OnInit {
         finalize(() => this.loadingFreelancers = false)
       )
       .subscribe((profiles: FreelancerProfile[]) => {
-        // Trier par completenessScore décroissant, prendre les 4 meilleurs
         this.topFreelancers = profiles
           .filter(p => p.visibility === 'PUBLIC')
           .sort((a, b) => (b.completenessScore ?? 0) - (a.completenessScore ?? 0))
@@ -157,7 +151,6 @@ export class OverviewComponent implements OnInit {
     return map[this.kycStatus] || this.kycStatus;
   }
 
-  /* ─── Score de complétion calculé dynamiquement ─── */
   get profileCompletionScore(): number {
     let s = 20;
     if (this.kycStatus !== 'PENDING')  s += 20;
@@ -167,7 +160,6 @@ export class OverviewComponent implements OnInit {
     return s;
   }
 
-  /* ─── Prochaine action recommandée selon l'état du profil ─── */
   get nextAction(): { label: string; route: string; icon: string } {
     if (this.kycStatus === 'PENDING')   return { label: 'Soumettre mon KYC',      route: '/app/profile/kyc',            icon: 'fa-id-card'        };
     if (this.kycStatus === 'IN_REVIEW') return { label: 'Voir mon dossier KYC',   route: '/app/profile/kyc',            icon: 'fa-hourglass-half' };
@@ -176,11 +168,8 @@ export class OverviewComponent implements OnInit {
     return                                     { label: 'Explorer les offres',     route: '/app/dashboard',              icon: 'fa-briefcase'      };
   }
 
-  canApply(trustRequired: number): boolean {
-    return this.trustLevel >= trustRequired;
-  }
+  canApply(trustRequired: number): boolean { return this.trustLevel >= trustRequired; }
 
-  /* ─── Disponibilité traduite ─── */
   getAvailabilityLabel(status: string): string {
     const map: Record<string, string> = {
       AVAILABLE: 'Disponible', BUSY: 'Occupé', ON_VACATION: 'En congé'
@@ -195,7 +184,6 @@ export class OverviewComponent implements OnInit {
     return map[status] || '#94a3b8';
   }
 
-  /* ─── Initiales avatar fallback ─── */
   getInitials(headline: string): string {
     if (!headline) return '?';
     const parts = headline.split(' ');
@@ -204,13 +192,11 @@ export class OverviewComponent implements OnInit {
       : headline.substring(0, 2).toUpperCase();
   }
 
-  /* ─── Salutation selon l'heure ─── */
   getGreeting(): string {
     const h = new Date().getHours();
     return h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
   }
 
-  /* ─── Largeur barre de tendance ─── */
   getTrendBarWidth(growth: number): string {
     return Math.min(growth * 1.5, 100) + '%';
   }

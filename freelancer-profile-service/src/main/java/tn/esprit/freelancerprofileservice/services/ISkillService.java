@@ -1,5 +1,6 @@
 package tn.esprit.freelancerprofileservice.services;
 
+import tn.esprit.freelancerprofileservice.dto.response.SkillResponse;
 import tn.esprit.freelancerprofileservice.entities.Skill;
 
 import java.util.List;
@@ -13,4 +14,7 @@ public interface ISkillService {
     void deleteSkill(Long skillId, Long userId);
 
     Skill upgradeSkillLevelIfEligible(Long skillId);
+
+
+    SkillResponse updateExamScore(Long skillId, Long userId, Double examScore);
 }

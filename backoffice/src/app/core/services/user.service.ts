@@ -68,9 +68,8 @@ export interface SuspensionRecordDTO {
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private baseUrl = 'http://localhost:8081/api';
-
-  constructor(private http: HttpClient) {}
+  private baseUrl = '/api';
+    constructor(private http: HttpClient) {}
 
   private getHeaders(): HttpHeaders {
     const token =
@@ -94,7 +93,7 @@ export class UserService {
    * Utilisé pour résoudre les noms dans les signalements.
    */
   getUserById(id: number): Observable<UserDTO> {
-    return this.http.get<UserDTO>(`${this.baseUrl}/admin/users/${id}`, {
+    return this.http.get<UserDTO>(`${this.baseUrl}/identity/users/${id}`, {
       headers: this.getHeaders()
     });
   }

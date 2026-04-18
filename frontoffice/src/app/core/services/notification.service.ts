@@ -89,27 +89,26 @@ export class NotificationService implements OnDestroy {
    * Joue un son "ding" via Web Audio API — aucun fichier externe requis.
    */
   private jouerSon(): void {
-    try {
-      const ctx  = new AudioContext();
+  try {
+    const ctx  = new AudioContext();
+    //  Resume obligatoire si le contexte est suspendu (politique Chrome autoplay)
+    ctx.resume().then(() => {
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
-
       osc.connect(gain);
       gain.connect(ctx.destination);
-
       osc.type = 'sine';
       osc.frequency.setValueAtTime(880,  ctx.currentTime);
       osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
-
       gain.gain.setValueAtTime(0.3, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.4);
-    } catch (e) {
-      console.warn('[NotificationService] Son non disponible :', e);
-    }
+    });
+  } catch (e) {
+    // Son non disponible — ne pas bloquer
   }
+}
 
   resetCount(): void {
     const user = this.authService.getCurrentAuthUser();

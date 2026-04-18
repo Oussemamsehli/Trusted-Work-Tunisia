@@ -94,7 +94,7 @@ export class ReviewsComponent implements OnInit {
       }
 
       this.profileService.getUserIdentity(clientId).subscribe({
-        next: (user) => {
+        next: (user: any) => {
           const fullName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
           const finalName = fullName || `Client #${clientId}`;
 

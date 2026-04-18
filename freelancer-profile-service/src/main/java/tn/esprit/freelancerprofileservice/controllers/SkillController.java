@@ -83,4 +83,24 @@ public class SkillController {
                 .endorsementCount(skill.getEndorsementCount())
                 .build();
     }
+
+
+    /**
+     * Mise à jour du score d'examen d'une compétence.
+     * Recalcul automatique du score d'authenticité après mise à jour.
+     */
+    @PatchMapping("/{skillId}/user/{userId}/exam-score")
+    public ResponseEntity<SkillResponse> updateExamScore(
+            @PathVariable Long skillId,
+            @PathVariable Long userId,
+            @RequestBody java.util.Map<String, Double> body) {
+
+        Double examScore = body.get("examScore");
+
+        if (examScore == null || examScore < 0 || examScore > 100) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok(skillService.updateExamScore(skillId, userId, examScore));
+    }
 }

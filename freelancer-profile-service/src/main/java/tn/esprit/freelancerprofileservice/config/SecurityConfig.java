@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                        // Swagger
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -43,17 +44,27 @@ public class SecurityConfig {
                                 "/v3/api-docs/**"
                         ).permitAll()
 
+                        // WebSocket
                         .requestMatchers("/ws/**").permitAll()
 
+                        // ML Service — accès public pour démo jury
+                        .requestMatchers("/api/ml/**").permitAll()
+
+                        // Profils — lecture publique
                         .requestMatchers(HttpMethod.GET, "/api/profiles").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/profiles/{profileId}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/profiles/ranking/**").permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/profile/**").permitAll()
+                        // Reviews — lecture et écriture publiques
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/reviews/**").permitAll()
 
+                        // Vues profil
                         .requestMatchers(HttpMethod.POST, "/api/views/profiles/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/views/profiles/**").permitAll()
 
+                        // Notifications — authentifié
                         .requestMatchers("/api/notifications/**").authenticated()
 
                         .anyRequest().authenticated()

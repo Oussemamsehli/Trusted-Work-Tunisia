@@ -11,29 +11,57 @@ import { AuthService } from './auth.service';
 @Injectable({ providedIn: 'root' })
 export class NotificationService implements OnDestroy {
 
-  private readonly BASE_URL = 'http://localhost:8082/api/notifications';
-
+  private readonly BASE_URL = '/api/notifications';
   // Convention : userId = 0 pour les notifications admin globales
   private readonly ADMIN_USER_ID = 0;
 
-  private countSubject = new BehaviorSubject<number>(0);
+  private countSubject    = new BehaviorSubject<number>(0);
   private messagesSubject = new BehaviorSubject<any[]>([]);
 
-  count$ = this.countSubject.asObservable();
+  count$    = this.countSubject.asObservable();
   messages$ = this.messagesSubject.asObservable();
 
   private stompClient: any = null;
 
+  /**
+   * AudioContext lazy — créé seulement après une interaction utilisateur
+   * pour respecter la politique autoplay de Chrome.
+   */
+  private audioCtx: AudioContext | null = null;
+
   constructor(
     private authService: AuthService,
     private http: HttpClient
-  ) {}
+  ) {
+    // Initialiser l'AudioContext au premier click utilisateur
+    this.initAudioContextOnInteraction();
+  }
+
+  /**
+   * Enregistre un listener unique sur le premier geste utilisateur
+   * pour débloquer l'AudioContext Chrome.
+   */
+  private initAudioContextOnInteraction(): void {
+    const handler = () => {
+      if (!this.audioCtx) {
+        this.audioCtx = new AudioContext();
+      }
+      // Resume si suspendu
+      if (this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume();
+      }
+      // Retirer le listener après la première interaction
+      document.removeEventListener('click', handler);
+      document.removeEventListener('keydown', handler);
+    };
+
+    document.addEventListener('click', handler);
+    document.addEventListener('keydown', handler);
+  }
 
   connect(): void {
     const userId = this.authService.getUserId();
-    const email = this.authService.getEmail();
 
-    // Vérifie juste qu'un admin est bien connecté
     if (!userId || userId <= 0) {
       return;
     }
@@ -106,26 +134,34 @@ export class NotificationService implements OnDestroy {
     ).subscribe();
   }
 
+  /**
+   * Son de notification — utilise l'AudioContext lazy-initialized.
+   * Silencieux si l'utilisateur n'a pas encore interagi avec la page.
+   */
   private jouerSon(): void {
     try {
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+      // AudioContext pas encore disponible — attendre l'interaction utilisateur
+      if (!this.audioCtx || this.audioCtx.state === 'suspended') {
+        return;
+      }
+
+      const osc  = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      gain.connect(this.audioCtx.destination);
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+      osc.frequency.setValueAtTime(880,  this.audioCtx.currentTime);
+      osc.frequency.setValueAtTime(1100, this.audioCtx.currentTime + 0.1);
 
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.3, this.audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.4);
 
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.4);
+      osc.start(this.audioCtx.currentTime);
+      osc.stop(this.audioCtx.currentTime + 0.4);
     } catch (e) {
-      // silencieux
+      // Silencieux — le son est non-critique
     }
   }
 
@@ -135,5 +171,6 @@ export class NotificationService implements OnDestroy {
 
   ngOnDestroy(): void {
     this.stompClient?.deactivate();
+    this.audioCtx?.close();
   }
 }

@@ -1,6 +1,7 @@
 package tn.esprit.freelancerprofileservice.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import tn.esprit.freelancerprofileservice.dto.request.AddReviewRequest;
@@ -31,6 +32,8 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
+
 public class ProfileReviewServiceImpl implements IProfileReviewService {
 
     private final ProfileReviewRepository reviewRepository;
@@ -38,39 +41,74 @@ public class ProfileReviewServiceImpl implements IProfileReviewService {
     private final ReviewAnalysisService reviewAnalysisService;
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationRepository notificationRepository;
+    private final MlServiceClient mlServiceClient;
+
 
     @Override
     public ReviewResponse addReview(Long profileId, AddReviewRequest request) {
+        // Vérification existence du profil
         FreelancerProfile profile = profileRepository.findById(profileId)
                 .orElseThrow(() -> new ResourceNotFoundException("Profil", profileId));
 
+        // Un freelancer ne peut pas s'auto-évaluer
         if (profile.getUserId() != null && profile.getUserId().equals(request.getClientId())) {
             throw new InvalidDataException("Vous ne pouvez pas laisser un avis sur votre propre profil");
         }
 
+        // Un client ne peut laisser qu'un seul avis par profil
         if (reviewRepository.existsByClientIdAndProfileId(request.getClientId(), profileId)) {
             throw new DuplicateResourceException("Vous avez déjà laissé un avis sur ce profil");
         }
 
+        // Validation de la note
         if (request.getRating() < 1 || request.getRating() > 5) {
             throw new InvalidDataException("La note doit être entre 1 et 5");
         }
 
-        ReviewAnalysisResult analysisResult =
-                reviewAnalysisService.analyze(request.getRating(), request.getComment());
+        // -------------------------------------------------------
+        // Analyse ML du sentiment via micro-service Python Flask
+        // Remplace l'ancienne détection par mots-clés statiques
+        // -------------------------------------------------------
+        boolean flagged = false;
+        String flagReason = null;
 
+        MlServiceClient.SentimentResult sentiment =
+                mlServiceClient.predictSentiment(request.getComment());
+
+        if (!"UNKNOWN".equals(sentiment.sentiment())) {
+            // Incohérence : note haute (4-5) avec commentaire négatif
+            if (request.getRating() >= 4 && "NEGATIVE".equals(sentiment.sentiment())) {
+                flagged = true;
+                flagReason = "ML_INCONSISTENT_HIGH_RATING_NEGATIVE_SENTIMENT";
+            }
+            // Incohérence : note basse (1-2) avec commentaire positif
+            if (request.getRating() <= 2 && "POSITIVE".equals(sentiment.sentiment())) {
+                flagged = true;
+                flagReason = "ML_INCONSISTENT_LOW_RATING_POSITIVE_SENTIMENT";
+            }
+        } else {
+            // Service ML indisponible — fallback sur l'ancienne logique mots-clés
+            log.warn("[ML] Fallback vers analyse par mots-clés pour profileId={}", profileId);
+            ReviewAnalysisResult analysisResult =
+                    reviewAnalysisService.analyze(request.getRating(), request.getComment());
+            flagged = analysisResult.isFlagged();
+            flagReason = analysisResult.getFlagReason();
+        }
+
+        // Construction et sauvegarde de l'avis
         ProfileReview review = ProfileReview.builder()
                 .clientId(request.getClientId())
                 .profile(profile)
                 .rating(request.getRating())
                 .comment(request.getComment())
                 .status(ReviewStatus.VISIBLE)
-                .flagged(analysisResult.isFlagged())
-                .flagReason(analysisResult.getFlagReason())
+                .flagged(flagged)
+                .flagReason(flagReason)
                 .build();
 
         ProfileReview savedReview = reviewRepository.save(review);
 
+        // Notifications persistée + WebSocket
         persisterNotification(profile, savedReview);
         envoyerNotificationWebSocket(profile, savedReview);
 

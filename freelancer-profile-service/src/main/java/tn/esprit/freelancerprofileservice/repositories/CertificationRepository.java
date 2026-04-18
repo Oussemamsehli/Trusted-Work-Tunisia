@@ -32,4 +32,6 @@ public interface CertificationRepository extends JpaRepository<Certification, Lo
              AND c.isExpired = false
            """)
     List<Certification> findExpiringCertifications(LocalDate deadline);
+
+
 }

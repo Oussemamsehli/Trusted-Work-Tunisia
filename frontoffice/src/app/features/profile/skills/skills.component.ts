@@ -6,7 +6,9 @@ import { Skill, SkillCategory } from '../../../core/models/freelancer.model';
 @Component({
   selector: 'app-skills',
   templateUrl: './skills.component.html',
-  styleUrls: ['./skills.component.css']
+  styleUrls: [
+    './skills.component.css',           // ✅ Votre CSS existant
+  ]
 })
 export class SkillsComponent implements OnInit {
   skills: Skill[] = [];

@@ -1,6 +1,8 @@
 package tn.esprit.freelancerprofileservice.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import tn.esprit.freelancerprofileservice.entities.WorkExperience;
 
 import java.time.LocalDate;
@@ -34,4 +36,7 @@ public interface WorkExperienceRepository extends JpaRepository<WorkExperience, 
             LocalDate startDate,
             Long id
     );
+
+    @Query("SELECT COALESCE(SUM(TIMESTAMPDIFF(MONTH, w.startDate, COALESCE(w.endDate, CURRENT_DATE))), 0) FROM WorkExperience w WHERE w.profile.id = :profileId")
+    long sumMonthsByProfileId(@Param("profileId") Long profileId);
 }

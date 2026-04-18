@@ -174,9 +174,10 @@
               </td>
   
               <td>
-                <!-- Badge flagged si incohérence détectée -->
-                <span *ngIf="review.flagged" class="badge badge-danger badge-flag" title="Incohérence détectée">
-                  <i class="fas fa-flag"></i> Suspect
+                <!-- Badge ML Flagged -->
+                <span class="badge badge-ml-flagged" *ngIf="review.flagged"
+                      [title]="review.flagReason || 'Suspect'">
+                  🤖 ML Suspect
                 </span>
                 <span class="badge" [ngClass]="'badge-' + getStatusClass(review.status)">
                   {{ getStatusLabel(review.status) }}

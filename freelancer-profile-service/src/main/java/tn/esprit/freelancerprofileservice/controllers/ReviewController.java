@@ -4,11 +4,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.freelancerprofileservice.dto.request.AddReviewRequest;
 import tn.esprit.freelancerprofileservice.dto.request.ReplyToReviewRequest;
 import tn.esprit.freelancerprofileservice.dto.response.ProfileReviewSummaryResponse;
 import tn.esprit.freelancerprofileservice.dto.response.ReviewResponse;
+import tn.esprit.freelancerprofileservice.entities.ProfileReview;
 import tn.esprit.freelancerprofileservice.services.IProfileReviewService;
 
 import java.util.List;
@@ -22,6 +24,8 @@ import java.util.List;
  * - Obtenir la moyenne
  * - Obtenir le summary (moyenne + distribution)
  * - Répondre à un avis
+ * - Masquer un avis (admin)
+ * - Supprimer un avis (admin)
  */
 @RestController
 @RequestMapping("/api/reviews")
@@ -89,5 +93,31 @@ public class ReviewController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * PATCH /api/reviews/{reviewId}/hide
+     */
+    @PatchMapping("/{reviewId}/hide")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> hideReview(@PathVariable Long reviewId) {
+        reviewService.hideReview(reviewId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * DELETE /api/reviews/{reviewId}
+     */
+    @DeleteMapping("/{reviewId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
+        reviewService.deleteReview(reviewId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ReviewResponse> restoreReview(@PathVariable Long id) {
+        return ResponseEntity.ok(reviewService.restoreReview(id));
     }
 }
