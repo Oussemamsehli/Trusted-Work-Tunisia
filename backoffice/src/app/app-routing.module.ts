@@ -19,6 +19,8 @@ import { ProfileDetailComponent } from './features/freelancer/profile-detail/pro
 import { ReportsManagementComponent } from './features/freelancer/reports-management/reports-management.component';
 import { ReviewsManagementComponent } from './features/freelancer/reviews-management/reviews-management.component';
 import { PlatformStatsComponent } from './features/freelancer/platform-stats/platform-stats.component';
+import { TrendingProfilesComponent } from './features/freelancer/trending-profiles/trending-profiles.component';
+
 
 const routes: Routes = [
   {
@@ -47,6 +49,8 @@ const routes: Routes = [
       { path: 'freelancers/reports',  component: ReportsManagementComponent },
       { path: 'freelancers/reviews',  component: ReviewsManagementComponent },
       { path: 'freelancers/stats',    component: PlatformStatsComponent },
+      { path: 'freelancers/trending', component: TrendingProfilesComponent },
+
       // ⚠️ Route dynamique en DERNIER — sinon elle capture 'reports', 'reviews', 'stats'
       { path: 'freelancers/:id',      component: ProfileDetailComponent },
 
