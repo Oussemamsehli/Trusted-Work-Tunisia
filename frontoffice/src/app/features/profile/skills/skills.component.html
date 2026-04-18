@@ -3,431 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mes Compétences | Ultra Premium Design</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    
+    <title>Ultra Premium Edit Button Demo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="ultra-premium-edit-button.css">
 </head>
-
 <body>
-    <!-- Animated Background -->
-    <div class="animated-bg"></div>
 
-    <!-- Floating Particles -->
-    <div class="particles" id="particles"></div>
+<div class="demo-container">
 
-    <!-- Main Content -->
-    <div class="skills-page">
+    <h1><i class="fas fa-wand-magic-sparkles"></i> Ultra Premium Edit Button</h1>
+    <p class="subtitle">Collection de boutons "Modifier" avec design haut de gamme, animations fluides et effets visuels premium</p>
+
+    <!-- ═══ SKILL CARD INTEGRATION DEMO ═══ -->
+    <div class="demo-section">
+        <h3 class="section-title"><i class="fas fa-palette"></i> Intégration dans Skill Card</h3>
         
-        <!-- Toast Notifications -->
-        <div class="toast-stack" id="toastStack"></div>
-
-        <!-- Hero Section -->
-        <section class="skills-hero">
-            <div class="hero-glow hero-glow--one"></div>
-            <div class="hero-glow hero-glow--two"></div>
-
-            <div class="section-header">
-                <div class="header-left">
-                    <div class="section-icon">&lt;/&gt;</div>
-                    <div class="header-copy">
-                        <div class="header-topline">
-                            <h2>Mes Compétences</h2>
-                            <span class="badge-count">12 compétences</span>
-                        </div>
-                        <p class="subtitle">
-                            Valorisez votre expertise avec des scores d'authenticité, 
-                            des endorsements et une présentation premium de votre stack technique.
-                        </p>
-                    </div>
+        <div class="skill-card-demo">
+            <div class="skill-header-demo">
+                <span class="skill-name-demo">Kubernetes</span>
+                <div class="badges-row">
+                    <span class="badge-category">Frontend</span>
+                    <span class="badge-level">Expert</span>
+                    <span class="badge-top">⭐ Top Skill</span>
                 </div>
-                <div class="header-actions">
-                    <button class="btn-primary" onclick="toggleForm()">
-                        + Ajouter une compétence
+            </div>
+
+            <div class="scores-container">
+                
+                <!-- Authenticity Row -->
+                <div class="score-row">
+                    <span class="score-label">Authenticité</span>
+                    <div class="score-bar-wrapper">
+                        <div class="score-bar-fill" style="width: 42%;"></div>
+                    </div>
+                    <span class="score-value-pill">42%</span>
+                </div>
+
+                <!-- Score Examen Row WITH EDIT BUTTON -->
+                <div class="score-row">
+                    <span class="score-label">Score Examen</span>
+                    <span class="score-value-pill">1%</span>
+                    
+                    <!-- ✨ VOTRE BOUTON MODIFIER ICI -->
+                    <button class="btn-edit-glass" type="button">
+                        <i class="fas fa-pen-to-square"></i>
+                        <span>Modifier</span>
+                    </button>
+                </div>
+
+                <!-- Endorsements Row -->
+                <div class="score-row">
+                    <span class="score-label">Endorsements</span>
+                    <span class="score-value-pill">1</span>
+                </div>
+
+            </div>
+
+            <!-- Action Buttons Footer -->
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(148, 163, 184, 0.10);">
+                <button class="btn-edit-outline" type="button">
+                    <i class="fas fa-calculator"></i>
+                    <span>Recalculer</span>
+                </button>
+                <button class="btn-danger" type="button">
+                    <i class="fas fa-trash-can"></i>
+                    Supprimer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ ALL VARIANTS SHOWCASE ═══ -->
+    <div class="demo-section">
+        <h3 class="section-title"><i class="fas fa-layer-group"></i> Toutes les Variantes Disponibles</h3>
+        
+        <div class="variants-showcase">
+
+            <!-- Variant 1: Primary -->
+            <div class="variant-card">
+                <span class="variant-label">Variant 01</span>
+                <div class="variant-name">Primary Gradient</div>
+                <p class="variant-desc">Bouton principal avec dégradé violet/bleu et effet lumineux. Idéal pour les actions principales.</p>
+                <div class="variant-demo">
+                    <button class="btn-edit-primary" type="button">
+                        <i class="fas fa-pen-to-square"></i>
+                        <span>Modifier</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Statistics -->
-            <div class="hero-stats">
-                <div class="stat-card">
-                    <span class="stat-label">Compétences totales</span>
-                    <strong class="stat-value">12</strong>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Authenticité moyenne</span>
-                    <strong class="stat-value">87%</strong>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Endorsements</span>
-                    <strong class="stat-value">256</strong>
-                </div>
-            </div>
-        </section>
-
-        <!-- Add Skill Form (Hidden by default) -->
-        <section class="form-card" id="formCard" style="display: none;">
-            <div class="form-card__header">
-                <span class="section-chip">Nouvelle compétence</span>
-                <h3>Ajouter un skill</h3>
-                <p>Ajoutez une compétence métier ou technique avec sa catégorie et son score d'évaluation initial.</p>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Nom du skill *</label>
-                    <input type="text" class="form-control" placeholder="Ex: Spring Boot, Angular, Docker...">
-                </div>
-                <div class="form-group">
-                    <label>Catégorie *</label>
-                    <select class="form-control">
-                        <option value="">Sélectionner...</option>
-                        <option value="FRONTEND">Frontend</option>
-                        <option value="BACKEND">Backend</option>
-                        <option value="FULLSTACK">Fullstack</option>
-                        <option value="MOBILE">Mobile</option>
-                        <option value="DEVOPS">DevOps</option>
-                        <option value="CLOUD">Cloud</option>
-                        <option value="DATA">Data</option>
-                        <option value="AI">AI / Machine Learning</option>
-                        <option value="DESIGN">Design</option>
-                        <option value="SECURITY">Sécurité</option>
-                        <option value="OTHER">Autre</option>
-                    </select>
-                    <small>Permet de structurer votre stack et améliorer la lisibilité du profil.</small>
-                </div>
-                <div class="form-group">
-                    <label>Score d'examen (0–100)</label>
-                    <input type="number" class="form-control" placeholder="85" min="0" max="100">
-                    <small>Correspond à votre score obtenu sur le module d'évaluation.</small>
+            <!-- Variant 2: Glassmorphism -->
+            <div class="variant-card">
+                <span class="variant-label">Variant 02</span>
+                <div class="variant-name">Glassmorphism</div>
+                <p class="variant-desc">Effet verre dépoli avec bordure subtile. Parfait pour l'édition en ligne dans les cartes.</p>
+                <div class="variant-demo">
+                    <button class="btn-edit-glass" type="button">
+                        <i class="fas fa-pen-to-square"></i>
+                        <span>Modifier</span>
+                    </button>
                 </div>
             </div>
 
-            <div class="form-actions">
-                <button class="btn-primary" onclick="addSkill()">
-                    Enregistrer la compétence
-                </button>
-                <button class="btn-ghost" onclick="toggleForm()">
-                    Annuler
-                </button>
-            </div>
-        </section>
-
-        <!-- Skills Grid -->
-        <section class="skills-grid-section">
-            <div class="section-head">
-                <span class="section-chip">Inventaire</span>
-                <h3>Compétences déclarées</h3>
+            <!-- Variant 3: Minimal -->
+            <div class="variant-card">
+                <span class="variant-label">Variant 03</span>
+                <div class="variant-name">Minimal Clean</div>
+                <p class="variant-desc">Design épuré avec soulignement animé. Optimal pour les tableaux et espaces compacts.</p>
+                <div class="variant-demo">
+                    <button class="btn-edit-minimal" type="button">
+                        <i class="fas fa-pen-to-square"></i>
+                        <span>Modifier</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="skills-grid">
-                
-                <!-- Skill Card 1 - Top Skill -->
-                <article class="skill-card">
-                    <div class="skill-header">
-                        <div class="skill-header__main">
-                            <span class="skill-name">Angular</span>
-                            <span class="skill-category">Frontend</span>
-                            <span class="skill-level level-expert">Expert</span>
-                        </div>
-                        <span class="top-skill-badge">⭐ Top Skill</span>
-                    </div>
-
-                    <div class="skill-scores">
-                        <div class="score-row">
-                            <span class="score-label">Authenticité</span>
-                            <div class="score-bar-wrapper">
-                                <div class="score-bar auth-high" style="width: 95%;"></div>
-                            </div>
-                            <span class="score-value">95%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Score examen</span>
-                            <span class="score-pill">98%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Endorsements</span>
-                            <span class="score-pill">47</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-actions">
-                        <button class="btn-secondary">Recalculer</button>
-                        <button class="btn-danger">Supprimer</button>
-                    </div>
-                </article>
-
-                <!-- Skill Card 2 -->
-                <article class="skill-card">
-                    <div class="skill-header">
-                        <div class="skill-header__main">
-                            <span class="skill-name">Spring Boot</span>
-                            <span class="skill-category">Backend</span>
-                            <span class="skill-level level-expert">Expert</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-scores">
-                        <div class="score-row">
-                            <span class="score-label">Authenticité</span>
-                            <div class="score-bar-wrapper">
-                                <div class="score-bar auth-high" style="width: 91%;"></div>
-                            </div>
-                            <span class="score-value">91%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Score examen</span>
-                            <span class="score-pill">94%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Endorsements</span>
-                            <span class="score-pill">38</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-actions">
-                        <button class="btn-secondary">Recalculer</button>
-                        <button class="btn-danger">Supprimer</button>
-                    </div>
-                </article>
-
-                <!-- Skill Card 3 -->
-                <article class="skill-card">
-                    <div class="skill-header">
-                        <div class="skill-header__main">
-                            <span class="skill-name">Docker</span>
-                            <span class="skill-category">DevOps</span>
-                            <span class="skill-level level-confirmed">Confirmé</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-scores">
-                        <div class="score-row">
-                            <span class="score-label">Authenticité</span>
-                            <div class="score-bar-wrapper">
-                                <div class="score-bar auth-medium" style="width: 72%;"></div>
-                            </div>
-                            <span class="score-value">72%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Score examen</span>
-                            <span class="score-pill">78%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Endorsements</span>
-                            <span class="score-pill">24</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-actions">
-                        <button class="btn-secondary">Recalculer</button>
-                        <button class="btn-danger">Supprimer</button>
-                    </div>
-                </article>
-
-                <!-- Skill Card 4 -->
-                <article class="skill-card">
-                    <div class="skill-header">
-                        <div class="skill-header__main">
-                            <span class="skill-name">React Native</span>
-                            <span class="skill-category">Mobile</span>
-                            <span class="skill-level level-junior">Junior</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-scores">
-                        <div class="score-row">
-                            <span class="score-label">Authenticité</span>
-                            <div class="score-bar-wrapper">
-                                <div class="score-bar auth-low" style="width: 35%;"></div>
-                            </div>
-                            <span class="score-value">35%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Score examen</span>
-                            <span class="score-pill">42%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Endorsements</span>
-                            <span class="score-pill">8</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-actions">
-                        <button class="btn-secondary">Recalculer</button>
-                        <button class="btn-danger">Supprimer</button>
-                    </div>
-                </article>
-
-                <!-- Skill Card 5 -->
-                <article class="skill-card">
-                    <div class="skill-header">
-                        <div class="skill-header__main">
-                            <span class="skill-name">TensorFlow</span>
-                            <span class="skill-category">AI</span>
-                            <span class="skill-level level-intermediate">Intermédiaire</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-scores">
-                        <div class="score-row">
-                            <span class="score-label">Authenticité</span>
-                            <div class="score-bar-wrapper">
-                                <div class="score-bar auth-medium" style="width: 58%;"></div>
-                            </div>
-                            <span class="score-value">58%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Score examen</span>
-                            <span class="score-pill">65%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Endorsements</span>
-                            <span class="score-pill">15</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-actions">
-                        <button class="btn-secondary">Recalculer</button>
-                        <button class="btn-danger">Supprimer</button>
-                    </div>
-                </article>
-
-                <!-- Skill Card 6 -->
-                <article class="skill-card">
-                    <div class="skill-header">
-                        <div class="skill-header__main">
-                            <span class="skill-name">AWS Cloud</span>
-                            <span class="skill-category">Cloud</span>
-                            <span class="skill-level level-confirmed">Confirmé</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-scores">
-                        <div class="score-row">
-                            <span class="score-label">Authenticité</span>
-                            <div class="score-bar-wrapper">
-                                <div class="score-bar auth-high" style="width: 81%;"></div>
-                            </div>
-                            <span class="score-value">81%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Score examen</span>
-                            <span class="score-pill">86%</span>
-                        </div>
-                        <div class="score-row">
-                            <span class="score-label">Endorsements</span>
-                            <span class="score-pill">31</span>
-                        </div>
-                    </div>
-
-                    <div class="skill-actions">
-                        <button class="btn-secondary">Recalculer</button>
-                        <button class="btn-danger">Supprimer</button>
-                    </div>
-                </article>
-
+            <!-- Variant 4: Icon Only -->
+            <div class="variant-card">
+                <span class="variant-label">Variant 04</span>
+                <div class="variant-name">Icon Only</div>
+                <p class="variant-desc">Bouton circulaire compact avec icône uniquement. Excellent pour les barres d'outils.</p>
+                <div class="variant-demo">
+                    <button class="btn-edit-icon" type="button">
+                        <i class="fas fa-pen-to-square"></i>
+                    </button>
+                </div>
             </div>
-        </section>
 
+            <!-- Variant 5: Outline -->
+            <div class="variant-card">
+                <span class="variant-label">Variant 05</span>
+                <div class="variant-name">Outline Fill</div>
+                <p class="variant-desc">Bordure colorée avec remplissage au hover. Convient aux formulaires et modales.</p>
+                <div class="variant-demo">
+                    <button class="btn-edit-outline" type="button">
+                        <i class="fas fa-pen-to-square"></i>
+                        <span>Modifier</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Disabled State -->
+            <div class="variant-card">
+                <span class="variant-label">State</span>
+                <div class="variant-name">Disabled / Loading</div>
+                <p class="variant-desc">États désactivé et chargement avec spinner intégré pour meilleure UX.</p>
+                <div class="variant-demo" style="gap: 12px;">
+                    <button class="btn-edit-glass" disabled type="button">
+                        <i class="fas fa-pen-to-square"></i>
+                        <span>Désactivé</span>
+                    </button>
+                    <button class="btn-edit-primary btn-loading" type="button">
+                        <i class="fas fa-pen-to-square"></i>
+                        <span>Chargement</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
     </div>
 
-    <script>
-        // Generate floating particles
-        function createParticles() {
-            const container = document.getElementById('particles');
-            const particleCount = 25;
+    <!-- ═══ CODE EXAMPLES ═══ -->
+    <div class="demo-section">
+        <h3 class="section-title"><i class="fas fa-code"></i> Intégration Angular</h3>
+        
+        <div class="code-example">
+<pre>&lt;!-- Utilisation recommandée dans votre composant --&gt;
 
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.animationDelay = Math.random() * 15 + 's';
-                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
-                
-                // Random sizes
-                const size = Math.random() * 4 + 2;
-                particle.style.width = size + 'px';
-                particle.style.height = size + 'px';
-                
-                container.appendChild(particle);
-            }
-        }
+&lt;button class="btn-edit-glass"
+        (click)="openEditModal(skill)"
+        [disabled]="isLoading"&gt;
+  &lt;i class="fas fa-pen-to-square"&gt;&lt;/i&gt;
+  &lt;span&gt;Modifier&lt;/span&gt;
+&lt;/button&gt;
 
-        // Toggle form visibility
-        function toggleForm() {
-            const formCard = document.getElementById('formCard');
-            const formVisible = formCard.style.display !== 'none';
+&lt;!-- Avec état de chargement --&gt;
+
+&lt;button class="btn-edit-primary"
+        [class.btn-loading]="isSaving"
+        (click)="saveChanges()"&gt;
+  &lt;i class="fas fa-pen-to-square"&gt;&lt;/i&gt;
+  &lt;span&gt;{{ isSaving ? '' : 'Sauvegarder' }}&lt;/span&gt;
+&lt;/button&gt;</pre>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Interactive demo: Add click feedback
+    document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            if (this.disabled) return;
             
-            formCard.style.display = formVisible ? 'none' : 'block';
+            // Create ripple effect
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
             
-            if (!formVisible) {
-                setTimeout(() => {
-                    formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
-            }
-        }
-
-        // Add skill (demo)
-        function addSkill() {
-            showToast('Compétence ajoutée avec succès!', 'success');
-            toggleForm();
-        }
-
-        // Show toast notification
-        function showToast(message, type = 'success') {
-            const toastStack = document.getElementById('toastStack');
-            const toast = document.createElement('div');
-            toast.className = `alert-banner alert-banner--${type}`;
-            toast.innerHTML = `
-                <span class="alert-icon">${type === 'success' ? '✅' : '⚠️'}</span>
-                <span>${message}</span>
-                <button class="alert-close" onclick="this.parentElement.remove()">✕</button>
+            ripple.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                transform: scale(0);
+                animation: rippleEffect 0.6s ease-out;
+                pointer-events: none;
+                left: ${e.clientX - rect.left - size/2}px;
+                top: ${e.clientY - rect.top - size/2}px;
             `;
             
-            toastStack.appendChild(toast);
-
-            // Auto remove after 3.5 seconds
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.style.animation = 'slideInRight 0.4s ease reverse';
-                    setTimeout(() => toast.remove(), 400);
-                }
-            }, 3500);
-        }
-
-        // Initialize on load
-        window.addEventListener('DOMContentLoaded', () => {
-            createParticles();
+            this.style.position = 'relative';
+            this.style.overflow = 'hidden';
+            this.appendChild(ripple);
             
-            // Animate skill cards on load
-            const cards = document.querySelectorAll('.skill-card');
-            cards.forEach((card, index) => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(30px)';
-                card.style.transition = `all 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.1}s`;
-                
-                setTimeout(() => {
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, 100);
-            });
-
-            // Animate stats
-            const stats = document.querySelectorAll('.stat-card');
-            stats.forEach((stat, index) => {
-                stat.style.opacity = '0';
-                stat.style.transform = 'translateY(20px)';
-                stat.style.transition = `all 0.5s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.15}s`;
-                
-                setTimeout(() => {
-                    stat.style.opacity = '1';
-                    stat.style.transform = 'translateY(0)';
-                }, 300);
-            });
+            setTimeout(() => ripple.remove(), 600);
+            
+            console.log('✏️ Edit button clicked!');
         });
-    </script>
+    });
+
+    // Add ripple keyframe if not exists
+    if (!document.querySelector('#ripple-styles')) {
+        const style = document.createElement('style');
+        style.id = 'ripple-styles';
+        style.textContent = `
+            @keyframes rippleEffect {
+                to {
+                    transform: scale(2.5);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+</script>
+
 </body>
 </html>

@@ -20,18 +20,24 @@ export class SkillsComponent implements OnInit {
   deletingSkillId: number | null = null;
   refreshingSkillId: number | null = null;
 
+  // ── Exam score inline edit ──────────────────────────────────
+  editingExamSkillId: number | null = null;
+  editingExamScore: number = 0;
+  isSavingExam = false;
+  // ────────────────────────────────────────────────────────────
+
   categoryOptions: { value: SkillCategory; label: string }[] = [
-    { value: 'FRONTEND', label: 'Frontend' },
-    { value: 'BACKEND', label: 'Backend' },
+    { value: 'FRONTEND',  label: 'Frontend' },
+    { value: 'BACKEND',   label: 'Backend' },
     { value: 'FULLSTACK', label: 'Fullstack' },
-    { value: 'MOBILE', label: 'Mobile' },
-    { value: 'DEVOPS', label: 'DevOps' },
-    { value: 'CLOUD', label: 'Cloud' },
-    { value: 'DATA', label: 'Data' },
-    { value: 'AI', label: 'AI / Machine Learning' },
-    { value: 'DESIGN', label: 'Design' },
-    { value: 'SECURITY', label: 'Security' },
-    { value: 'OTHER', label: 'Other' }
+    { value: 'MOBILE',    label: 'Mobile' },
+    { value: 'DEVOPS',    label: 'DevOps' },
+    { value: 'CLOUD',     label: 'Cloud' },
+    { value: 'DATA',      label: 'Data' },
+    { value: 'AI',        label: 'AI / Machine Learning' },
+    { value: 'DESIGN',    label: 'Design' },
+    { value: 'SECURITY',  label: 'Security' },
+    { value: 'OTHER',     label: 'Other' }
   ];
 
   newSkill: { name: string; category: SkillCategory; examScore: number } = {
@@ -62,16 +68,13 @@ export class SkillsComponent implements OnInit {
   }
 
   get averageAuthenticity(): number {
-    if (!this.skills.length) {
-      return 0;
-    }
-
-    const total = this.skills.reduce((sum, skill) => sum + (skill.authenticityScore || 0), 0);
+    if (!this.skills.length) return 0;
+    const total = this.skills.reduce((sum, s) => sum + (s.authenticityScore || 0), 0);
     return total / this.skills.length;
   }
 
   get totalEndorsements(): number {
-    return this.skills.reduce((sum, skill) => sum + (skill.endorsementCount || 0), 0);
+    return this.skills.reduce((sum, s) => sum + (s.endorsementCount || 0), 0);
   }
 
   get topSkill(): Skill | null {
@@ -108,20 +111,15 @@ export class SkillsComponent implements OnInit {
   }
 
   addSkill(): void {
-    if (!this.canSave) {
-      return;
-    }
-
+    if (!this.canSave) return;
     this.clearMessages();
     this.isSaving = true;
 
-    const payload = {
-      name: this.newSkill.name.trim(),
-      category: this.newSkill.category,
+    this.profileService.addSkill(this.currentUserId, {
+      name:      this.newSkill.name.trim(),
+      category:  this.newSkill.category,
       examScore: this.newSkill.examScore
-    };
-
-    this.profileService.addSkill(this.currentUserId, payload).subscribe({
+    }).subscribe({
       next: () => {
         this.isSaving = false;
         this.successMessage = 'Compétence ajoutée avec succès.';
@@ -132,17 +130,14 @@ export class SkillsComponent implements OnInit {
       },
       error: () => {
         this.isSaving = false;
-        this.errorMessage = 'Erreur lors de l’ajout du skill.';
+        this.errorMessage = "Erreur lors de l'ajout du skill.";
         this.autoClearMessages();
       }
     });
   }
 
   deleteSkill(skillId: number): void {
-    if (!confirm('Supprimer ce skill ?')) {
-      return;
-    }
-
+    if (!confirm('Supprimer ce skill ?')) return;
     this.clearMessages();
     this.deletingSkillId = skillId;
 
@@ -168,24 +163,70 @@ export class SkillsComponent implements OnInit {
     this.profileService.getSkillAuthenticity(skillId).subscribe({
       next: () => {
         this.refreshingSkillId = null;
-        this.successMessage = 'Score d’authenticité recalculé.';
+        this.successMessage = "Score d'authenticité recalculé.";
         this.loadSkills();
         this.autoClearMessages();
       },
       error: () => {
         this.refreshingSkillId = null;
-        this.errorMessage = 'Erreur lors du calcul d’authenticité.';
+        this.errorMessage = "Erreur lors du calcul d'authenticité.";
         this.autoClearMessages();
       }
     });
   }
 
+  // ── Exam score inline edit ──────────────────────────────────
+
+  startEditExam(skill: Skill): void {
+    this.editingExamSkillId = skill.id;
+    this.editingExamScore   = skill.examScore || 0;
+    this.clearMessages();
+  }
+
+  cancelEditExam(): void {
+    this.editingExamSkillId = null;
+    this.editingExamScore   = 0;
+  }
+
+  saveExamScore(skillId: number): void {
+    if (this.editingExamScore < 0 || this.editingExamScore > 100) {
+      this.errorMessage = 'Le score doit être entre 0 et 100.';
+      return;
+    }
+
+    this.isSavingExam = true;
+    this.clearMessages();
+
+    this.profileService.updateExamScore(
+      skillId,
+      this.currentUserId,
+      this.editingExamScore
+    ).subscribe({
+      next: (updated) => {
+        // Mise à jour locale sans reload complet
+        const skill = this.skills.find(s => s.id === skillId);
+        if (skill) skill.examScore = updated.examScore;
+
+        this.isSavingExam       = false;
+        this.editingExamSkillId = null;
+        this.successMessage     = "Score d'examen mis à jour.";
+        this.autoClearMessages();
+
+        // Recalcul authenticité automatique après mise à jour exam
+        this.refreshAuthenticity(skillId);
+      },
+      error: () => {
+        this.isSavingExam = false;
+        this.errorMessage = 'Impossible de mettre à jour le score.';
+        this.autoClearMessages();
+      }
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────
+
   resetForm(): void {
-    this.newSkill = {
-      name: '',
-      category: 'BACKEND',
-      examScore: 0
-    };
+    this.newSkill = { name: '', category: 'BACKEND', examScore: 0 };
   }
 
   clearMessages(): void {
@@ -202,49 +243,32 @@ export class SkillsComponent implements OnInit {
 
   getLevelLabel(level: string): string {
     const labels: Record<string, string> = {
-      JUNIOR: 'Junior',
-      INTERMEDIATE: 'Intermédiaire',
-      CONFIRMED: 'Confirmé',
-      EXPERT: 'Expert'
+      JUNIOR: 'Junior', INTERMEDIATE: 'Intermédiaire',
+      CONFIRMED: 'Confirmé', EXPERT: 'Expert'
     };
     return labels[level] ?? level;
   }
 
   getLevelClass(level: string): string {
     const classes: Record<string, string> = {
-      JUNIOR: 'level-junior',
-      INTERMEDIATE: 'level-intermediate',
-      CONFIRMED: 'level-confirmed',
-      EXPERT: 'level-expert'
+      JUNIOR: 'level-junior', INTERMEDIATE: 'level-intermediate',
+      CONFIRMED: 'level-confirmed', EXPERT: 'level-expert'
     };
     return classes[level] ?? '';
   }
 
   getAuthenticityClass(score: number): string {
-    if (score >= 75) {
-      return 'auth-high';
-    }
-    if (score >= 40) {
-      return 'auth-medium';
-    }
+    if (score >= 75) return 'auth-high';
+    if (score >= 40) return 'auth-medium';
     return 'auth-low';
   }
 
   getCategoryLabel(category: SkillCategory): string {
     const labels: Record<SkillCategory, string> = {
-      FRONTEND: 'Frontend',
-      BACKEND: 'Backend',
-      FULLSTACK: 'Fullstack',
-      MOBILE: 'Mobile',
-      DEVOPS: 'DevOps',
-      CLOUD: 'Cloud',
-      DATA: 'Data',
-      AI: 'AI / ML',
-      DESIGN: 'Design',
-      SECURITY: 'Security',
-      OTHER: 'Other'
+      FRONTEND: 'Frontend', BACKEND: 'Backend', FULLSTACK: 'Fullstack',
+      MOBILE: 'Mobile', DEVOPS: 'DevOps', CLOUD: 'Cloud', DATA: 'Data',
+      AI: 'AI / ML', DESIGN: 'Design', SECURITY: 'Security', OTHER: 'Other'
     };
-
     return labels[category] ?? category;
   }
 
