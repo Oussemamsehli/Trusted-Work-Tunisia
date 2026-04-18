@@ -750,3 +750,18 @@
     align-items: flex-start;
   }
 }
+.secondary-btn {
+  background: transparent;
+  border: 1px solid rgba(200, 92, 59, 0.3);
+  color: #C85C3B;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin-left: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondary-btn:hover {
+  background: rgba(200, 92, 59, 0.1);
+  border-color: #C85C3B;
+}

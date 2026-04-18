@@ -182,20 +182,35 @@
 
       <!-- ===== BOUTONS ===== -->
       <div class="hero-actions">
-        <button *ngIf="!editMode" class="primary-btn" (click)="toggleEdit()">
-          <i class="fas fa-pen"></i>
-          Modifier le profil
-        </button>
 
-        <div *ngIf="editMode" class="action-group">
-          <button class="success-btn" (click)="saveProfile()" [disabled]="saving">
-            {{ saving ? 'Sauvegarde...' : 'Sauvegarder' }}
-          </button>
-          <button class="ghost-btn" (click)="cancelEdit()" [disabled]="saving">
-            Annuler
-          </button>
-        </div>
-      </div>
+  <!-- ===== MODE NORMAL ===== -->
+  <ng-container *ngIf="!editMode">
+
+    <button class="primary-btn" (click)="toggleEdit()">
+      <i class="fas fa-pen"></i>
+      Modifier le profil
+    </button>
+
+    <!-- ✅ NOUVEAU BOUTON EXPORT PDF -->
+    <button class="secondary-btn" (click)="downloadCv()">
+      <i class="fas fa-file-pdf"></i>
+      Exporter CV
+    </button>
+
+  </ng-container>
+
+  <!-- ===== MODE EDIT ===== -->
+  <div *ngIf="editMode" class="action-group">
+    <button class="success-btn" (click)="saveProfile()" [disabled]="saving">
+      {{ saving ? 'Sauvegarde...' : 'Sauvegarder' }}
+    </button>
+
+    <button class="ghost-btn" (click)="cancelEdit()" [disabled]="saving">
+      Annuler
+    </button>
+  </div>
+
+</div>
     </div>
   </section>
 
