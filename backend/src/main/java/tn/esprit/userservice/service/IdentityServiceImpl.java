@@ -92,6 +92,7 @@ public class IdentityServiceImpl implements IIdentityService {
                 .cin(user.getCin())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
+                .phone(user.getPhone())
                 .email(user.getEmail())
                 .role(user.getRole() != null ? user.getRole().name() : null)
                 .kycStatus(user.getKycStatus() != null
