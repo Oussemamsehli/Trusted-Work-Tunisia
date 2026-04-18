@@ -4,7 +4,7 @@ import { AuthService } from '../services/auth.service';
 
 function checkAuthentication(): boolean | UrlTree {
   const authService = inject(AuthService);
-  const router = inject(Router);
+  const router      = inject(Router);
 
   if (authService.isLoggedIn()) {
     return true;
