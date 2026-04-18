@@ -26,13 +26,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     /**
      * Endpoints exclus du filtre JWT — accès sans token autorisé.
+     * IMPORTANT : /api/users/ retiré du bypass pour permettre l'authentification
+     * sur les endpoints protégés comme /api/users/me
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
 
         return path.startsWith("/api/identity/")
-                || path.startsWith("/api/users/")
                 || path.startsWith("/auth/")
                 || path.startsWith("/uploads/")
                 || path.startsWith("/swagger-ui/")
