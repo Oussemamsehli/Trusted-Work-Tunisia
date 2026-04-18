@@ -41,6 +41,7 @@ import { ProfileReputationTabComponent } from './features/freelancer/profile-det
 import { ProfileInsightsTabComponent } from './features/freelancer/profile-detail/components/profile-insights-tab/profile-insights-tab.component';
 import { ReviewsManagementComponent } from './features/freelancer/reviews-management/reviews-management.component';
 import { ProfileOverviewTabComponent } from './features/freelancer/profile-detail/components/profile-overview-tab/profile-overview-tab.component';
+import { TrendingProfilesComponent } from './features/freelancer/trending-profiles/trending-profiles.component';
 
 @NgModule({
   declarations: [
@@ -70,7 +71,8 @@ import { ProfileOverviewTabComponent } from './features/freelancer/profile-detai
     ProfileReputationTabComponent,
     ProfileInsightsTabComponent,
     ReviewsManagementComponent,
-    ProfileOverviewTabComponent
+    ProfileOverviewTabComponent,
+    TrendingProfilesComponent
   ],
   imports: [
     BrowserModule,
