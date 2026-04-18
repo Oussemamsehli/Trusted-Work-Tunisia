@@ -11,7 +11,7 @@ import java.security.Key;
 
 /**
  * Utilitaire JWT — valide les tokens émis par le user-service (Module 01)
- * Secret en plain text — aligné sur user-service
+ * Compatible jjwt 0.11.5
  */
 @Component
 public class JwtUtil {
@@ -20,7 +20,8 @@ public class JwtUtil {
     private String jwtSecret;
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public Claims extractAllClaims(String token) {
@@ -37,27 +38,26 @@ public class JwtUtil {
 
     public Long extractUserId(String token) {
         Claims claims = extractAllClaims(token);
-        return claims.get("userId", Long.class);
+        Object userId = claims.get("userId");
+        if (userId == null) return null;
+        return Long.valueOf(userId.toString());
     }
 
-    /**
-     * Extrait le rôle depuis le claim "role" du token JWT.
-    */
     public String extractRole(String token) {
         Claims claims = extractAllClaims(token);
-
-        //  "roles" = claim utilisé par le user-service
-        Object role = claims.get("roles");
-        if (role == null) role = claims.get("role"); // fallback
-
+        // user-service stocke le rôle dans "role" (singulier)
+        Object role = claims.get("role");
+        if (role == null) role = claims.get("roles");
         return role != null ? role.toString() : "USER";
     }
 
     public boolean isTokenValid(String token) {
         try {
-            extractAllClaims(token);
-            return true;
+            Claims claims = extractAllClaims(token);
+            // Vérifier expiration manuellement
+            return claims.getExpiration().after(new java.util.Date());
         } catch (Exception e) {
+            System.out.println(">>> JWT EXCEPTION détail : " + e.getClass().getSimpleName() + " — " + e.getMessage());
             return false;
         }
     }
