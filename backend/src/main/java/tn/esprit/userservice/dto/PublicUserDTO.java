@@ -29,4 +29,6 @@ public class PublicUserDTO {
 
     // Compte actif — vérification rapide avant toute interaction
     private String accountStatus;
+
+    private String phone;
 }
