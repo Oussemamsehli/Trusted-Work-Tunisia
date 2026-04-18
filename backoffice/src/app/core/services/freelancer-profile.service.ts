@@ -21,14 +21,17 @@ import {
 @Injectable({ providedIn: 'root' })
 export class FreelancerProfileService {
 
-  private baseUrl = 'http://localhost:8082/api';
-
-  constructor(private http: HttpClient) {}
+  private baseUrl = '/api';
+    constructor(private http: HttpClient) {}
 
   // ────────────────── PROFILS ──────────────────
 
   getAllProfiles(): Observable<FreelancerProfile[]> {
     return this.http.get<FreelancerProfile[]>(`${this.baseUrl}/profiles`);
+  }
+
+  getAllPublicProfiles(): Observable<FreelancerProfile[]> {
+    return this.getAllProfiles();
   }
 
   getProfileById(profileId: number): Observable<FreelancerProfile> {
@@ -52,6 +55,45 @@ export class FreelancerProfileService {
     return this.http.delete<void>(`${this.baseUrl}/profiles/user/${userId}`);
   }
 
+  updateAvailability(userId: number, status: string): Observable<FreelancerProfile> {
+    const params = new HttpParams().set('status', status);
+    return this.http.patch<FreelancerProfile>(
+      `${this.baseUrl}/profiles/user/${userId}/availability`,
+      null,
+      { params }
+    );
+  }
+
+  searchProfiles(filters: {
+    region?: string;
+    availability?: 'AVAILABLE' | 'BUSY' | 'ON_VACATION' | '';
+    minRate?: number | null;
+    maxRate?: number | null;
+  }): Observable<FreelancerProfile[]> {
+    let params = new HttpParams();
+
+    if (filters.region) {
+      params = params.set('region', filters.region);
+    }
+
+    if (filters.availability) {
+      params = params.set('availability', filters.availability);
+    }
+
+    if (filters.minRate !== null && filters.minRate !== undefined) {
+      params = params.set('minRate', filters.minRate.toString());
+    }
+
+    if (filters.maxRate !== null && filters.maxRate !== undefined) {
+      params = params.set('maxRate', filters.maxRate.toString());
+    }
+
+    return this.http.get<FreelancerProfile[]>(
+      `${this.baseUrl}/profiles/search`,
+      { params }
+    );
+  }
+
   // ────────────────── SKILLS ──────────────────
 
   getSkillsByUserId(userId: number): Observable<Skill[]> {
@@ -64,6 +106,10 @@ export class FreelancerProfileService {
 
   getSkillAuthenticity(skillId: number): Observable<number> {
     return this.http.get<number>(`${this.baseUrl}/skills/${skillId}/authenticity`);
+  }
+
+  deleteSkill(skillId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/skills/${skillId}/user/${userId}`);
   }
 
   // ────────────────── PORTFOLIO ──────────────────
@@ -94,14 +140,6 @@ export class FreelancerProfileService {
     return this.http.get<Certification[]>(`${this.baseUrl}/certifications/user/${userId}`);
   }
 
-  addCertification(userId: number, data: Partial<Certification>): Observable<Certification> {
-    return this.http.post<Certification>(`${this.baseUrl}/certifications/user/${userId}`, data);
-  }
-
-  updateCertification(certId: number, userId: number, data: Partial<Certification>): Observable<Certification> {
-    return this.http.put<Certification>(`${this.baseUrl}/certifications/${certId}/user/${userId}`, data);
-  }
-
   deleteCertification(certId: number, userId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/certifications/${certId}/user/${userId}`);
   }
@@ -110,6 +148,10 @@ export class FreelancerProfileService {
 
   getEndorsementsBySkill(skillId: number): Observable<Endorsement[]> {
     return this.http.get<Endorsement[]>(`${this.baseUrl}/endorsements/skill/${skillId}`);
+  }
+
+  countEndorsements(skillId: number): Observable<number> {
+    return this.http.get<number>(`${this.baseUrl}/endorsements/skill/${skillId}/count`);
   }
 
   // ────────────────── WORK EXPERIENCES ──────────────────
@@ -162,6 +204,14 @@ export class FreelancerProfileService {
     return this.http.get<ProfileReview[]>(`${this.baseUrl}/reviews/profiles/${profileId}`);
   }
 
+  getReviews(profileId: number): Observable<ProfileReview[]> {
+    return this.getReviewsByProfile(profileId);
+  }
+
+  getAllReviews(): Observable<ProfileReview[]> {
+    return this.http.get<ProfileReview[]>(`${this.baseUrl}/reviews`);
+  }
+
   getAverageRating(profileId: number): Observable<number> {
     return this.http.get<number>(`${this.baseUrl}/reviews/profiles/${profileId}/average`);
   }
@@ -184,6 +234,27 @@ export class FreelancerProfileService {
 
   deleteReview(reviewId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/reviews/${reviewId}`);
+  }
+
+  resolveReview(reviewId: number): Observable<ProfileReview> {
+    return this.http.patch<ProfileReview>(
+      `${this.baseUrl}/reviews/${reviewId}/resolve`,
+      {}
+    );
+  }
+
+  rejectReview(reviewId: number): Observable<ProfileReview> {
+    return this.http.patch<ProfileReview>(
+      `${this.baseUrl}/reviews/${reviewId}/reject`,
+      {}
+    );
+  }
+
+  restoreReview(reviewId: number) {
+    return this.http.put(
+      `${this.baseUrl}/reviews/${reviewId}/restore`,
+      {}
+    );
   }
 
   // ────────────────── REPORTS (ADMIN) ──────────────────
@@ -225,18 +296,51 @@ export class FreelancerProfileService {
     return this.http.get<SkillGapRecommendation>(`${this.baseUrl}/recommendations/user/${userId}/skill-gap`);
   }
 
-  // ────────────────── ACTIONS ADMIN ──────────────────
+  // ────────────────── DASHBOARD / TRENDING ──────────────────
 
-  updateAvailability(userId: number, status: string): Observable<FreelancerProfile> {
-    const params = new HttpParams().set('status', status);
-    return this.http.patch<FreelancerProfile>(
-      `${this.baseUrl}/profiles/user/${userId}/availability`,
-      null,
-      { params }
-    );
+  getTrendingProfiles(): Observable<FreelancerProfile[]> {
+    return this.getAllProfiles();
   }
 
-  deleteSkill(skillId: number, userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/skills/${skillId}/user/${userId}`);
+  getPlatformStats(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/admin/dashboard/module02`);
+  }
+
+  exportProfilesExcel(): void {
+    this.http.get(`${this.baseUrl}/export/admin/profiles/excel`, {
+      responseType: 'blob'
+    }).subscribe({
+      next: (blob) => {
+        if (!blob || blob.size === 0) return;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'profiles.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => console.error('Export Excel erreur :', err.status)
+    });
+  }
+  
+  exportAdminReportPdf(): void {
+    this.http.get(`${this.baseUrl}/export/admin/report/pdf`, {
+      responseType: 'blob'
+    }).subscribe({
+      next: (blob) => {
+        if (!blob || blob.size === 0) return;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'admin-report.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => console.error('Export PDF erreur :', err.status)
+    });
   }
 }
