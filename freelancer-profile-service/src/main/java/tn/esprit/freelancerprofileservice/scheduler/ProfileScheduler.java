@@ -37,8 +37,8 @@ public class ProfileScheduler {
     private final CertificationRepository certificationRepository;
     private final ISkillAuthenticityService skillAuthenticityService;
     private final ICompletenessService completenessService;
-    private final IEmailService emailService;   // ← AJOUT
-    private final UserClient userClient;        // ← AJOUT
+    private final IEmailService emailService;
+    private final UserClient userClient;
 
     /**
      * TÂCHE 1 — Recalcul nocturne des scores d'authenticité
