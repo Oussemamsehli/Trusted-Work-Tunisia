@@ -275,45 +275,57 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
   /**
    * Profil DNA — 4 axes calculés depuis les données réelles.
-   * ✅ BUG FIX : AuthenticityScore est déjà en %, pas besoin de *100
+   *
+   * Scoring basé sur le niveau de chaque compétence :
+   *   JUNIOR=25 | INTERMEDIATE=50 | CONFIRMED=75 | EXPERT=100
+   *
+   * Technical : BACKEND, DEVOPS, CLOUD, SECURITY, DATA, AI, FULLSTACK
+   * Creative  : FRONTEND, DESIGN, MOBILE, FULLSTACK
+   * Reliable  : moyenne des authenticityScore
+   * FastDel.  : moyenne d'endorsements × 20 (plafonné à 100)
    */
   private computeProfileDNA(skills: any[]): void {
-    const total = skills.length || 1;
-
-    // Technical % — BACKEND + DEVOPS + CLOUD + SECURITY
-    const technicalCategories = ['BACKEND', 'DEVOPS', 'CLOUD', 'SECURITY'];
-    const technical = Math.round(
-      (skills.filter(s => technicalCategories.includes(s.category)).length / total) * 100
-    );
-
-    // Creative % — FRONTEND + DESIGN + MOBILE
-    const creativeCategories = ['FRONTEND', 'DESIGN', 'MOBILE'];
-    const creative = Math.round(
-      (skills.filter(s => creativeCategories.includes(s.category)).length / total) * 100
-    );
-
-    // ✅ CORRECTIF ICI : AuthenticityScore est déjà entre 0-100 ou 0-1
-    // On arrondit simplement sans multiplier par 100
-    const avgAuthenticity = skills.length
-      ? skills.reduce((acc, s) => acc + (s.authenticityScore || 0), 0) / skills.length
-      : 0;
-    
-    // Si la valeur est déjà un pourcentage (0-100), on arrondit
-    // Si c'est un ratio (0-1), on multiplie par 100
-    let reliable: number;
-    if (avgAuthenticity > 1) {
-      // Déjà en pourcentage
-      reliable = Math.min(100, Math.round(avgAuthenticity));
-    } else {
-      // C'est un ratio 0-1
-      reliable = Math.min(100, Math.round(avgAuthenticity * 100));
+    const zero = { max: 100 };
+    if (skills.length === 0) {
+      this.dnaAxes = [
+        { label: 'Technical',     value: 0, ...zero, color: '#3b82f6' },
+        { label: 'Creative',      value: 0, ...zero, color: '#8b5cf6' },
+        { label: 'Reliable',      value: 0, ...zero, color: '#22c55e' },
+        { label: 'Fast Delivery', value: 0, ...zero, color: '#f59e0b' }
+      ];
+      return;
     }
 
-    // Fast Delivery %
-    const avgEndorsements = skills.length
-      ? this.totalEndorsements / skills.length
+    // Level → numeric score
+    const levelScore: Record<string, number> = {
+      JUNIOR: 25, INTERMEDIATE: 50, CONFIRMED: 75, EXPERT: 100
+    };
+    const lvl = (s: any): number => levelScore[s.level] ?? 50;
+
+    // ── Technical ──────────────────────────────────────────────────
+    // FULLSTACK counts here too; DATA & AI are engineering disciplines
+    const technicalCats = new Set(['BACKEND', 'DEVOPS', 'CLOUD', 'SECURITY', 'DATA', 'AI', 'FULLSTACK']);
+    const technicalSkills = skills.filter(s => technicalCats.has(s.category));
+    const technical = technicalSkills.length
+      ? Math.round(technicalSkills.reduce((acc, s) => acc + lvl(s), 0) / technicalSkills.length)
       : 0;
-    const fastDelivery = Math.min(100, Math.round(avgEndorsements * 20));
+
+    // ── Creative ───────────────────────────────────────────────────
+    // FULLSTACK also counts (covers frontend knowledge)
+    const creativeCats = new Set(['FRONTEND', 'DESIGN', 'MOBILE', 'FULLSTACK']);
+    const creativeSkills = skills.filter(s => creativeCats.has(s.category));
+    const creative = creativeSkills.length
+      ? Math.round(creativeSkills.reduce((acc, s) => acc + lvl(s), 0) / creativeSkills.length)
+      : 0;
+
+    // ── Reliable (authenticityScore) ───────────────────────────────
+    const avgAuth = skills.reduce((acc, s) => acc + (s.authenticityScore || 0), 0) / skills.length;
+    // backend may send 0-1 or 0-100 — normalise safely
+    const reliable = Math.min(100, Math.round(avgAuth > 1 ? avgAuth : avgAuth * 100));
+
+    // ── Fast Delivery (endorsements) ───────────────────────────────
+    const avgEnd = this.totalEndorsements / skills.length;
+    const fastDelivery = Math.min(100, Math.round(avgEnd * 20));
 
     this.dnaAxes = [
       { label: 'Technical',     value: technical,    max: 100, color: '#3b82f6' },

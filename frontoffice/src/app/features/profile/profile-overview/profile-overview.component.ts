@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 import { forkJoin, catchError, of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 import { Skill, CompletenessResponse, FreelancerProfile } from '../../../core/models/freelancer.model';
+import { UserService } from '../../../core/services/user.service';
 
 const API_BASE = 'http://localhost:8081/api';
 
@@ -53,6 +54,7 @@ export class ProfileOverviewComponent implements OnInit {
   selectedAvatarFile: File | null = null;
 
   private userId: number | null = null;
+  private userCin: number | null = null;
 
   skills:            Skill[]               = [];
   completeness:      CompletenessResponse  | null = null;
@@ -84,7 +86,9 @@ export class ProfileOverviewComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private api: ApiService,
-    private freelancerService: FreelancerProfileService
+    private freelancerService: FreelancerProfileService,
+    private userService: UserService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -155,8 +159,9 @@ export class ProfileOverviewComponent implements OnInit {
 
     this.draftProfile = { ...this.profile };
 
-    // Charger trustLevel + données freelancer en parallèle
+    // Charger user-service (/users/me) + trustLevel + données freelancer en parallèle
     forkJoin({
+      userMe:       this.userService.getMyProfile().pipe(catchError(() => of(null))),
       trustData:    this.freelancerService.getUserTrustLevel(authUser.userId).pipe(catchError(() => of({ trustLevel: 1 }))),
       fpProfile:    this.freelancerService.getProfileByUserId(authUser.userId).pipe(catchError(() => of(null))),
       skills:       this.freelancerService.getMySkills(authUser.userId).pipe(catchError(() => of([]))),
@@ -164,15 +169,34 @@ export class ProfileOverviewComponent implements OnInit {
     })
     .pipe(finalize(() => this.loading = false))
     .subscribe({
-      next: ({ trustData, fpProfile, skills, completeness }) => {
+      next: ({ userMe, trustData, fpProfile, skills, completeness }) => {
         // TrustLevel depuis endpoint public
         const trustLevel = Number((trustData as any)?.trustLevel ?? 1);
 
-        this.profile = {
-          ...this.profile,
-          trustLevel,
-          trustPassportCompleted: trustLevel >= 3
-        };
+        // Données utilisateur réelles depuis /users/me
+        if (userMe) {
+          const photoUrl = this.resolvePhotoUrl((userMe as any).photo || '');
+          this.userCin   = (userMe as any).cin ?? null;
+          this.profile = {
+            ...this.profile,
+            firstName:          (userMe as any).firstName        || authUser.email.split('@')[0],
+            lastName:           (userMe as any).lastName         || '',
+            fullName:           `${(userMe as any).firstName || ''} ${(userMe as any).lastName || ''}`.trim() || authUser.email,
+            phone:              (userMe as any).phone            || '',
+            headline:           (userMe as any).headline         || '',
+            location:           (userMe as any).location         || 'Tunisie',
+            bio:                (userMe as any).bio              || '',
+            photo:              photoUrl,
+            avatar:             photoUrl,
+            cin:                (userMe as any).cin              ?? null,
+            kycStatus:          (userMe as any).kycStatus        || 'PENDING',
+            twoFactorEnabled:   (userMe as any).twoFactorEnabled ?? false,
+            trustLevel,
+            trustPassportCompleted: trustLevel >= 3
+          };
+        } else {
+          this.profile = { ...this.profile, trustLevel, trustPassportCompleted: trustLevel >= 3 };
+        }
 
         this.draftProfile = { ...this.profile };
 
@@ -192,7 +216,7 @@ export class ProfileOverviewComponent implements OnInit {
             projectType:        fpProfile.projectType        || 'BOTH'
           };
 
-          // Synchroniser le headline
+          // Synchroniser le headline depuis freelancer profile si disponible
           if (fpProfile.headline) {
             this.profile.headline      = fpProfile.headline;
             this.draftProfile.headline = fpProfile.headline;
@@ -296,7 +320,7 @@ export class ProfileOverviewComponent implements OnInit {
       this.freelancerDraft.headline?.trim() ||
       this.draftProfile.headline?.trim()    || '';
 
-    // Sauvegarde profil freelancer uniquement (port 8082, pas de 403)
+    // 1 — Mise à jour du profil freelancer (port 8082)
     const freelancerPayload: Partial<FreelancerProfile> = {
       headline:           normalizedHeadline,
       bio:                this.freelancerDraft.bio?.trim()  || '',
@@ -307,22 +331,50 @@ export class ProfileOverviewComponent implements OnInit {
       projectType:        this.freelancerDraft.projectType
     };
 
-    this.freelancerService.updateProfile(this.userId, freelancerPayload)
-      .pipe(finalize(() => this.saving = false))
-      .subscribe({
-        next: () => {
-          this.successMessage     = 'Profil freelancer mis à jour avec succès.';
-          this.editMode           = false;
-          this.selectedAvatarFile = null;
-          this.loadProfile();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.error =
-            err?.error?.error   ||
-            err?.error?.message ||
-            'Erreur lors de la sauvegarde.';
+    // 2 — Mise à jour du profil utilisateur (user-service port 8081) avec la photo
+    const saveUserProfile$ = this.userCin
+      ? (() => {
+          const formData = new FormData();
+          formData.append('firstName', this.draftProfile.firstName?.trim() || '');
+          formData.append('lastName',  this.draftProfile.lastName?.trim()  || '');
+          if (this.draftProfile.phone)    formData.append('phone',    this.draftProfile.phone.trim());
+          if (this.draftProfile.headline) formData.append('headline', normalizedHeadline);
+          if (this.draftProfile.location) formData.append('location', this.draftProfile.location.trim());
+          if (this.draftProfile.bio)      formData.append('bio',      this.draftProfile.bio.trim());
+          if (this.selectedAvatarFile)    formData.append('photo',    this.selectedAvatarFile, this.selectedAvatarFile.name);
+
+          return this.http.put<any>(
+            `${API_BASE}/users/${this.userCin}`,
+            formData
+          ).pipe(catchError(() => of(null)));
+        })()
+      : of(null);
+
+    forkJoin({
+      freelancer: this.freelancerService.updateProfile(this.userId, freelancerPayload).pipe(catchError(() => of(null))),
+      user:       saveUserProfile$
+    })
+    .pipe(finalize(() => this.saving = false))
+    .subscribe({
+      next: ({ user }) => {
+        // Si la photo a été uploadée, mettre à jour l'avatar immédiatement
+        if (user && (user as any).photo) {
+          const newPhotoUrl = this.resolvePhotoUrl((user as any).photo);
+          this.profile.photo  = newPhotoUrl;
+          this.profile.avatar = newPhotoUrl;
         }
-      });
+        this.successMessage     = 'Profil mis à jour avec succès.';
+        this.editMode           = false;
+        this.selectedAvatarFile = null;
+        this.loadProfile();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error =
+          err?.error?.error   ||
+          err?.error?.message ||
+          'Erreur lors de la sauvegarde.';
+      }
+    });
   }
 
   onAvatarSelected(event: Event): void {

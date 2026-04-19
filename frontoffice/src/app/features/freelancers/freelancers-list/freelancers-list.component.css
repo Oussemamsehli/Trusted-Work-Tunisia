@@ -562,6 +562,12 @@
   background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
 }
 
+/* Real profile photo — overrides gradient background */
+.avatar-badge--photo {
+  object-fit: cover;
+  background: transparent;
+}
+
 .identity-copy {
   min-width: 0;
   flex: 1;

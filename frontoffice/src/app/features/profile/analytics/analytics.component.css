@@ -1011,7 +1011,298 @@
   .hex-value { font-size: 22px; }
 }
 /* ═══════════════════════════════════════════════════════════════════════════
-   FIFA ANALYTICS INTERFACE - ULTRA PREMIUM GAMING STYLE
-   Version Finale - Tous bugs corrigés
+   DNA PANEL — RADAR + BARS — COMPLETE FIX
+   All missing classes added. Premium SaaS dark-mode design.
 ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── DNA Toggle (header buttons) ── */
+.dna-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 4px;
+  margin-left: auto;
+}
+
+.toggle-btn {
+  padding: 5px 14px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.toggle-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.toggle-btn--active {
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.25), rgba(168, 85, 247, 0.2));
+  color: #fff;
+  box-shadow: 0 0 12px rgba(0, 217, 255, 0.2);
+}
+
+.toggle-arrow {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  padding-right: 6px;
+}
+
+/* ── Export button in hero card ── */
+.hero-export-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pdf-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 10px;
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.pdf-export-btn:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(239, 68, 68, 0.2));
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.25);
+}
+
+/* ══════════════════════════════════════════
+   RADAR WRAPPER — positions canvas + labels
+══════════════════════════════════════════ */
+.fifa-radar-wrapper {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  margin: 28px auto 20px;
+  flex-shrink: 0;
+}
+
+.fifa-radar-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+
+/* ── Center Score Overlay ── */
+.radar-center-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.center-score {
+  display: block;
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(135deg, #ffffff, rgba(255, 255, 255, 0.75));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  font-family: 'Rajdhani', monospace;
+}
+
+.center-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 3px;
+}
+
+/* ── Axis Labels Container ── */
+.axis-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ── Base axis label style ── */
+.axis-label {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px currentColor;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.axis-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  font-family: 'Rajdhani', monospace;
+  text-shadow: 0 0 16px currentColor;
+}
+
+/* Top label — TECHNICAL — centered above */
+.axis-label--top {
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+/* Right label — CREATIVE — vertically centered right */
+.axis-label--right {
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  text-align: right;
+  align-items: flex-end;
+}
+
+/* Bottom label — RELIABLE — centered below */
+.axis-label--bottom {
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+/* Left label — DELIVERY — vertically centered left */
+.axis-label--left {
+  top: 50%;
+  left: 2px;
+  transform: translateY(-50%);
+  text-align: left;
+  align-items: flex-start;
+}
+
+/* ══════════════════════════════════════════
+   DNA BARS GRID
+══════════════════════════════════════════ */
+.dna-bars-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 24px 28px;
+}
+
+.dna-bar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  opacity: 0;
+  animation: barFadeIn 0.5s ease forwards;
+}
+
+@keyframes barFadeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Bar header row: dot · name · score */
+.bar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.bar-name {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+}
+
+.bar-score {
+  font-size: 15px;
+  font-weight: 900;
+  font-family: 'Rajdhani', monospace;
+  min-width: 32px;
+  text-align: right;
+  text-shadow: 0 0 10px currentColor;
+}
+
+/* Bar track + fill */
+.bar-track-fifa {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bar-fill-fifa {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.bar-glow-effect {
+  width: 6px;
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  background: rgba(255, 255, 255, 0.6);
+  filter: blur(3px);
+}
+
+/* Tick marks at 25 / 50 / 75 */
+.bar-tick-marks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tick-mark {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.15);
+}
 

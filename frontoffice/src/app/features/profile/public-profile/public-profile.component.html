@@ -275,11 +275,11 @@
 
               <div class="skill-meta">
                 <span>{{ skill.endorsementCount }} endorsement(s)</span>
-                <span>{{ (skill.authenticityScore ?? 0).toFixed(0) }}% authenticité</span>
+                <span>{{ (skill.authenticityScore).toFixed(0) }}% authenticité</span>
               </div>
 
               <div class="auth-bar-wrapper">
-                <div class="auth-bar" [style.width.%]="skill.authenticityScore ?? 0"></div>
+                <div class="auth-bar" [style.width.%]="skill.authenticityScore"></div>
               </div>
             </div>
 

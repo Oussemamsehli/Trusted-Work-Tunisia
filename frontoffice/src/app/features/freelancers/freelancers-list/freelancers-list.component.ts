@@ -14,6 +14,7 @@ import { FreelancerProfile } from '../../../core/models/freelancer.model';
 interface FreelancerViewModel extends FreelancerProfile {
   fullName: string;
   initials: string;
+  photo: string;
 }
 
 /**
@@ -102,13 +103,14 @@ private readonly clockInterval: any;
             this.freelancers = others.map((f, index) => {
               const user = users[index] || {};
               const firstName = (user.firstName || '').trim();
-              const lastName = (user.lastName || '').trim();
-              const fullName = `${firstName} ${lastName}`.trim();
+              const lastName  = (user.lastName  || '').trim();
+              const fullName  = `${firstName} ${lastName}`.trim();
 
               return {
                 ...f,
                 fullName: fullName || f.headline || 'Freelancer',
-                initials: this.buildInitials(firstName, lastName, f.headline)
+                initials: this.buildInitials(firstName, lastName, f.headline),
+                photo:    (user.photo as string) || ''
               };
             });
 
@@ -119,7 +121,8 @@ private readonly clockInterval: any;
             this.freelancers = others.map(f => ({
               ...f,
               fullName: f.headline || 'Freelancer',
-              initials: f.headline?.charAt(0)?.toUpperCase() || 'F'
+              initials: f.headline?.charAt(0)?.toUpperCase() || 'F',
+              photo:    ''
             }));
             this.isLoading = false;
           }

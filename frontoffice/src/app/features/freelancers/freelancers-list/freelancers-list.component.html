@@ -154,7 +154,18 @@
 
         <div class="freelancer-card__top">
           <div class="freelancer-identity">
+            <!-- Real photo if available, otherwise show initials -->
+            <img
+              *ngIf="f.photo"
+              [src]="f.photo"
+              [alt]="f.fullName"
+              class="avatar-badge avatar-badge--photo"
+              [class.avatar-badge--elite]="f.completenessScore >= 80"
+              [class.avatar-badge--pro]="f.completenessScore >= 50 && f.completenessScore < 80"
+              [class.avatar-badge--starter]="f.completenessScore < 50" />
+
             <div
+              *ngIf="!f.photo"
               class="avatar-badge"
               [class.avatar-badge--elite]="f.completenessScore >= 80"
               [class.avatar-badge--pro]="f.completenessScore >= 50 && f.completenessScore < 80"
@@ -194,7 +205,7 @@
         </div>
 
         <p class="bio">
-          {{ f.bio | slice:0:120 }}{{ (f.bio?.length || 0) > 120 ? '...' : '' }}
+          {{ f.bio | slice:0:120 }}{{ (f.bio.length || 0) > 120 ? '...' : '' }}
         </p>
 
         <div class="meta-row">

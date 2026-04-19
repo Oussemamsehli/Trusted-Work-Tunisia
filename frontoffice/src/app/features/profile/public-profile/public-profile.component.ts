@@ -4,6 +4,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { FreelancerProfileService } from '../../../core/services/freelancer-profile.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService } from '../../../core/services/api.service';
 
 interface FreelancerProfile {
   id: number;
@@ -152,7 +153,8 @@ export class PublicProfileComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private freelancerProfileService: FreelancerProfileService,
-    private authService: AuthService
+    private authService: AuthService,
+    private api: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -197,7 +199,8 @@ export class PublicProfileComponent implements OnInit {
           reviews:        this.freelancerProfileService.getVisibleReviews(profile.id).pipe(catchError(() => of([]))),
           experiences:    this.freelancerProfileService.getWorkExperiencesByUserId(profile.userId).pipe(catchError(() => of([]))),
           viewsCount:     this.freelancerProfileService.getProfileViewsCount(profile.id).pipe(catchError(() => of(profile.totalViews ?? 0))),
-          mlTrust:        this.freelancerProfileService.getMlTrustScore(profile.userId).pipe(catchError(() => of(null)))
+          mlTrust:        this.freelancerProfileService.getMlTrustScore(profile.userId).pipe(catchError(() => of(null))),
+          userIdentity:   this.api.get<any>(`/identity/users/${profile.userId}`).pipe(catchError(() => of(null)))
         }).subscribe({
           next: (res: any) => {
             this.skills         = res.skills         || [];
@@ -216,7 +219,7 @@ export class PublicProfileComponent implements OnInit {
             }
 
             this.computeDerivedStats();
-            this.resolveTargetUserDisplay();
+            this.resolveTargetUserDisplay(res.userIdentity);
 
             if (!this.isOwner) {
               this.recordView(profile.id, currentUserId ?? undefined);
@@ -276,14 +279,20 @@ return acc + normalized;
     }
   }
 
-  private resolveTargetUserDisplay(): void {
+  private resolveTargetUserDisplay(userIdentity?: any): void {
     if (!this.profile) return;
 
-    this.targetUserFullName = this.profile.headline
-      ? this.profile.headline
-      : `Freelancer #${this.profile.userId}`;
+    // Prefer real name from user-service identity, fall back to headline
+    if (userIdentity?.firstName || userIdentity?.lastName) {
+      const first = (userIdentity.firstName || '').trim();
+      const last  = (userIdentity.lastName  || '').trim();
+      this.targetUserFullName = `${first} ${last}`.trim() || this.profile.headline || `Freelancer #${this.profile.userId}`;
+    } else {
+      this.targetUserFullName = this.profile.headline || `Freelancer #${this.profile.userId}`;
+    }
 
-    this.targetUserPhoto    = this.profile.avatarUrl || '';
+    // Prefer Cloudinary photo from user-service, fall back to avatarUrl from freelancer-profile-service
+    this.targetUserPhoto    = (userIdentity?.photo as string) || this.profile.avatarUrl || '';
     this.targetUserInitials = this.extractInitials(this.targetUserFullName);
   }
 
