@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,6 +23,8 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
     private final JwtUtil jwtUtil;
 
@@ -70,7 +74,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String username = jwtUtil.extractUsername(token);
                 String role = jwtUtil.extractRole(token);
 
-                System.out.println(">>> JWT OK — user: " + username + " role: " + role);
+                log.debug(">>> JWT OK — user: {} role: {}", username, role);
 
                 List<SimpleGrantedAuthority> authorities = List.of(
                         new SimpleGrantedAuthority("ROLE_" + role)
@@ -81,11 +85,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
-                System.out.println(">>> JWT INVALID — token rejected");
+                log.warn(">>> JWT INVALID — token rejected");
                 SecurityContextHolder.clearContext();
             }
         } catch (Exception e) {
-            System.out.println(">>> JWT EXCEPTION — " + e.getMessage());
+            log.error(">>> JWT EXCEPTION — {}", e.getMessage(), e);
             SecurityContextHolder.clearContext();
         }
 

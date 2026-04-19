@@ -3,6 +3,8 @@ package tn.esprit.freelancerprofileservice.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +17,8 @@ import java.security.Key;
  */
 @Component
 public class JwtUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -57,7 +61,7 @@ public class JwtUtil {
             // Vérifier expiration manuellement
             return claims.getExpiration().after(new java.util.Date());
         } catch (Exception e) {
-            System.out.println(">>> JWT EXCEPTION détail : " + e.getClass().getSimpleName() + " — " + e.getMessage());
+            log.error(">>> JWT EXCEPTION détail : {} — {}", e.getClass().getSimpleName(), e.getMessage(), e);
             return false;
         }
     }
