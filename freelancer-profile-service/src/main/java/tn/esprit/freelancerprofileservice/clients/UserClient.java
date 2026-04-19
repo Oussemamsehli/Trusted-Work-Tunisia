@@ -2,12 +2,16 @@ package tn.esprit.freelancerprofileservice.clients;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
 public class UserClient {
+
+    private static final Logger log = LoggerFactory.getLogger(UserClient.class);
 
     private final RestTemplate restTemplate;
 
@@ -19,12 +23,12 @@ public class UserClient {
         try {
             // Utiliser l'endpoint identity qui expose le phone
             String url = IDENTITY_URL + userId;
-            System.out.println(">>> USER CLIENT IDENTITY URL = " + url);
+            log.debug(">>> USER CLIENT IDENTITY URL = {}", url);
 
             PublicUserResponse response = restTemplate.getForObject(url, PublicUserResponse.class);
 
             if (response == null) {
-                System.out.println(">>> USER CLIENT - response is null, fallback legacy");
+                log.warn(">>> USER CLIENT - response is null, fallback legacy");
                 // Fallback vers l'ancien endpoint
                 url = BASE_URL + userId + "/public";
                 response = restTemplate.getForObject(url, PublicUserResponse.class);
@@ -33,7 +37,7 @@ public class UserClient {
             return response;
 
         } catch (Exception e) {
-            System.out.println(">>> USER CLIENT ERROR - " + e.getMessage());
+            log.error(">>> USER CLIENT ERROR - {}", e.getMessage(), e);
             return null;
         }
     }

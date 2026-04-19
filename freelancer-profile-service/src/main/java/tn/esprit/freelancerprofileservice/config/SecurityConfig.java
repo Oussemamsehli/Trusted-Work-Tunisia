@@ -24,6 +24,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String REVIEWS_API = "/api/reviews/**";
+
     private final JwtAuthFilter jwtAuthFilter;
 
     @Bean
@@ -47,7 +49,7 @@ public class SecurityConfig {
                         // WebSocket
                         .requestMatchers("/ws/**").permitAll()
 
-                        // ML Service — accès public pour démo jury
+                        // ML Service — accès public
                         .requestMatchers("/api/ml/**").permitAll()
 
                         // Profils — lecture publique
@@ -56,9 +58,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/profiles/ranking/**").permitAll()
 
                         // Reviews — lecture et écriture publiques
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/reviews/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, REVIEWS_API).permitAll()
+                        .requestMatchers(HttpMethod.POST, REVIEWS_API).permitAll()
+                        .requestMatchers(HttpMethod.PUT, REVIEWS_API).permitAll()
 
                         // Vues profil
                         .requestMatchers(HttpMethod.POST, "/api/views/profiles/**").permitAll()

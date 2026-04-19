@@ -70,21 +70,18 @@ public class WorkExperience {
 
     @PrePersist
     public void prePersist() {
-        if (this.isCurrent == null) {
-            this.isCurrent = false;
-        }
-
-        if (Boolean.TRUE.equals(this.isCurrent)) {
-            this.endDate = null;
-        }
+        normalizeCurrentFlag();
     }
 
     @PreUpdate
     public void preUpdate() {
+        normalizeCurrentFlag();
+    }
+
+    private void normalizeCurrentFlag() {
         if (this.isCurrent == null) {
             this.isCurrent = false;
         }
-
         if (Boolean.TRUE.equals(this.isCurrent)) {
             this.endDate = null;
         }
