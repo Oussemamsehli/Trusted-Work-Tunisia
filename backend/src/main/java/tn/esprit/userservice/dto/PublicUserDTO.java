@@ -31,4 +31,7 @@ public class PublicUserDTO {
     private String accountStatus;
 
     private String phone;
+
+    // Profile photo — Cloudinary CDN URL
+    private String photo;
 }

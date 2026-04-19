@@ -11,14 +11,10 @@ import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.userservice.dto.PublicUserDTO;
 import tn.esprit.userservice.dto.UpdateProfileRequest;
 import tn.esprit.userservice.dto.UserDTO;
+import tn.esprit.userservice.service.CloudinaryService;
 import tn.esprit.userservice.service.IUserService;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
@@ -27,6 +23,7 @@ import java.util.UUID;
 public class UserController {
 
     private final IUserService userService;
+    private final CloudinaryService cloudinaryService;
 
     @GetMapping("/me")
     @PreAuthorize("isAuthenticated()")
@@ -55,7 +52,10 @@ public class UserController {
         request.setBio(bio);
 
         if (photo != null && !photo.isEmpty()) {
-            request.setPhoto(saveProfilePhoto(photo));
+            String uploadedUrl = cloudinaryService.uploadProfilePhoto(photo);
+            if (uploadedUrl != null) {
+                request.setPhoto(uploadedUrl);
+            }
         }
 
         return ResponseEntity.ok(userService.updateProfile(cin, request));
@@ -76,24 +76,4 @@ public class UserController {
         );
     }
 
-    private String saveProfilePhoto(MultipartFile file) {
-        try {
-            String originalName = file.getOriginalFilename() != null
-                    ? file.getOriginalFilename().replaceAll("[\\\\/:*?\"<>|]", "_")
-                    : "photo.jpg";
-
-            String fileName = "profile_" + UUID.randomUUID() + "_" + originalName;
-
-            Path uploadDir = Paths.get(System.getProperty("user.dir"), "uploads", "profiles");
-            Files.createDirectories(uploadDir);
-
-            Path destination = uploadDir.resolve(fileName);
-            file.transferTo(destination.toFile());
-
-            return "/uploads/profiles/" + fileName;
-
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur upload image", e);
-        }
-    }
 }
