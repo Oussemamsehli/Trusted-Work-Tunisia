@@ -52,10 +52,10 @@ public class MlServiceClient {
 
             HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(
+            ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(
                     MlServiceConfig.ML_SERVICE_URL + "/predict/sentiment",
                     request,
-                    Map.class
+                    (Class<Map<String, Object>>) (Class<?>) Map.class
             );
 
             Map<String, Object> result = response.getBody();
@@ -107,10 +107,10 @@ public class MlServiceClient {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(
+            ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(
                     MlServiceConfig.ML_SERVICE_URL + "/predict/trust-score",
                     request,
-                    Map.class
+                    (Class<Map<String, Object>>) (Class<?>) Map.class
             );
 
             Map<String, Object> result = response.getBody();

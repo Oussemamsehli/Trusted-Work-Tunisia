@@ -59,8 +59,7 @@ public class SmsService {
         }
     }
 
-    public void sendReportResolvedSms(String toPhone, String firstName,
-                                      Long reportId, String status) {
+    public void sendReportResolvedSms(String firstName, Long reportId, String status) {
         String body = String.format(
                 "[TrustedWork Tunisia] Bonjour %s, " +
                         "votre signalement #%d a ete traite. " +

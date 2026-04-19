@@ -32,6 +32,7 @@ import java.util.List;
 public class ProfileReportServiceImpl implements IProfileReportService {
 
     private static final long AUTO_SUSPENSION_THRESHOLD = 5;
+    private static final String ADMIN_REPORTS_TOPIC = "/topic/admin/reports";
     private static final int RISK_SCORE_PER_REPORT = 20;
     private static final int MAX_RISK_SCORE = 100;
     private static final long ADMIN_USER_ID = 0L;
@@ -178,21 +179,21 @@ public class ProfileReportServiceImpl implements IProfileReportService {
     // =========================================================
 
     private void sendStatusEmailToReporter(ProfileReport report) {
-        System.out.println(">>> MAIL STEP 1 - sendStatusEmailToReporter called for report #" + report.getId());
+        log.debug(">>> MAIL STEP 1 - sendStatusEmailToReporter called for report #{}", report.getId());
 
         try {
             Long reporterId = report.getReporterId();
-            System.out.println(">>> MAIL STEP 2 - reporterId = " + reporterId);
+            log.debug(">>> MAIL STEP 2 - reporterId = {}", reporterId);
 
             if (reporterId == null) {
-                System.out.println(">>> MAIL STOP - reporterId is null");
+                log.warn(">>> MAIL STOP - reporterId is null");
                 return;
             }
 
             UserClient.PublicUserResponse reporter = userClient.getPublicUser(reporterId);
 
             if (reporter == null) {
-                System.out.println(">>> MAIL STOP - reporter response is null");
+                log.warn(">>> MAIL STOP - reporter response is null");
                 return;
             }
 
@@ -206,11 +207,11 @@ public class ProfileReportServiceImpl implements IProfileReportService {
                 fullName = "Utilisateur";
             }
 
-            System.out.println(">>> MAIL STEP 3 - email = " + email);
-            System.out.println(">>> MAIL STEP 4 - fullName = " + fullName);
+            log.debug(">>> MAIL STEP 3 - email = {}", email);
+            log.debug(">>> MAIL STEP 4 - fullName = {}", fullName);
 
             if (email == null || email.isBlank()) {
-                System.out.println(">>> MAIL STOP - email is null or blank");
+                log.warn(">>> MAIL STOP - email is null or blank");
                 return;
             }
 
@@ -221,10 +222,10 @@ public class ProfileReportServiceImpl implements IProfileReportService {
                     report.getDescription()
             );
 
-            System.out.println(">>> MAIL SUCCESS - email request launched for " + email);
+            log.info(">>> MAIL SUCCESS - email request launched for {}", email);
 
         } catch (Exception e) {
-            System.out.println(">>> MAIL ERROR - " + e.getClass().getName() + " - " + e.getMessage());
+            log.error(">>> MAIL ERROR - {} - {}", e.getClass().getName(), e.getMessage(), e);
             e.printStackTrace();
         }
     }
@@ -271,7 +272,7 @@ public class ProfileReportServiceImpl implements IProfileReportService {
                         : LocalDateTime.now().toString())
                 .build();
 
-        messagingTemplate.convertAndSend("/topic/admin/reports", message);
+        messagingTemplate.convertAndSend(ADMIN_REPORTS_TOPIC, message);
     }
 
     private void sendReportStatusUpdatedNotification(ProfileReport report) {
@@ -286,7 +287,7 @@ public class ProfileReportServiceImpl implements IProfileReportService {
                 .createdAt(LocalDateTime.now().toString())
                 .build();
 
-        messagingTemplate.convertAndSend("/topic/admin/reports", message);
+        messagingTemplate.convertAndSend(ADMIN_REPORTS_TOPIC, message);
     }
 
     // =========================================================
@@ -335,7 +336,7 @@ public class ProfileReportServiceImpl implements IProfileReportService {
                 .createdAt(LocalDateTime.now().toString())
                 .build();
 
-        messagingTemplate.convertAndSend("/topic/admin/reports", message);
+        messagingTemplate.convertAndSend(ADMIN_REPORTS_TOPIC, message);
     }
 
     // =========================================================
@@ -377,7 +378,6 @@ public class ProfileReportServiceImpl implements IProfileReportService {
             String firstName = userClient.getUserFullName(freelancerUserId).split(" ")[0];
 
             smsService.sendReportResolvedSms(
-                    null,        // ignoré — numéro fixe dans SmsService
                     firstName,
                     report.getId(),
                     report.getStatus().name()

@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
 import tn.esprit.freelancerprofileservice.entities.WorkExperience;
+import tn.esprit.freelancerprofileservice.exceptions.DuplicateResourceException;
+import tn.esprit.freelancerprofileservice.exceptions.InvalidDataException;
+import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
 import tn.esprit.freelancerprofileservice.repositories.WorkExperienceRepository;
 
@@ -14,6 +17,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class WorkExperienceServiceImpl implements IWorkExperienceService {
+
+    private static final String EXP_NOT_FOUND = "Expérience introuvable";
 
     private final WorkExperienceRepository workExperienceRepository;
     private final FreelancerProfileRepository profileRepository;
@@ -39,7 +44,7 @@ public class WorkExperienceServiceImpl implements IWorkExperienceService {
 
         WorkExperience existing = workExperienceRepository
                 .findByIdAndProfileId(expId, profile.getId())
-                .orElseThrow(() -> new RuntimeException("Expérience introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException(EXP_NOT_FOUND));
 
         validateExperience(updates, profile.getId(), expId);
 
@@ -68,7 +73,7 @@ public class WorkExperienceServiceImpl implements IWorkExperienceService {
         FreelancerProfile profile = getProfile(userId);
 
         return workExperienceRepository.findByIdAndProfileId(expId, profile.getId())
-                .orElseThrow(() -> new RuntimeException("Expérience introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException(EXP_NOT_FOUND));
     }
 
     @Override
@@ -76,7 +81,7 @@ public class WorkExperienceServiceImpl implements IWorkExperienceService {
         FreelancerProfile profile = getProfile(userId);
 
         WorkExperience exp = workExperienceRepository.findByIdAndProfileId(expId, profile.getId())
-                .orElseThrow(() -> new RuntimeException("Expérience introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException(EXP_NOT_FOUND));
 
         workExperienceRepository.delete(exp);
         completenessService.calculateCompleteness(userId);
@@ -104,65 +109,55 @@ public class WorkExperienceServiceImpl implements IWorkExperienceService {
 
     private FreelancerProfile getProfile(Long userId) {
         return profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Profil introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Profil introuvable"));
     }
 
     private void validateExperience(WorkExperience exp, Long profileId, Long expId) {
         if (exp.getJobTitle() == null || exp.getJobTitle().isBlank()) {
-            throw new RuntimeException("Titre du poste obligatoire");
+            throw new InvalidDataException("Titre du poste obligatoire");
         }
-
         if (exp.getCompany() == null || exp.getCompany().isBlank()) {
-            throw new RuntimeException("Entreprise obligatoire");
+            throw new InvalidDataException("Entreprise obligatoire");
         }
+        validateDates(exp);
+        validateNoDuplicate(exp, profileId, expId);
+    }
 
+    private void validateDates(WorkExperience exp) {
         if (exp.getStartDate() == null) {
-            throw new RuntimeException("Date de début obligatoire");
+            throw new InvalidDataException("Date de début obligatoire");
         }
-
         if (exp.getStartDate().isAfter(LocalDate.now())) {
-            throw new RuntimeException("Date de début invalide");
+            throw new InvalidDataException("Date de début invalide");
         }
-
         if (Boolean.TRUE.equals(exp.getIsCurrent())) {
             exp.setEndDate(null);
-        } else {
-            if (exp.getEndDate() == null) {
-                throw new RuntimeException("Date de fin obligatoire");
-            }
-
-            if (exp.getEndDate().isAfter(LocalDate.now())) {
-                throw new RuntimeException("Date de fin invalide");
-            }
-
-            if (exp.getStartDate().isAfter(exp.getEndDate())) {
-                throw new RuntimeException("Dates incohérentes");
-            }
+            return;
         }
+        if (exp.getEndDate() == null) {
+            throw new InvalidDataException("Date de fin obligatoire");
+        }
+        if (exp.getEndDate().isAfter(LocalDate.now())) {
+            throw new InvalidDataException("Date de fin invalide");
+        }
+        if (exp.getStartDate().isAfter(exp.getEndDate())) {
+            throw new InvalidDataException("Dates incohérentes");
+        }
+    }
 
+    private void validateNoDuplicate(WorkExperience exp, Long profileId, Long expId) {
         boolean exists;
-
         if (expId == null) {
             exists = workExperienceRepository
                     .existsByProfileIdAndJobTitleIgnoreCaseAndCompanyIgnoreCaseAndStartDate(
-                            profileId,
-                            exp.getJobTitle(),
-                            exp.getCompany(),
-                            exp.getStartDate()
-                    );
+                            profileId, exp.getJobTitle(), exp.getCompany(), exp.getStartDate());
         } else {
             exists = workExperienceRepository
                     .existsByProfileIdAndJobTitleIgnoreCaseAndCompanyIgnoreCaseAndStartDateAndIdNot(
-                            profileId,
-                            exp.getJobTitle(),
-                            exp.getCompany(),
-                            exp.getStartDate(),
-                            expId
-                    );
+                            profileId, exp.getJobTitle(), exp.getCompany(), exp.getStartDate(), expId);
         }
-
         if (exists) {
-            throw new RuntimeException("Expérience déjà existante");
+            throw new DuplicateResourceException("Expérience déjà existante");
         }
     }
 }

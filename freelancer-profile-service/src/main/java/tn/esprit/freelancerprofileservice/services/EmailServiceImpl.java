@@ -1,6 +1,8 @@
 package tn.esprit.freelancerprofileservice.services;
 
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -10,6 +12,9 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements IEmailService {
+
+    private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
+    private static final String BONJOUR = "Bonjour ";
 
     private final JavaMailSender mailSender;
 
@@ -36,10 +41,10 @@ public class EmailServiceImpl implements IEmailService {
             mail.setText(buildReportMessage(fullName, status, description));
 
             mailSender.send(mail);
-            System.out.println(">>> MAIL SUCCESS [report] → " + finalRecipient);
+            log.info(">>> MAIL SUCCESS [report] → {}", finalRecipient);
 
         } catch (Exception e) {
-            System.out.println(">>> MAIL ERROR [report] — " + e.getMessage());
+            log.error(">>> MAIL ERROR [report] — {}", e.getMessage(), e);
         }
     }
 
@@ -59,7 +64,7 @@ public class EmailServiceImpl implements IEmailService {
             mail.setTo(finalRecipient);
             mail.setSubject("[TrustedWork] Complétez votre profil pour attirer plus de clients");
             mail.setText(
-                    "Bonjour " + safeName + ",\n\n" +
+                    BONJOUR + safeName + ",\n\n" +
                             "Votre profil TrustedWork Tunisia est complété à " + completenessScore + "%.\n\n" +
                             "Les profils complétés à plus de 80% reçoivent 3x plus de demandes de collaboration.\n\n" +
                             "Conseils pour améliorer votre profil :\n" +
@@ -74,10 +79,10 @@ public class EmailServiceImpl implements IEmailService {
             );
 
             mailSender.send(mail);
-            System.out.println(">>> MAIL SUCCESS [rappel profil] → " + finalRecipient);
+            log.info(">>> MAIL SUCCESS [rappel profil] → {}", finalRecipient);
 
         } catch (Exception e) {
-            System.out.println(">>> MAIL ERROR [rappel profil] — " + e.getMessage());
+            log.error(">>> MAIL ERROR [rappel profil] — {}", e.getMessage(), e);
         }
     }
 
@@ -98,7 +103,7 @@ public class EmailServiceImpl implements IEmailService {
             mail.setTo(finalRecipient);
             mail.setSubject("[TrustedWork] Votre certification expire bientôt — " + certTitle);
             mail.setText(
-                    "Bonjour " + safeName + ",\n\n" +
+                    BONJOUR + safeName + ",\n\n" +
                             "Votre certification \"" + certTitle + "\" expire le " + expiryDate + ".\n\n" +
                             "Une certification expirée réduit votre score d'authenticité et la visibilité " +
                             "de votre profil auprès des clients.\n\n" +
@@ -109,10 +114,10 @@ public class EmailServiceImpl implements IEmailService {
             );
 
             mailSender.send(mail);
-            System.out.println(">>> MAIL SUCCESS [cert expiry] → " + finalRecipient);
+            log.info(">>> MAIL SUCCESS [cert expiry] → {}", finalRecipient);
 
         } catch (Exception e) {
-            System.out.println(">>> MAIL ERROR [cert expiry] — " + e.getMessage());
+            log.error(">>> MAIL ERROR [cert expiry] — {}", e.getMessage(), e);
         }
     }
 
@@ -152,7 +157,7 @@ public class EmailServiceImpl implements IEmailService {
                 statusMessage = "Le statut de votre signalement a été mis à jour.";
         }
 
-        return "Bonjour " + safeName + ",\n\n"
+        return BONJOUR + safeName + ",\n\n"
                 + statusMessage + "\n\n"
                 + "Description du signalement :\n"
                 + (description != null ? description : "-") + "\n\n"

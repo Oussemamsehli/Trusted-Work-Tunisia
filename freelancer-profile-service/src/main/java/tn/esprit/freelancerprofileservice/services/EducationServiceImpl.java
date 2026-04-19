@@ -5,6 +5,9 @@ import org.springframework.stereotype.Service;
 import tn.esprit.freelancerprofileservice.dto.request.UpdateEducationRequest;
 import tn.esprit.freelancerprofileservice.entities.Education;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
+import tn.esprit.freelancerprofileservice.exceptions.DuplicateResourceException;
+import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
+import tn.esprit.freelancerprofileservice.exceptions.UnauthorizedActionException;
 import tn.esprit.freelancerprofileservice.repositories.EducationRepository;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
 
@@ -39,7 +42,7 @@ public class EducationServiceImpl implements IEducationService {
                         profile.getId());
 
         if (exists) {
-            throw new RuntimeException(
+            throw new DuplicateResourceException(
                     "Vous avez déjà déclaré ce diplôme dans cet établissement.");
         }
 
@@ -55,11 +58,11 @@ public class EducationServiceImpl implements IEducationService {
     @Override
     public Education updateEducation(Long eduId, Long userId, UpdateEducationRequest request) {
         Education edu = educationRepository.findById(eduId)
-                .orElseThrow(() -> new RuntimeException("Formation introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Formation introuvable"));
 
         // Vérifier que la formation appartient bien à cet utilisateur
         if (!edu.getProfile().getUserId().equals(userId)) {
-            throw new RuntimeException("Action non autorisée");
+            throw new UnauthorizedActionException("Action non autorisée");
         }
 
         // Mettre à jour uniquement les champs fournis
@@ -94,10 +97,10 @@ public class EducationServiceImpl implements IEducationService {
     @Override
     public void deleteEducation(Long eduId, Long userId) {
         Education edu = educationRepository.findById(eduId)
-                .orElseThrow(() -> new RuntimeException("Formation introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Formation introuvable"));
 
         if (!edu.getProfile().getUserId().equals(userId)) {
-            throw new RuntimeException("Action non autorisée");
+            throw new UnauthorizedActionException("Action non autorisée");
         }
 
         educationRepository.delete(edu);
@@ -109,6 +112,6 @@ public class EducationServiceImpl implements IEducationService {
     // ─── Méthode utilitaire privée ───────────────────────────────────────────
     private FreelancerProfile getProfile(Long userId) {
         return profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Profil introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Profil introuvable"));
     }
 }

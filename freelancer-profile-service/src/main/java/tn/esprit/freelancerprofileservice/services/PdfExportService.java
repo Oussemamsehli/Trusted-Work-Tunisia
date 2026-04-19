@@ -52,7 +52,7 @@ public class PdfExportService {
     // =========================
     //  FRONT (CV FREELANCER)
     // =========================
-    public byte[] generateCv(Long userId) throws Exception {
+    public byte[] generateCv(Long userId) throws IOException {
         FreelancerProfile profile = profileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Profil", userId));
 

@@ -7,6 +7,8 @@ import tn.esprit.freelancerprofileservice.dto.response.SkillResponse;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
 import tn.esprit.freelancerprofileservice.entities.Skill;
 import tn.esprit.freelancerprofileservice.enums.SkillLevel;
+import tn.esprit.freelancerprofileservice.exceptions.DuplicateResourceException;
+import tn.esprit.freelancerprofileservice.exceptions.InvalidDataException;
 import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
 import tn.esprit.freelancerprofileservice.exceptions.UnauthorizedActionException;
 import tn.esprit.freelancerprofileservice.repositories.EndorsementRepository;
@@ -25,6 +27,7 @@ import java.util.List;
 public class SkillServiceImpl implements ISkillService {
 
     private static final int MAX_SKILLS_PER_PROFILE = 30;
+    private static final String SKILL_ENTITY = "Skill";
 
     private final SkillRepository skillRepository;
     private final FreelancerProfileRepository profileRepository;
@@ -38,13 +41,13 @@ public class SkillServiceImpl implements ISkillService {
                 .orElseThrow(() -> new ResourceNotFoundException("FreelancerProfile", userId));
 
         if (skillRepository.countByProfileId(profile.getId()) >= MAX_SKILLS_PER_PROFILE) {
-            throw new RuntimeException("Vous avez atteint la limite de 30 skills");
+            throw new InvalidDataException("Vous avez atteint la limite de 30 skills");
         }
 
         String normalizedName = normalizeSkillName(skill.getName());
 
         if (skillRepository.existsByProfileIdAndNormalizedName(profile.getId(), normalizedName)) {
-            throw new RuntimeException("Ce skill existe déjà sur votre profil");
+            throw new DuplicateResourceException("Ce skill existe déjà sur votre profil");
         }
 
         skill.setProfile(profile);
@@ -59,7 +62,7 @@ public class SkillServiceImpl implements ISkillService {
         skillAuthenticityService.calculateAuthenticityScore(savedSkill.getId());
 
         return skillRepository.findById(savedSkill.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Skill", savedSkill.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException(SKILL_ENTITY, savedSkill.getId()));
     }
 
     @Override
@@ -74,10 +77,10 @@ public class SkillServiceImpl implements ISkillService {
     @Override
     public void deleteSkill(Long skillId, Long userId) {
         Skill skill = skillRepository.findById(skillId)
-                .orElseThrow(() -> new ResourceNotFoundException("Skill", skillId));
+                .orElseThrow(() -> new ResourceNotFoundException(SKILL_ENTITY, skillId));
 
         if (!skill.getProfile().getUserId().equals(userId)) {
-            throw new RuntimeException("Action non autorisée");
+            throw new UnauthorizedActionException("Action non autorisée");
         }
 
         Long profileId = skill.getProfile().getId();
@@ -89,7 +92,7 @@ public class SkillServiceImpl implements ISkillService {
     @Override
     public Skill upgradeSkillLevelIfEligible(Long skillId) {
         Skill skill = skillRepository.findById(skillId)
-                .orElseThrow(() -> new ResourceNotFoundException("Skill", skillId));
+                .orElseThrow(() -> new ResourceNotFoundException(SKILL_ENTITY, skillId));
 
         long endorsementCount = endorsementRepository.countBySkillId(skillId);
         long portfolioCount = portfolioItemRepository.countByProfileId(skill.getProfile().getId());
@@ -114,7 +117,7 @@ public class SkillServiceImpl implements ISkillService {
 
     private String normalizeSkillName(String name) {
         if (name == null || name.trim().isEmpty()) {
-            throw new RuntimeException("Le nom du skill est obligatoire");
+            throw new InvalidDataException("Le nom du skill est obligatoire");
         }
         return name.trim().replaceAll("\\s+", " ").toLowerCase();
     }
@@ -128,10 +131,10 @@ public class SkillServiceImpl implements ISkillService {
     public SkillResponse updateExamScore(Long skillId, Long userId, Double examScore) {
         // Vérifier appartenance au profil
         Skill skill = skillRepository.findById(skillId)
-                .orElseThrow(() -> new ResourceNotFoundException("Skill", skillId));
+                .orElseThrow(() -> new ResourceNotFoundException(SKILL_ENTITY, skillId));
 
         if (!skill.getProfile().getUserId().equals(userId)) {
-            throw new RuntimeException("Cette compétence ne vous appartient pas");
+            throw new UnauthorizedActionException("Cette competence ne vous appartient pas");
         }
 
         // Mettre à jour le score d'examen

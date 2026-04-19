@@ -6,6 +6,10 @@ import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.freelancerprofileservice.dto.request.UpdateCertificationRequest;
 import tn.esprit.freelancerprofileservice.entities.Certification;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
+import tn.esprit.freelancerprofileservice.exceptions.DuplicateResourceException;
+import tn.esprit.freelancerprofileservice.exceptions.InvalidDataException;
+import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
+import tn.esprit.freelancerprofileservice.exceptions.UnauthorizedActionException;
 import tn.esprit.freelancerprofileservice.repositories.CertificationRepository;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
 
@@ -41,13 +45,13 @@ public class CertificationServiceImpl implements ICertificationService {
                 normalizedTitle,
                 normalizedIssuer
         )) {
-            throw new RuntimeException("Une certification avec le même titre et le même émetteur existe déjà");
+            throw new DuplicateResourceException("Une certification avec le même titre et le même émetteur existe déjà");
         }
 
         if (certification.getIssueDate() != null
                 && certification.getExpiryDate() != null
                 && certification.getIssueDate().isAfter(certification.getExpiryDate())) {
-            throw new RuntimeException("La date d'émission doit être antérieure ou égale à la date d'expiration");
+            throw new InvalidDataException("La date d'émission doit être antérieure ou égale à la date d'expiration");
         }
 
         certification.setTitle(normalizedTitle);
@@ -66,10 +70,10 @@ public class CertificationServiceImpl implements ICertificationService {
     @Override
     public Certification updateCertification(Long certId, Long userId, UpdateCertificationRequest request) {
         Certification existing = certificationRepository.findById(certId)
-                .orElseThrow(() -> new RuntimeException("Certification introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Certification introuvable"));
 
         if (!existing.getProfile().getUserId().equals(userId)) {
-            throw new RuntimeException("Action non autorisée");
+            throw new UnauthorizedActionException("Action non autorisée");
         }
 
         String finalTitle = request.getTitle() != null ? normalize(request.getTitle()) : existing.getTitle();
@@ -87,7 +91,7 @@ public class CertificationServiceImpl implements ICertificationService {
                 : existing.getExpiryDate();
 
         if (finalIssueDate != null && finalExpiryDate != null && finalIssueDate.isAfter(finalExpiryDate)) {
-            throw new RuntimeException("La date d'émission doit être antérieure ou égale à la date d'expiration");
+            throw new InvalidDataException("La date d'émission doit être antérieure ou égale à la date d'expiration");
         }
 
         if (certificationRepository.existsByProfileIdAndTitleIgnoreCaseAndIssuerIgnoreCaseAndIdNot(
@@ -96,7 +100,7 @@ public class CertificationServiceImpl implements ICertificationService {
                 finalIssuer,
                 existing.getId()
         )) {
-            throw new RuntimeException("Une autre certification avec le même titre et le même émetteur existe déjà");
+            throw new DuplicateResourceException("Une autre certification avec le même titre et le même émetteur existe déjà");
         }
 
         existing.setTitle(finalTitle);
@@ -133,10 +137,10 @@ public class CertificationServiceImpl implements ICertificationService {
     @Override
     public void deleteCertification(Long certId, Long userId) {
         Certification cert = certificationRepository.findById(certId)
-                .orElseThrow(() -> new RuntimeException("Certification introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Certification introuvable"));
 
         if (!cert.getProfile().getUserId().equals(userId)) {
-            throw new RuntimeException("Action non autorisée");
+            throw new UnauthorizedActionException("Action non autorisée");
         }
 
         Long ownerUserId = cert.getProfile().getUserId();
@@ -148,13 +152,13 @@ public class CertificationServiceImpl implements ICertificationService {
 
     private FreelancerProfile getProfileByUserId(Long userId) {
         return profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Profil introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Profil introuvable"));
     }
 
     private void validateCertificationLimit(Long profileId) {
         long count = certificationRepository.countByProfileId(profileId);
         if (count >= MAX_CERTIFICATIONS_PER_PROFILE) {
-            throw new RuntimeException("Limite atteinte : un profil ne peut pas avoir plus de 20 certifications");
+            throw new InvalidDataException("Limite atteinte : un profil ne peut pas avoir plus de 20 certifications");
         }
     }
 

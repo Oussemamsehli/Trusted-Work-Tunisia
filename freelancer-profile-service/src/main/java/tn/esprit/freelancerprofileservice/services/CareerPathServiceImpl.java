@@ -11,7 +11,6 @@ import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileReposito
 import tn.esprit.freelancerprofileservice.repositories.SkillRepository;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Recommandation simple de parcours de carrière.
@@ -24,11 +23,13 @@ public class CareerPathServiceImpl implements ICareerPathService {
     private final FreelancerProfileRepository profileRepository;
     private final SkillRepository skillRepository;
 
+    private static final String BACKEND_JAVA = "Backend Java";
+
     private static final Map<String, List<String>> CAREER_PATHS = new LinkedHashMap<>();
     private static final Map<String, String> CAREER_DESCRIPTIONS = new HashMap<>();
 
     static {
-        CAREER_PATHS.put("Backend Java",
+        CAREER_PATHS.put(BACKEND_JAVA,
                 Arrays.asList("Java", "Spring Boot", "Spring Security", "JPA", "MySQL", "Docker", "Kubernetes", "Microservices"));
 
         CAREER_PATHS.put("Frontend",
@@ -43,7 +44,7 @@ public class CareerPathServiceImpl implements ICareerPathService {
         CAREER_PATHS.put("Mobile",
                 Arrays.asList("Flutter", "Dart", "React Native", "Android", "iOS", "Firebase"));
 
-        CAREER_DESCRIPTIONS.put("Backend Java", "Développeur backend Java spécialisé en microservices et cloud");
+        CAREER_DESCRIPTIONS.put(BACKEND_JAVA, "Développeur backend Java spécialisé en microservices et cloud");
         CAREER_DESCRIPTIONS.put("Frontend", "Développeur frontend moderne avec frameworks JavaScript");
         CAREER_DESCRIPTIONS.put("Data", "Ingénieur data et Machine Learning");
         CAREER_DESCRIPTIONS.put("DevOps", "Ingénieur DevOps et infrastructure cloud");
@@ -61,9 +62,9 @@ public class CareerPathServiceImpl implements ICareerPathService {
                 .map(Skill::getName)
                 .map(name -> name.toLowerCase().trim())
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
-        String bestPath = "Backend Java";
+        String bestPath = BACKEND_JAVA;
         int bestScore = -1;
 
         for (Map.Entry<String, List<String>> entry : CAREER_PATHS.entrySet()) {
@@ -82,15 +83,15 @@ public class CareerPathServiceImpl implements ICareerPathService {
 
         List<String> currentSkills = pathSkills.stream()
                 .filter(skill -> userSkills.contains(skill.toLowerCase().trim()))
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> missingSkills = pathSkills.stream()
                 .filter(skill -> !userSkills.contains(skill.toLowerCase().trim()))
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> nextSteps = missingSkills.stream()
                 .limit(3)
-                .collect(Collectors.toList());
+                .toList();
 
         return CareerPathResponse.builder()
                 .detectedPath(bestPath)

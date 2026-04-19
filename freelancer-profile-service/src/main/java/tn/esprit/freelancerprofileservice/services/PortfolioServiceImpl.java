@@ -5,6 +5,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tn.esprit.freelancerprofileservice.entities.FreelancerProfile;
 import tn.esprit.freelancerprofileservice.entities.PortfolioItem;
+import tn.esprit.freelancerprofileservice.exceptions.DuplicateResourceException;
+import tn.esprit.freelancerprofileservice.exceptions.InvalidDataException;
+import tn.esprit.freelancerprofileservice.exceptions.ResourceNotFoundException;
 import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileRepository;
 import tn.esprit.freelancerprofileservice.repositories.PortfolioItemRepository;
 
@@ -32,7 +35,7 @@ public class PortfolioServiceImpl implements IPortfolioService {
 
         long totalItems = portfolioItemRepository.countByProfileId(profile.getId());
         if (totalItems >= MAX_PORTFOLIO_ITEMS) {
-            throw new RuntimeException("Vous avez atteint la limite de 20 projets portfolio");
+            throw new InvalidDataException("Vous avez atteint la limite de 20 projets portfolio");
         }
 
         validateDuplicateTitleForCreate(profile.getId(), item.getTitle());
@@ -136,14 +139,14 @@ public class PortfolioServiceImpl implements IPortfolioService {
 
     private FreelancerProfile getProfileByUserId(Long userId) {
         return profileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Profil introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Profil introuvable"));
     }
 
     private PortfolioItem getOwnedPortfolioItem(Long itemId, Long userId) {
         FreelancerProfile profile = getProfileByUserId(userId);
 
         return portfolioItemRepository.findByIdAndProfileId(itemId, profile.getId())
-                .orElseThrow(() -> new RuntimeException("Projet introuvable ou non autorisé"));
+                .orElseThrow(() -> new ResourceNotFoundException("Projet introuvable ou non autorisé"));
     }
 
     private void validateDuplicateTitleForCreate(Long profileId, String title) {
@@ -153,7 +156,7 @@ public class PortfolioServiceImpl implements IPortfolioService {
 
         boolean exists = portfolioItemRepository.existsByProfileIdAndTitleIgnoreCase(profileId, title.trim());
         if (exists) {
-            throw new RuntimeException("Un projet avec ce titre existe déjà dans votre portfolio");
+            throw new DuplicateResourceException("Un projet avec ce titre existe déjà dans votre portfolio");
         }
     }
 
@@ -164,14 +167,14 @@ public class PortfolioServiceImpl implements IPortfolioService {
 
         boolean exists = portfolioItemRepository.existsByProfileIdAndTitleIgnoreCaseAndIdNot(profileId, title.trim(), itemId);
         if (exists) {
-            throw new RuntimeException("Un projet avec ce titre existe déjà dans votre portfolio");
+            throw new DuplicateResourceException("Un projet avec ce titre existe déjà dans votre portfolio");
         }
     }
 
     private void validatePinnedLimit(Long profileId) {
         long pinnedCount = portfolioItemRepository.countByProfileIdAndPinnedTrue(profileId);
         if (pinnedCount >= MAX_PINNED_ITEMS) {
-            throw new RuntimeException("Vous ne pouvez pas épingler plus de 3 projets");
+            throw new InvalidDataException("Vous ne pouvez pas épingler plus de 3 projets");
         }
     }
 

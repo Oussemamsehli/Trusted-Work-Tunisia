@@ -11,7 +11,6 @@ import tn.esprit.freelancerprofileservice.repositories.FreelancerProfileReposito
 import tn.esprit.freelancerprofileservice.repositories.SkillRepository;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Détection des gaps de compétences.
@@ -34,18 +33,18 @@ public class SkillGapServiceImpl implements ISkillGapService {
                 .map(Skill::getName)
                 .map(name -> name.toLowerCase().trim())
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> topSkills = skillRepository.findTopSkillsRaw()
                 .stream()
                 .limit(10)
                 .map(row -> ((String) row[0]).toLowerCase().trim())
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
         List<String> gapSkills = topSkills.stream()
                 .filter(skill -> !mySkills.contains(skill))
-                .collect(Collectors.toList());
+                .toList();
 
         return SkillGapResponse.builder()
                 .mySkills(mySkills)
