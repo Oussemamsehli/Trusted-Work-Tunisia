@@ -23,6 +23,9 @@
         <springdoc.version>2.5.0</springdoc.version>
         <totp.version>1.7.1</totp.version>
         <lombok.version>1.18.32</lombok.version>
+
+        <sonar.host.url>http://localhost:9000</sonar.host.url>
+        <sonar.projectKey>freelancer-profile-service</sonar.projectKey>
     </properties>
 
     <dependencies>
