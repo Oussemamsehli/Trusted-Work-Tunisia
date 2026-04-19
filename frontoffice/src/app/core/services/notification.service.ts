@@ -10,8 +10,8 @@ export class NotificationService implements OnDestroy {
 
   private readonly BASE_URL = 'http://localhost:8082/api/notifications';
 
-  private countSubject   = new BehaviorSubject<number>(0);
-  private messagesSubject = new BehaviorSubject<any[]>([]);
+  private readonly countSubject   = new BehaviorSubject<number>(0);
+  private readonly messagesSubject = new BehaviorSubject<any[]>([]);
 
   count$    = this.countSubject.asObservable();
   messages$ = this.messagesSubject.asObservable();
@@ -19,8 +19,8 @@ export class NotificationService implements OnDestroy {
   private stompClient: any = null;
 
   constructor(
-    private authService: AuthService,
-    private http: HttpClient
+    private readonly authService: AuthService,
+    private readonly http: HttpClient
   ) {}
 
   connect(): void {
@@ -106,7 +106,8 @@ export class NotificationService implements OnDestroy {
       osc.stop(ctx.currentTime + 0.4);
     });
   } catch (e) {
-    // Son non disponible — ne pas bloquer
+    // Son non disponible (politique autoplay du navigateur) — ne pas bloquer l'application
+    console.warn('[NotificationService] Son non disponible :', e);
   }
 }
 

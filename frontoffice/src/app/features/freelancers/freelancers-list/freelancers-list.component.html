@@ -1,297 +1,247 @@
-<div class="roster-hq">
-  
-  <!-- ════════════════════════════════════════
-       ATMOSPHERIC LAYERS
-  ════════════════════════════════════════ -->
-  <div class="atmosphere">
-    <div class="grid-matrix"></div>
-    <div class="scan-beam"></div>
-    <div class="glow-orb glow--primary"></div>
-    <div class="glow-orb glow--secondary"></div>
+<div class="talent-marketplace">
+  <div class="marketplace-bg">
+    <div class="bg-glow bg-glow--one"></div>
+    <div class="bg-glow bg-glow--two"></div>
+    <div class="bg-grid"></div>
   </div>
 
-  <!-- ════════════════════════════════════════
-       MAIN CONTAINER
-  ════════════════════════════════════════ -->
-  <div class="roster-container">
+  <div class="marketplace-shell">
 
-    <!-- ════════════════════════════════════════
-         COMMAND HEADER - ROSTER TITLE
-    ════════════════════════════════════════ -->
-    <header class="roster-header">
-      <div class="header-left">
-        <div class="emblem">
-          <div class="emblem-ring"></div>
-          <i class="fas fa-users-viewfinder"></i>
+    <section class="marketplace-hero">
+      <div class="marketplace-hero__content">
+        <div class="hero-copy">
+          <span class="hero-chip">TrustedWork Marketplace</span>
+          <h1>Trouvez le bon freelancer, plus vite.</h1>
+          <p>
+            Explorez les talents par région, disponibilité et budget dans une
+            interface plus premium, plus claire et plus SaaS.
+          </p>
         </div>
-        <div class="title-block">
-          <h1>FREELANCER <span class="accent">ROSTER</span></h1>
-          <p>TrustedWork Tunisia — Community Database</p>
-        </div>
-      </div>
 
-      <div class="header-right">
-        <div class="count-badge">
-          <span class="count-number">{{ freelancers.length }}</span>
-          <span class="count-label">OPERATIVES</span>
+        <div class="hero-stat-card">
+          <span class="hero-stat-card__label">Freelancers trouvés</span>
+          <strong class="hero-stat-card__value">{{ freelancers.length }}</strong>
+          <span class="hero-stat-card__sub">Base active TrustedWork</span>
         </div>
       </div>
-    </header>
 
-    <!-- ════════════════════════════════════════
-         TACTICAL FILTERS BAR
-    ════════════════════════════════════════ -->
-    <section class="tactical-filters">
-      <div class="filter-label">
-        <i class="fas fa-filter-circle-dot"></i>
-        TACTICAL FILTERS
-      </div>
-
-      <div class="filters-grid">
-        
-        <!-- Region Filter -->
-        <div class="filter-group">
-          <label class="filter-tag">REGION</label>
-          <div class="select-wrapper">
-            <select [(ngModel)]="selectedRegion" (change)="applyFilters()" class="tactical-select">
-              <option value="">ALL REGIONS</option>
-              <option *ngFor="let region of availableRegions" [value]="region">
-                {{ region }}
-              </option>
-            </select>
-            <i class="fas fa-chevron-down select-arrow"></i>
+      <div class="filter-panel">
+        <div class="filter-panel__header">
+          <div>
+            <span class="section-chip">Filtres intelligents</span>
+            <h2>Affinez votre recherche</h2>
           </div>
         </div>
 
-        <!-- Status Filter -->
-        <div class="filter-group">
-          <label class="filter-tag">STATUS</label>
-          <div class="select-wrapper">
-            <select [(ngModel)]="selectedStatus" (change)="applyFilters()" class="tactical-select">
-              <option value="">ALL STATUS</option>
-              <option value="AVAILABLE">AVAILABLE</option>
-              <option value="BUSY">ENGAGED</option>
-              <option value="ON_VACATION">AWAY</option>
-            </select>
-            <i class="fas fa-chevron-down select-arrow"></i>
+        <div class="filter-grid">
+          <div class="filter-box">
+            <label for="filter-region">Région</label>
+            <div class="input-shell">
+              <select
+                id="filter-region"
+                [(ngModel)]="selectedRegion"
+                (change)="applyFilters()">
+                <option value="">Toutes les régions</option>
+                <option *ngFor="let region of availableRegions" [value]="region">
+                  {{ region }}
+                </option>
+              </select>
+              <span class="input-icon">⌄</span>
+            </div>
+          </div>
+
+          <div class="filter-box">
+            <label for="filter-status">Statut</label>
+            <div class="input-shell">
+              <select
+                id="filter-status"
+                [(ngModel)]="selectedStatus"
+                (change)="applyFilters()">
+                <option value="">Tous les statuts</option>
+                <option value="AVAILABLE">Disponible</option>
+                <option value="BUSY">Occupé</option>
+                <option value="ON_VACATION">En congé</option>
+              </select>
+              <span class="input-icon">⌄</span>
+            </div>
+          </div>
+
+          <div class="filter-box">
+            <label for="filter-rate-min">Budget minimum</label>
+            <div class="input-shell">
+              <input
+                id="filter-rate-min"
+                type="number"
+                [(ngModel)]="minRate"
+                placeholder="0" />
+              <span class="input-suffix">TND</span>
+            </div>
+          </div>
+
+          <div class="filter-box">
+            <label for="filter-rate-max">Budget maximum</label>
+            <div class="input-shell">
+              <input
+                id="filter-rate-max"
+                type="number"
+                [(ngModel)]="maxRate"
+                placeholder="∞" />
+              <span class="input-suffix">TND</span>
+            </div>
           </div>
         </div>
 
-        <!-- Rate Min -->
-        <div class="filter-group">
-          <label class="filter-tag">RATE MIN</label>
-          <div class="input-wrapper">
-            <input type="number" placeholder="0" [(ngModel)]="minRate" class="tactical-input" />
-            <span class="input-suffix">TND</span>
-          </div>
-        </div>
-
-        <!-- Rate Max -->
-        <div class="filter-group">
-          <label class="filter-tag">RATE MAX</label>
-          <div class="input-wrapper">
-            <input type="number" placeholder="∞" [(ngModel)]="maxRate" class="tactical-input" />
-            <span class="input-suffix">TND</span>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
         <div class="filter-actions">
-          <button type="button" class="btn-execute" (click)="applyFilters()">
-            <i class="fas fa-crosshairs"></i>
-            EXECUTE
+          <button type="button" class="btn-primary-action" (click)="applyFilters()">
+            <span>Exécuter</span>
           </button>
-          <button type="button" class="btn-reset" (click)="resetFilters()">
-            <i class="fas fa-rotate-left"></i>
-            RESET
+          <button type="button" class="btn-secondary-action" (click)="resetFilters()">
+            <span>Reset</span>
           </button>
         </div>
-
       </div>
     </section>
 
-    <!-- ════════════════════════════════════════
-         LOADING STATE - ACQUISITION SEQUENCE
-    ════════════════════════════════════════ -->
-    <div class="acquisition-loader" *ngIf="isLoading">
-      <div class="loader-core">
-        <div class="loader-ring loader-ring--outer"></div>
-        <div class="loader-ring loader-ring--inner"></div>
-        <i class="fas fa-satellite-dish loader-icon"></i>
-      </div>
-      <div class="loader-text">
-        <span class="loader-title">ACQUIRING DATA...</span>
-        <span class="loader-sub">Querying Freelancer Database</span>
-      </div>
-      <div class="loader-progress">
-        <div class="progress-bar"><div class="progress-fill"></div></div>
-      </div>
+    <div class="loading-state" *ngIf="isLoading">
+      <div class="loading-spinner"></div>
+      <h3>Chargement des freelancers...</h3>
+      <p>Nous synchronisons la base TrustedWork.</p>
     </div>
 
-    <!-- ════════════════════════════════════════
-         ERROR STATE
-    ════════════════════════════════════════ -->
-    <div class="error-module" *ngIf="errorMessage">
-      <div class="error-icon">
-        <i class="fas fa-triangle-exclamation"></i>
+    <div class="error-state" *ngIf="errorMessage">
+      <div class="error-state__icon">!</div>
+      <div class="error-state__content">
+        <strong>Impossible de charger les profils</strong>
+        <span>{{ errorMessage }}</span>
       </div>
-      <div class="error-content">
-        <strong>CONNECTION FAILURE</strong>
-        <p>{{ errorMessage }}</p>
-      </div>
-      <button class="btn-retry" (click)="loadFreelancers()">
-        <i class="fas fa-rotate-right"></i> RETRY
+      <button class="btn-reload" type="button" (click)="loadFreelancers()">
+        Réessayer
       </button>
     </div>
 
-    <!-- ════════════════════════════════════════
-         EMPTY STATE - NO OPERATIVES
-    ════════════════════════════════════════ -->
-    <div class="empty-roster" *ngIf="!isLoading && freelancers.length === 0">
-      <div class="empty-visual">
-        <div class="empty-hexagon">
-          <i class="fas fa-user-slash"></i>
-        </div>
-        <div class="empty-rings">
-          <span></span><span></span><span></span>
-        </div>
-      </div>
-      <h3>NO OPERATIVES FOUND</h3>
-      <p>No freelancers match your current filter configuration.</p>
-      <button class="btn-clear-filters" (click)="resetFilters()">
-        CLEAR ALL FILTERS
+    <div class="empty-state" *ngIf="!isLoading && freelancers.length === 0">
+      <div class="empty-state__icon">◌</div>
+      <h3>Aucun freelancer trouvé</h3>
+      <p>Aucun profil ne correspond à votre configuration actuelle.</p>
+      <button class="btn-primary-action" type="button" (click)="resetFilters()">
+        Réinitialiser les filtres
       </button>
     </div>
 
-    <!-- ════════════════════════════════════════
-         FREELANCER CARDS GRID - PLAYER ROSTER
-    ════════════════════════════════════════ -->
-    <div class="roster-grid" *ngIf="!isLoading && freelancers.length > 0">
-      
-      <div class="player-card" 
-           *ngFor="let f of freelancers; let i = index"
-           (click)="viewProfile(f.userId)"
-           [style.animation-delay]="(i * 0.1) + 's'">
+    <section class="results-toolbar" *ngIf="!isLoading && freelancers.length > 0">
+      <div class="results-toolbar__left">
+        <h2>Résultats</h2>
+        <span>{{ freelancers.length }} profil(s) disponibles</span>
+      </div>
 
-        <!-- Card Glow Effect -->
-        <div class="card-glow" 
-             [class.glow-available]="f.availabilityStatus === 'AVAILABLE'"
-             [class.glow-busy]="f.availabilityStatus === 'BUSY'"
-             [class.glow-vacation]="f.availabilityStatus === 'ON_VACATION'">
+      <div class="results-toolbar__right">
+        <div class="toolbar-badge">
+          <span>Dernière sync</span>
+          <strong>{{ currentTime }}</strong>
         </div>
+      </div>
+    </section>
 
-        <!-- Top Border Accent -->
-        <div class="card-accent-line"
-             [class.line-available]="f.availabilityStatus === 'AVAILABLE'"
-             [class.line-busy]="f.availabilityStatus === 'BUSY'"
-             [class.line-vacation]="f.availabilityStatus === 'ON_VACATION'">
-        </div>
+    <section class="freelancers-grid" *ngIf="!isLoading && freelancers.length > 0">
+      <article
+        class="freelancer-card"
+        *ngFor="let f of freelancers; let i = index"
+        role="button"
+        tabindex="0"
+        (click)="viewProfile(f.userId)"
+        (keyup.enter)="viewProfile(f.userId)"
+        [style.animation-delay]="(i * 0.06) + 's'">
 
-        <!-- Corner Brackets -->
-        <div class="corner-bracket cb-tl"></div>
-        <div class="corner-bracket cb-tr"></div>
-        <div class="corner-bracket cb-bl"></div>
-        <div class="corner-bracket cb-br"></div>
-
-        <!-- Player Avatar Section -->
-        <div class="player-visual">
-          <div class="avatar-frame"
-               [class.frame-elite]="f.completenessScore >= 80"
-               [class.frame-pro]="f.completenessScore >= 50 && f.completenessScore < 80"
-               [class.frame-rookie]="f.completenessScore < 50">
-            <span class="avatar-initials">{{ f.initials }}</span>
-            <div class="avatar-scanline"></div>
-          </div>
-          
-          <!-- Overall Rating Badge -->
-          <div class="overall-badge"
-               [class.badge-elite]="f.completenessScore >= 80"
-               [class.badge-pro]="f.completenessScore >= 50 && f.completenessScore < 80"
-               [class.badge-rookie]="f.completenessScore < 50">
-            <span class="overall-value">{{ f.completenessScore }}</span>
-            <span class="overall-label">OVR</span>
-          </div>
-        </div>
-
-        <!-- Player Info Section -->
-        <div class="player-data">
-          
-          <!-- Name & Title -->
-          <div class="name-block">
-            <h3 class="player-name">{{ f.fullName }}</h3>
-            <span class="player-role">{{ f.headline || 'Specialist' }}</span>
-          </div>
-
-          <!-- Bio Preview -->
-          <p class="player-bio">
-            {{ f.bio | slice:0:90 }}{{ (f.bio.length || 0) > 90 ? '...' : '' }}
-          </p>
-
-          <!-- Stats Row -->
-          <div class="stats-row">
-            
-            <!-- Region Stat -->
-            <div class="mini-stat" *ngIf="f.region">
-              <i class="fas fa-location-dot"></i>
-              <span>{{ f.region }}</span>
+        <div class="freelancer-card__top">
+          <div class="freelancer-identity">
+            <div
+              class="avatar-badge"
+              [class.avatar-badge--elite]="f.completenessScore >= 80"
+              [class.avatar-badge--pro]="f.completenessScore >= 50 && f.completenessScore < 80"
+              [class.avatar-badge--starter]="f.completenessScore < 50">
+              {{ f.initials }}
             </div>
 
-            <!-- Rate Stat -->
-            <div class="mini-stat" *ngIf="f.hourlyRate">
-              <i class="fas fa-coins"></i>
-              <span>{{ f.hourlyRate }} <small>TND/h</small></span>
-            </div>
+            <div class="identity-copy">
+              <div class="identity-header">
+                <h3>{{ f.fullName }}</h3>
 
-            <!-- Completeness Stat -->
-            <div class="mini-stat stat-highlight">
-              <i class="fas fa-shield-check"></i>
-              <span>{{ f.completenessScore }}%</span>
-            </div>
+                <span
+                  class="availability-pill"
+                  [class.availability-pill--available]="f.availabilityStatus === 'AVAILABLE'"
+                  [class.availability-pill--busy]="f.availabilityStatus === 'BUSY'"
+                  [class.availability-pill--vacation]="f.availabilityStatus === 'ON_VACATION'">
+                  {{
+                    f.availabilityStatus === 'AVAILABLE'
+                      ? 'Disponible'
+                      : f.availabilityStatus === 'BUSY'
+                        ? 'Occupé'
+                        : 'En congé'
+                  }}
+                </span>
+              </div>
 
+              <p class="headline">
+                {{ f.headline || 'Freelancer specialist' }}
+              </p>
+            </div>
           </div>
 
-          <!-- Availability Status -->
-          <div class="status-indicator"
-               [class.status-available]="f.availabilityStatus === 'AVAILABLE'"
-               [class.status-busy]="f.availabilityStatus === 'BUSY'"
-               [class.status-vacation]="f.availabilityStatus === 'ON_VACATION'">
-            <span class="status-dot"></span>
-            <span class="status-text">
-              {{ f.availabilityStatus === 'AVAILABLE' ? 'READY FOR DEPLOYMENT' :
-                 f.availabilityStatus === 'BUSY' ? 'CURRENTLY ENGAGED' :
-                 'ON LEAVE' }}
-            </span>
+          <div class="score-panel">
+            <strong>{{ f.completenessScore }}</strong>
+            <span>OVR</span>
           </div>
-
         </div>
 
-        <!-- Action Button -->
-        <div class="card-action">
-          <button class="action-btn">
-            <i class="fas fa-arrow-right-long"></i>
-            <span>VIEW PROFILE</span>
+        <p class="bio">
+          {{ f.bio | slice:0:120 }}{{ (f.bio?.length || 0) > 120 ? '...' : '' }}
+        </p>
+
+        <div class="meta-row">
+          <span class="meta-pill" *ngIf="f.region">📍 {{ f.region }}</span>
+          <span class="meta-pill" *ngIf="f.hourlyRate">💰 {{ f.hourlyRate }} TND/h</span>
+          <span class="meta-pill meta-pill--accent">{{ f.completenessScore }}% complétude</span>
+        </div>
+
+        <div
+          class="deployment-status"
+          [class.deployment-status--available]="f.availabilityStatus === 'AVAILABLE'"
+          [class.deployment-status--busy]="f.availabilityStatus === 'BUSY'"
+          [class.deployment-status--vacation]="f.availabilityStatus === 'ON_VACATION'">
+          <span class="status-dot"></span>
+          <span>
+            {{
+              f.availabilityStatus === 'AVAILABLE'
+                ? 'Ready for deployment'
+                : f.availabilityStatus === 'BUSY'
+                  ? 'Currently engaged'
+                  : 'On leave'
+            }}
+          </span>
+        </div>
+
+        <div class="card-footer">
+          <button type="button" class="btn-card-action">
+            Voir le profil
           </button>
         </div>
+      </article>
+    </section>
 
+    <footer class="marketplace-footer" *ngIf="!isLoading && freelancers.length > 0">
+      <div class="footer-stat">
+        <span class="footer-stat__label">Profils chargés</span>
+        <strong>{{ freelancers.length }}</strong>
       </div>
 
-    </div>
+      <div class="footer-stat">
+        <span class="footer-stat__label">Filtres actifs</span>
+        <strong>{{ (selectedRegion ? 1 : 0) + (selectedStatus ? 1 : 0) + (minRate ? 1 : 0) + (maxRate ? 1 : 0) }}</strong>
+      </div>
 
-    <!-- ════════════════════════════════════════
-         FOOTER STATS BAR
-    ════════════════════════════════════════ -->
-    <footer class="roster-footer" *ngIf="!isLoading && freelancers.length > 0">
       <div class="footer-stat">
-        <i class="fas fa-database"></i>
-        <span>{{ freelancers.length }} RECORDS LOADED</span>
-      </div>
-      <div class="footer-stat">
-        <i class="fas fa-filter"></i>
-        <span>FILTERS ACTIVE: {{ (selectedRegion ? 1 : 0) + (selectedStatus ? 1 : 0) + (minRate ? 1 : 0) + (maxRate ? 1 : 0) }}</span>
-      </div>
-      <div class="footer-stat">
-        <i class="fas fa-clock"></i>
-        <span>LAST SYNC: {{ currentTime }}</span>
+        <span class="footer-stat__label">Statut</span>
+        <strong>Synchronisé</strong>
       </div>
     </footer>
 

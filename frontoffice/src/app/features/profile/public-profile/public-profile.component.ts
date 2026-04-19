@@ -266,8 +266,9 @@ export class PublicProfileComponent implements OnInit {
     if (this.skills.length > 0) {
       const totalAuth = this.skills.reduce((acc, s) => {
         const value = s.authenticityScore ?? 0;
-        const normalized = value <= 1 ? value * 100 : value;
-        return acc + normalized;
+const normalized = Math.min(value <= 1 ? value * 100 : value, 100);
+
+return acc + normalized;
       }, 0);
       this.averageAuthenticity = totalAuth / this.skills.length;
     } else {

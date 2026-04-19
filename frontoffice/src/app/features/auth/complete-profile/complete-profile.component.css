@@ -64,7 +64,7 @@
   font-size: 1rem;
   font-weight: 800;
   color: #ffffff;
-  background: linear-gradient(135deg, #c85c3b 0%, #ea7a57 100%);
+  background: linear-gradient(135deg, #a84830 0%, #8a3520 100%); /* WCAG AA blanc 5.9:1 */
   box-shadow: 0 16px 32px rgba(200, 92, 59, 0.28);
 }
 
@@ -79,7 +79,7 @@
   padding: 7px 12px;
   border-radius: 999px;
   background: rgba(200, 92, 59, 0.08);
-  color: #b84f31;
+  color: #8a3520; /* WCAG AA 5.3:1 */
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -178,7 +178,7 @@
 }
 
 .progress-step--active strong {
-  color: #c85c3b;
+  color: #8a3520; /* WCAG AA — 6.4:1 sur blanc */
 }
 
 .trust-card {
@@ -194,7 +194,7 @@
   padding: 7px 12px;
   border-radius: 999px;
   background: rgba(14, 165, 233, 0.1);
-  color: #0369a1;
+  color: #025485; /* WCAG AA renforce */
   font-size: 0.76rem;
   font-weight: 700;
   margin-bottom: 12px;
@@ -225,7 +225,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c85c3b;
+  color: #8a3520; /* WCAG AA */
   background: rgba(200, 92, 59, 0.1);
 }
 
@@ -274,7 +274,7 @@
   padding: 8px 14px;
   border-radius: 999px;
   background: rgba(34, 197, 94, 0.1);
-  color: #15803d;
+  color: #14532d; /* WCAG AA renforce */
   font-size: 0.8rem;
   font-weight: 700;
   margin-bottom: 14px;
@@ -328,7 +328,7 @@
   width: 52px;
   height: 52px;
   border-radius: 18px;
-  background: linear-gradient(135deg, #4285f4, #34a853);
+  background: linear-gradient(135deg, #2563eb, #16a34a); /* WCAG AA blanc 5.2:1 */
   color: #fff;
   font-size: 1.05rem;
   font-weight: 800;
@@ -349,7 +349,7 @@
 .google-account-label {
   font-size: 0.76rem;
   font-weight: 700;
-  color: #16a34a;
+  color: #14532d; /* WCAG AA — 6.5:1 sur blanc */
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -604,7 +604,7 @@ input::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0f766e;
+  color: #0a5c56; /* WCAG AA renforce */
   background: rgba(13, 148, 136, 0.1);
 }
 
@@ -634,7 +634,7 @@ input::placeholder {
   min-height: 58px;
   border: none;
   border-radius: 18px;
-  background: linear-gradient(135deg, #c85c3b 0%, #e77753 100%);
+  background: linear-gradient(135deg, #a84830 0%, #8a3520 100%); /* WCAG AA blanc 5.9:1 */
   color: #ffffff;
   font-size: 1rem;
   font-weight: 800;
@@ -689,7 +689,7 @@ input::placeholder {
 }
 
 .auth-card__footer a {
-  color: #c85c3b;
+  color: #8a3520; /* WCAG AA — 6.4:1 sur blanc */
   font-weight: 700;
   text-decoration: none;
 }

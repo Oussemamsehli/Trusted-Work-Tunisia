@@ -33,7 +33,7 @@ export class FreelancersListComponent implements OnInit {
   errorMessage = '';
   currentTime = '';
 
-private clockInterval: any;
+private readonly clockInterval: any;
 
   selectedRegion = '';
   selectedStatus: 'AVAILABLE' | 'BUSY' | 'ON_VACATION' | '' = '';
@@ -43,10 +43,10 @@ private clockInterval: any;
   availableRegions: string[] = [];
 
   constructor(
-    private profileService: FreelancerProfileService,
-    private authService: AuthService,
-    private api: ApiService,
-    private router: Router
+    private readonly profileService: FreelancerProfileService,
+    private readonly authService: AuthService,
+    private readonly api: ApiService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {

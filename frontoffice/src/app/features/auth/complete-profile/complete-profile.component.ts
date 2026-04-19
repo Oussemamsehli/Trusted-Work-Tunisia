@@ -19,10 +19,10 @@ export class CompleteProfileComponent implements OnInit {
   googleUser: any;
 
   constructor(
-    private fb: FormBuilder,
-    private userService: UserService,
-    public authService: AuthService,
-    private router: Router
+    private readonly fb: FormBuilder,
+    private readonly userService: UserService,
+    public readonly authService: AuthService,
+    private readonly router: Router
   ) {
     this.form = this.fb.group({
       cin: ['', [Validators.required, Validators.pattern(/^\d{8}$/)]],

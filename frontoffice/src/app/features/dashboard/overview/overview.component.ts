@@ -66,8 +66,8 @@ export class OverviewComponent implements OnInit {
   ];
 
   constructor(
-    private authService: AuthService,
-    private freelancerService: FreelancerProfileService
+    private readonly authService: AuthService,
+    private readonly freelancerService: FreelancerProfileService
   ) {}
 
   ngOnInit(): void {
@@ -194,7 +194,9 @@ export class OverviewComponent implements OnInit {
 
   getGreeting(): string {
     const h = new Date().getHours();
-    return h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
+    if (h < 12) { return 'Bonjour'; }
+    if (h < 18) { return 'Bon après-midi'; }
+    return 'Bonsoir';
   }
 
   getTrendBarWidth(growth: number): string {

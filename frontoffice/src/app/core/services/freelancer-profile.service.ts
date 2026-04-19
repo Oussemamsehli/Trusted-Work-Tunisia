@@ -31,7 +31,7 @@ export class FreelancerProfileService {
   private readonly BASE_URL      = 'http://localhost:8082/api';
   private readonly USER_BASE_URL = 'http://localhost:8081/api';
 
-  constructor(private http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {}
 
   // =========================================================
   // PROFILE — /api/profiles
@@ -399,12 +399,12 @@ export class FreelancerProfileService {
   this.http.get(`${this.BASE_URL}/export/profiles/${userId}/cv`, {
     responseType: 'blob'
   }).subscribe(blob => {
-    const url = window.URL.createObjectURL(blob);
+    const url = globalThis.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `cv-${userId}.pdf`;
     a.click();
-    window.URL.revokeObjectURL(url);
+    globalThis.URL.revokeObjectURL(url);
   });
 }
 
