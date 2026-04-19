@@ -14,7 +14,6 @@ import tn.esprit.freelancerprofileservice.entities.Education;
 import tn.esprit.freelancerprofileservice.services.IEducationService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Controller REST — gestion du parcours académique
@@ -36,7 +35,7 @@ public class EducationController {
     // ─── Ajouter une formation ───────────────────────────────────────────────
     @PostMapping("/user/{userId}")
     @Operation(summary = "Ajouter une formation académique")
-    public ResponseEntity<?> add(
+    public ResponseEntity<Object> add(
             @PathVariable Long userId,
             @Valid @RequestBody AddEducationRequest request) {
 
@@ -65,14 +64,14 @@ public class EducationController {
         List<EducationResponse> list = educationService.getMyEducations(userId)
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(list);
     }
 
     // ─── Modifier une formation ──────────────────────────────────────────────
     @PutMapping("/{eduId}/user/{userId}")
     @Operation(summary = "Modifier une formation académique")
-    public ResponseEntity<?> update(
+    public ResponseEntity<Object> update(
             @PathVariable Long eduId,
             @PathVariable Long userId,
             @Valid @RequestBody UpdateEducationRequest request) {

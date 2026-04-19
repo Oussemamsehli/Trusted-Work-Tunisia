@@ -11,7 +11,6 @@ import tn.esprit.freelancerprofileservice.entities.Endorsement;
 import tn.esprit.freelancerprofileservice.services.IEndorsementService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Controller REST de gestion des endorsements.
@@ -42,7 +41,7 @@ public class EndorsementController {
         List<EndorsementResponse> responses = endorsementService.getEndorsementsBySkill(skillId)
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         return ResponseEntity.ok(responses);
     }

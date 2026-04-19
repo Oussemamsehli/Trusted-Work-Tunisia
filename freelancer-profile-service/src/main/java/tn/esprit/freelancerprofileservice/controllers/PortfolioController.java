@@ -11,7 +11,6 @@ import tn.esprit.freelancerprofileservice.entities.PortfolioItem;
 import tn.esprit.freelancerprofileservice.services.IPortfolioService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Controller REST — gestion du portfolio
@@ -49,7 +48,7 @@ public class PortfolioController {
         List<PortfolioResponse> items = portfolioService.getMyPortfolio(userId)
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         return ResponseEntity.ok(items);
     }
@@ -59,7 +58,7 @@ public class PortfolioController {
         List<PortfolioResponse> items = portfolioService.getPinnedPortfolio(userId)
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         return ResponseEntity.ok(items);
     }

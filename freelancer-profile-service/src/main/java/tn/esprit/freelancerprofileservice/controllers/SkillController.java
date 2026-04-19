@@ -14,7 +14,6 @@ import tn.esprit.freelancerprofileservice.services.ISkillGapService;
 import tn.esprit.freelancerprofileservice.services.ISkillService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Controller REST de gestion des compétences.
@@ -48,7 +47,7 @@ public class SkillController {
         List<SkillResponse> responses = skillService.getMySkills(userId)
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         return ResponseEntity.ok(responses);
     }

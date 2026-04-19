@@ -14,7 +14,6 @@ import tn.esprit.freelancerprofileservice.services.ICertificationService;
 import io.swagger.v3.oas.annotations.Operation;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Controller REST — gestion des certifications
@@ -67,7 +66,7 @@ public class CertificationController {
         List<CertificationResponse> certs = certificationService.getMyCertifications(userId)
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         return ResponseEntity.ok(certs);
     }

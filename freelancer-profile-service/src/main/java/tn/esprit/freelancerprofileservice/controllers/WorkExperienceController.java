@@ -14,7 +14,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/work-experiences")
@@ -68,7 +67,7 @@ public class WorkExperienceController {
         List<WorkExperienceResponse> list = workExperienceService.getMyWorkExperiences(userId)
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         return ResponseEntity.ok(list);
     }
@@ -159,7 +158,7 @@ public class WorkExperienceController {
         long months = durationInMonths % 12;
 
         if (years > 0 && months > 0) {
-            return years + (years == 1 ? " an " : " ans ") + months + (months == 1 ? " mois" : " mois");
+            return years + (years == 1 ? " an " : " ans ") + months + " mois";
         }
 
         if (years > 0) {

@@ -10,7 +10,6 @@ import tn.esprit.freelancerprofileservice.dto.request.AddReviewRequest;
 import tn.esprit.freelancerprofileservice.dto.request.ReplyToReviewRequest;
 import tn.esprit.freelancerprofileservice.dto.response.ProfileReviewSummaryResponse;
 import tn.esprit.freelancerprofileservice.dto.response.ReviewResponse;
-import tn.esprit.freelancerprofileservice.entities.ProfileReview;
 import tn.esprit.freelancerprofileservice.services.IProfileReviewService;
 
 import java.util.List;

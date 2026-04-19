@@ -15,7 +15,6 @@ import tn.esprit.freelancerprofileservice.services.ICompletenessService;
 import tn.esprit.freelancerprofileservice.services.IFreelancerProfileService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Controller REST — gestion des profils freelancer
@@ -68,7 +67,7 @@ public class FreelancerProfileController {
                 .searchProfiles(region, availability, minRate, maxRate)
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
 
         return ResponseEntity.ok(profiles);
     }
@@ -105,7 +104,7 @@ public class FreelancerProfileController {
         List<ProfileResponse> profiles = profileService.getAllPublicProfiles()
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(profiles);
     }
 
@@ -115,7 +114,7 @@ public class FreelancerProfileController {
         List<ProfileResponse> profiles = profileService.getRankingByRegion(region)
                 .stream()
                 .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(profiles);
     }
 
