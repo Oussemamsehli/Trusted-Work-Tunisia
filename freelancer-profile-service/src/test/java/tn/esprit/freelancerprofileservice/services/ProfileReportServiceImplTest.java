@@ -152,7 +152,7 @@ class ProfileReportServiceImplTest {
 
     @Test
     void shouldThrowWhenNullCategory() {
-        when(profileRepository.findById(1L)).thenReturn(Optional.of(profile));
+        // La validation de category=null se fait avant findById → pas de stub nécessaire
         assertThrows(InvalidDataException.class, () ->
                 service.reportProfile(1L, 2L, null, "desc")
         );
@@ -160,7 +160,7 @@ class ProfileReportServiceImplTest {
 
     @Test
     void shouldThrowWhenDescriptionEmpty() {
-        when(profileRepository.findById(1L)).thenReturn(Optional.of(profile));
+        // La validation de description vide se fait avant findById → pas de stub nécessaire
         assertThrows(InvalidDataException.class, () ->
                 service.reportProfile(1L, 2L, ReportCategory.SPAM, "  ")
         );
@@ -168,7 +168,7 @@ class ProfileReportServiceImplTest {
 
     @Test
     void shouldThrowWhenDescriptionTooLong() {
-        when(profileRepository.findById(1L)).thenReturn(Optional.of(profile));
+        // La validation de description trop longue se fait avant findById → pas de stub nécessaire
         String longDesc = "a".repeat(1001);
         assertThrows(InvalidDataException.class, () ->
                 service.reportProfile(1L, 2L, ReportCategory.SPAM, longDesc)
