@@ -12,6 +12,7 @@ import { UserDetailComponent } from './features/users/user-detail/user-detail.co
 import { KycManagementComponent } from './features/users/kyc-management/kyc-management.component';
 import { AuditLogsComponent } from './features/admin/audit-logs/audit-logs.component';
 import { SuspensionsComponent } from './features/admin/suspensions/suspensions.component';
+import { SchedulerManagementComponent } from './features/admin/scheduler-management/scheduler-management.component';
 
 // ── Module 02 : Freelancer Profiles ──
 import { ProfilesListComponent } from './features/freelancer/profiles-list/profiles-list.component';
@@ -53,6 +54,9 @@ const routes: Routes = [
 
       // ⚠️ Route dynamique en DERNIER — sinon elle capture 'reports', 'reviews', 'stats'
       { path: 'freelancers/:id',      component: ProfileDetailComponent },
+
+      // ── Système ──
+      { path: 'schedulers', component: SchedulerManagementComponent },
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

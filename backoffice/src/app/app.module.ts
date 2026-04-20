@@ -26,6 +26,7 @@ import { KycManagementComponent } from './features/users/kyc-management/kyc-mana
 
 import { AuditLogsComponent } from './features/admin/audit-logs/audit-logs.component';
 import { SuspensionsComponent } from './features/admin/suspensions/suspensions.component';
+import { SchedulerManagementComponent } from './features/admin/scheduler-management/scheduler-management.component';
 
 import { FilterCatPipe } from './shared/pipes/filter-cat.pipe';
 
@@ -72,7 +73,9 @@ import { TrendingProfilesComponent } from './features/freelancer/trending-profil
     ProfileInsightsTabComponent,
     ReviewsManagementComponent,
     ProfileOverviewTabComponent,
-    TrendingProfilesComponent
+    TrendingProfilesComponent,
+    // ── Système ──
+    SchedulerManagementComponent
   ],
   imports: [
     BrowserModule,

@@ -81,6 +81,12 @@ export class SidebarComponent implements OnInit {
       route: '/admin/freelancers/trending',
       badge: '🔥',
       badgeType: 'accent'
+    },
+    {
+      sectionLabel: 'Système',
+      label: 'Schedulers',
+      icon: 'fa-clock-rotate-left',
+      route: '/admin/schedulers'
     }
   ];
 
@@ -208,7 +214,10 @@ export class SidebarComponent implements OnInit {
         return currentUrl === '/admin/freelancers/stats';
         
         case '/admin/freelancers/reviews':
-          return currentUrl === '/admin/freelancers/reviews';
+        return currentUrl === '/admin/freelancers/reviews';
+
+      case '/admin/schedulers':
+        return currentUrl === '/admin/schedulers';
 
       default:
         return currentUrl === route;
